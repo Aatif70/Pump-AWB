@@ -24,17 +24,33 @@ class StockMovementReportScreen extends StatefulWidget {
   State<StockMovementReportScreen> createState() => _StockMovementReportScreenState();
 }
 
-class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
+class _StockMovementReportScreenState extends State<StockMovementReportScreen> with TickerProviderStateMixin {
   DateTime selectedDate = DateTime.now();
   bool isLoading = false;
   bool isGeneratingPdf = false;
   Map<String, dynamic>? reportData;
   String? errorMessage;
+  late AnimationController _fillAnimationController;
+  late Animation<double> _fillAnimation;
+  bool _isAnimatingFill = false;
 
   @override
   void initState() {
     super.initState();
+    _fillAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _fillAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fillAnimationController, curve: Curves.easeInOut),
+    );
     _fetchReportData();
+  }
+
+  @override
+  void dispose() {
+    _fillAnimationController.dispose();
+    super.dispose();
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -86,6 +102,7 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
           reportData = responseData;
           isLoading = false;
         });
+        _startFillAnimation();
       } else {
         setState(() {
           errorMessage = responseData['message'] ?? 'Failed to load report data';
@@ -98,6 +115,21 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
         isLoading = false;
       });
     }
+  }
+
+  void _startFillAnimation() {
+    setState(() {
+      _isAnimatingFill = true;
+    });
+    _fillAnimationController
+      ..reset()
+      ..forward().then((_) {
+        if (mounted) {
+          setState(() {
+            _isAnimatingFill = false;
+          });
+        }
+      });
   }
 
   @override
@@ -265,7 +297,10 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
             ),
           ),
           Expanded(
-            child: _buildReportContent(),
+            child: RefreshIndicator(
+              onRefresh: _fetchReportData,
+              child: _buildReportContent(),
+            ),
           ),
         ],
       ),
@@ -274,18 +309,23 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
 
   Widget _buildReportContent() {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: const Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
     if (errorMessage != null) {
-      return Center(
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.25),
               Icon(Icons.error_outline, color: Colors.red, size: 48),
               SizedBox(height: 16),
               Text(
@@ -309,12 +349,13 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
     }
 
     if (reportData == null || reportData!['data'] == null || reportData!['data'].isEmpty) {
-      return Center(
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.25),
               Icon(Icons.info_outline, color: Colors.amber, size: 48),
               SizedBox(height: 16),
               Text(
@@ -361,7 +402,7 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
                 _buildSummaryItem('Total Received', '${(summary['totalReceived'] as num).toDouble()} L'),
                 _buildSummaryItem('Total Dispensed', '${(summary['totalDispensed'] as num).toDouble()} L'),
                 _buildSummaryItem('Total Adjustments', '${(summary['totalAdjustments'] as num).toDouble()} L'),
-                _buildSummaryItem('Overall Stock %', '${(summary['overallStockPercentage'] as num).toDouble()}%'),
+                _buildAnimatedSummaryPercent('Overall Stock %', (summary['overallStockPercentage'] as num).toDouble()),
                 _buildSummaryItem('Tanks Requiring Attention', '${summary['tanksRequiringAttention']}'),
               ],
             ),
@@ -432,12 +473,14 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
                     ],
                   ),
                   SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: tank['stockPercentage'] / 100,
-                    backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(stockColor),
-                    minHeight: 8,
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: (tank['stockPercentage'] / 100) * _fillAnimation.value,
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(stockColor),
+                      minHeight: 8,
+                    ),
                   ),
                   SizedBox(height: 16),
                   Row(
@@ -1020,5 +1063,51 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
         );
       }
     }
+  }
+
+  Widget _buildAnimatedSummaryPercent(String label, double percent) {
+    final color = percent < 20
+        ? Colors.red
+        : percent < 40
+            ? Colors.orange
+            : Colors.green;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[700],
+                ),
+              ),
+              Text(
+                '${(percent * _fillAnimation.value).toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (percent / 100) * _fillAnimation.value,
+              backgroundColor: Colors.grey[200],
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              minHeight: 8,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 } 

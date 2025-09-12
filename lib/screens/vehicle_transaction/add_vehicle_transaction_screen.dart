@@ -49,7 +49,7 @@ class _AddVehicleTransactionScreenState extends State<AddVehicleTransactionScree
   bool _isSubmitting = false;
 
   // Payment modes
-  final List<String> _paymentModes = ['Cash', 'Credit', 'UPI', 'Card'];
+  final List<String> _paymentModes = ['Credit', 'Cash', 'UPI'];
 
   @override
   void initState() {
