@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api/fuel_tank_repository.dart';
 import '../../api/quality_check_repository.dart';
@@ -9,7 +8,6 @@ import '../../models/fuel_tank_model.dart';
 import '../../models/quality_check_model.dart';
 import '../../theme.dart';
 import '../../utils/shared_prefs.dart';
-import '../../api/api_constants.dart';
 import '../../widgets/custom_snackbar.dart';
 
 class AddQualityCheckScreen extends StatefulWidget {

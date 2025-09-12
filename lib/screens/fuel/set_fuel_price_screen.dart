@@ -39,13 +39,14 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
   DateTime _selectedEffectiveFrom = DateTime.now();
 
-  // FUEL TYPES AND THEIR COLORS
+  // FUEL TYPES AND THEIR COLORS (aligned with app standard)
   final Map<String, Color> _fuelColors = {
-    'Petrol': Colors.green.shade600,
-    'Diesel': Colors.blue.shade700,
-    'Premium Petrol': Colors.orange.shade600,
-    'Premium Diesel': Colors.purple.shade600,
-    'CNG': Colors.teal.shade600,
+    'Diesel': Colors.blue,
+    'Petrol': Colors.green,
+    'Power Petrol': Colors.red,
+    'Premium Petrol': Colors.red,
+    'Premium Diesel': Colors.black,
+    'CNG': Colors.teal.shade700,
   };
 
   // Map fuel types to their icons
@@ -757,35 +758,35 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
                 const SizedBox(height: 16),
 
-                // Price field
-                TextFormField(
-                  controller: priceController,
-                  decoration: InputDecoration(
-                    labelText: 'Price per liter (₹)',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.currency_rupee),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: color),
-                    ),
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a price';
-                    }
-
-                    try {
-                      final price = double.parse(value);
-                      if (price <= 0) {
-                        return 'Price must be greater than zero';
-                      }
-                    } catch (e) {
-                      return 'Please enter a valid number';
-                    }
-
-                    return null;
-                  },
-                ),
+                // // Price field
+                // TextFormField(
+                //   controller: priceController,
+                //   decoration: InputDecoration(
+                //     labelText: 'Price per liter (₹)',
+                //     border: const OutlineInputBorder(),
+                //     prefixIcon: const Icon(Icons.currency_rupee),
+                //     focusedBorder: OutlineInputBorder(
+                //       borderSide: BorderSide(color: color),
+                //     ),
+                //   ),
+                //   keyboardType: TextInputType.numberWithOptions(decimal: true),
+                //   validator: (value) {
+                //     if (value == null || value.isEmpty) {
+                //       return 'Please enter a price';
+                //     }
+                //
+                //     try {
+                //       final price = double.parse(value);
+                //       if (price <= 0) {
+                //         return 'Price must be greater than zero';
+                //       }
+                //     } catch (e) {
+                //       return 'Please enter a valid number';
+                //     }
+                //
+                //     return null;
+                //   },
+                // ),
 
                 const SizedBox(height: 16),
 
@@ -805,62 +806,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
                 const SizedBox(height: 16),
 
-                // Markup fields (percentage and amount)
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: markupPercentageController,
-                        decoration: InputDecoration(
-                          labelText: 'Markup %',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.percent),
-                        ),
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
-                        onChanged: (value) {
-                          // Calculate markup amount if both cost and percentage are entered
-                          if (value.isNotEmpty && costController.text.isNotEmpty) {
-                            try {
-                              final cost = double.parse(costController.text);
-                              final percentage = double.parse(value);
-                              final markupAmount = cost * (percentage / 100);
-                              markupAmountController.text = markupAmount.toStringAsFixed(2);
-                            } catch (e) {
-                              // Ignore errors
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextFormField(
-                        controller: markupAmountController,
-                        decoration: InputDecoration(
-                          labelText: 'Markup ₹',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.currency_rupee),
-                        ),
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
-                        onChanged: (value) {
-                          // Calculate percentage if both cost and amount are entered
-                          if (value.isNotEmpty && costController.text.isNotEmpty) {
-                            try {
-                              final cost = double.parse(costController.text);
-                              if (cost > 0) {
-                                final amount = double.parse(value);
-                                final percentage = (amount / cost) * 100;
-                                markupPercentageController.text = percentage.toStringAsFixed(2);
-                              }
-                            } catch (e) {
-                              // Ignore errors
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+
               ],
             ),
           ),
@@ -1685,7 +1631,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _showEditPriceDialog(price),
+          // onTap: () => _showEditPriceDialog(price),
           onLongPress: () => _showPriceOptions(price),
           child: Container(
             decoration: BoxDecoration(

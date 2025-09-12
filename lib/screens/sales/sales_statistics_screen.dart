@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:developer' as developer;
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../api/api_constants.dart';
 import '../../api/shift_sales_repository.dart';
 import '../../models/sales_statistics_model.dart';
 import '../../theme.dart';

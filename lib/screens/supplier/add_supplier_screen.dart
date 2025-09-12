@@ -116,19 +116,7 @@ class _AddSupplierScreenState extends State<AddSupplierScreen> {
     }
   }
   
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: AppTheme.primaryBlue,
-        ),
-      ),
-    );
-  }
+
   
   Widget _buildStyledFormField({
     required TextEditingController controller,

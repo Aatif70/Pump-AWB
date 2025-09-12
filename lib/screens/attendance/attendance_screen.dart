@@ -178,7 +178,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -191,7 +191,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -406,12 +406,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppTheme.primaryBlue.withOpacity(0.1), Colors.white],
+                  colors: [AppTheme.primaryBlue.withValues(alpha:0.1), Colors.white],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.2)),
+                border: Border.all(color: AppTheme.primaryBlue.withValues(alpha:0.2)),
               ),
               child: Row(
                 children: [
@@ -500,13 +500,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
         border: Border.all(
-          color: statusColor.withOpacity(0.2),
+          color: statusColor.withValues(alpha:0.2),
           width: 1,
         ),
       ),
@@ -524,8 +524,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            statusColor.withOpacity(0.2),
-                            statusColor.withOpacity(0.1),
+                            statusColor.withValues(alpha:0.2),
+                            statusColor.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
@@ -578,7 +578,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.1),
+                              color: statusColor.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -712,7 +712,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 16),
@@ -771,14 +771,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [AppTheme.primaryBlue, AppTheme.primaryBlue.withOpacity(0.8)],
+                        colors: [AppTheme.primaryBlue, AppTheme.primaryBlue.withValues(alpha:0.8)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryBlue.withOpacity(0.3),
+                          color: AppTheme.primaryBlue.withValues(alpha:0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 5),
                         ),
@@ -900,19 +900,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha:0.2)),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -951,7 +951,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -963,7 +963,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -1034,7 +1034,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
@@ -1157,7 +1157,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> with SingleTickerPr
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

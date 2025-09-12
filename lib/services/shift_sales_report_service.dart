@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:developer' as developer;
 import '../api/api_constants.dart';
 import '../models/shift_sales_report.dart';
 import 'package:shared_preferences/shared_preferences.dart';

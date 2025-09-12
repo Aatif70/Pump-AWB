@@ -1,9 +1,5 @@
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'dart:developer' as developer;
-import 'dart:math';
 import '../../api/dashboard_repository.dart';
 import '../../models/inventory_status_model.dart';
 import '../../models/consumption_rate_model.dart';

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../api/supplier_repository.dart';
 import '../../models/supplier_model.dart';
@@ -20,7 +19,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
   bool _isLoading = true;
   List<Supplier> _suppliers = [];
   String _errorMessage = '';
-  
+
   // Animation controller for stats cards
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
@@ -28,13 +27,13 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
   @override
   void initState() {
     super.initState();
-    
+
     // Setup animation
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    
+
     _fadeInAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -42,10 +41,10 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
       parent: _animationController,
       curve: Curves.easeOut,
     ));
-    
+
     _loadSuppliers();
   }
-  
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -60,7 +59,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
 
     try {
       final response = await _supplierRepository.getAllSuppliers();
-      
+
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -84,76 +83,80 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
   }
 
   void _navigateToEditSupplier(Supplier supplier) async {
-    print('SUPPLIER_LIST: Navigating to Edit Supplier screen for ${supplier.supplierName}');
+    print('SUPPLIER_LIST: Navigating to Edit Supplier screen for ${supplier
+        .supplierName}');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditSupplierScreen(supplier: supplier),
       ),
     );
-    
+
     // Refresh the list if successful edit
     if (result == true) {
       _loadSuppliers();
     }
   }
-  
+
   void _deleteSupplier(Supplier supplier) async {
     // Show confirmation dialog
     final shouldDelete = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Supplier'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Are you sure you want to delete ${supplier.supplierName}?'),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'This action cannot be undone. All data related to this supplier will be permanently deleted.',
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontSize: 12,
-                      ),
-                    ),
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Delete Supplier'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Are you sure you want to delete ${supplier
+                    .supplierName}?'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded,
+                          color: Colors.red.shade700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'This action cannot be undone. All data related to this supplier will be permanently deleted.',
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     ) ?? false;
-    
+
     if (!shouldDelete) return;
-    
+
     // Check if supplier has a valid ID
     if (supplier.supplierDetailId == null) {
       showAnimatedSnackBar(
@@ -163,19 +166,20 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
       );
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      final response = await _supplierRepository.deleteSupplier(supplier.supplierDetailId!);
-      
+      final response = await _supplierRepository.deleteSupplier(
+          supplier.supplierDetailId!);
+
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        
+
         if (response.success) {
           showAnimatedSnackBar(
             context: context,
@@ -204,7 +208,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
       }
     }
   }
-  
+
   void _showSupplierDetails(Supplier supplier) {
     showModalBottomSheet(
       context: context,
@@ -229,10 +233,11 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha:0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 5,
                           offset: const Offset(0, 1),
                         ),
@@ -275,18 +280,23 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                             ),
                             // Status badge
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: supplier.isActive ? Colors.green.shade100 : Colors.red.shade100,
+                                color: supplier.isActive
+                                    ? Colors.green.shade100
+                                    : Colors.red.shade100,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: supplier.isActive ? Colors.green.shade300 : Colors.red.shade300,
+                                  color: supplier.isActive ? Colors.green
+                                      .shade300 : Colors.red.shade300,
                                 ),
                               ),
                               child: Text(
                                 supplier.isActive ? 'Active' : 'Inactive',
                                 style: TextStyle(
-                                  color: supplier.isActive ? Colors.green.shade700 : Colors.red.shade700,
+                                  color: supplier.isActive ? Colors.green
+                                      .shade700 : Colors.red.shade700,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -297,7 +307,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                       ],
                     ),
                   ),
-                  
+
                   // Content
                   Expanded(
                     child: ListView(
@@ -307,8 +317,9 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                         // Business Information Card
                         Card(
                           elevation: 2,
-                          shadowColor: Colors.black.withValues(alpha:0.1),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shadowColor: Colors.black.withValues(alpha: 0.1),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -316,7 +327,8 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryBlue.withValues(alpha:0.1),
+                                  color: AppTheme.primaryBlue.withValues(
+                                      alpha: 0.1),
                                   borderRadius: const BorderRadius.only(
                                     topLeft: Radius.circular(16),
                                     topRight: Radius.circular(16),
@@ -346,27 +358,34 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                                 padding: const EdgeInsets.all(16),
                                 child: Column(
                                   children: [
-                                    _buildDetailRow('GST Number', supplier.gstNumber, Icons.receipt_long),
+                                    _buildDetailRow(
+                                        'GST Number', supplier.gstNumber,
+                                        Icons.receipt_long),
                                     const Divider(height: 24),
-                                    _buildDetailRow('Contact Person', supplier.contactPerson, Icons.person),
+                                    _buildDetailRow('Contact Person',
+                                        supplier.contactPerson, Icons.person),
                                     const Divider(height: 24),
-                                    _buildDetailRow('Phone', supplier.phoneNumber, Icons.phone),
+                                    _buildDetailRow(
+                                        'Phone', supplier.phoneNumber,
+                                        Icons.phone),
                                     const Divider(height: 24),
-                                    _buildDetailRow('Email', supplier.email, Icons.email),
+                                    _buildDetailRow(
+                                        'Email', supplier.email, Icons.email),
                                   ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 20),
-                        
+
                         // Location Information Card
                         Card(
                           elevation: 2,
-                          shadowColor: Colors.black.withValues(alpha:0.1),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shadowColor: Colors.black.withValues(alpha: 0.1),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -374,7 +393,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.amber.withValues(alpha:0.1),
+                                  color: Colors.amber.withValues(alpha: 0.1),
                                   borderRadius: const BorderRadius.only(
                                     topLeft: Radius.circular(16),
                                     topRight: Radius.circular(16),
@@ -404,29 +423,36 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                                 padding: const EdgeInsets.all(16),
                                 child: Column(
                                   children: [
-                                    _buildDetailRow('Address', supplier.address, Icons.home),
+                                    _buildDetailRow('Address', supplier.address,
+                                        Icons.home),
                                     const Divider(height: 24),
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: _buildDetailRow('City', supplier.city, Icons.location_city),
+                                          child: _buildDetailRow(
+                                              'City', supplier.city,
+                                              Icons.location_city),
                                         ),
                                         Expanded(
-                                          child: _buildDetailRow('State', supplier.state, Icons.map),
+                                          child: _buildDetailRow(
+                                              'State', supplier.state,
+                                              Icons.map),
                                         ),
                                       ],
                                     ),
                                     const Divider(height: 24),
-                                    _buildDetailRow('ZIP Code', supplier.zipCode, Icons.pin),
+                                    _buildDetailRow(
+                                        'ZIP Code', supplier.zipCode,
+                                        Icons.pin),
                                   ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Action Buttons
                         Row(
                           children: [
@@ -440,8 +466,10 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                                 label: const Text('EDIT'),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: AppTheme.primaryBlue,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  side: const BorderSide(color: AppTheme.primaryBlue),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 14),
+                                  side: const BorderSide(
+                                      color: AppTheme.primaryBlue),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -459,7 +487,8 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                                 label: const Text('DELETE'),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.red,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 14),
                                   side: const BorderSide(color: Colors.red),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -480,7 +509,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
       },
     );
   }
-  
+
   Widget _buildDetailRow(String label, String value, IconData icon) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,14 +547,15 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
       ],
     );
   }
-  
+
   // Build modern stat card for header
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, {bool isAlert = false}) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color,
+      {bool isAlert = false}) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:0.15),
+          color: Colors.white.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: isAlert ? Border.all(color: Colors.amber, width: 1.5) : null,
         ),
@@ -544,7 +574,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                   title,
                   style: TextStyle(
                     fontSize: 12,
-                    color: color.withValues(alpha:0.8),
+                    color: color.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -563,7 +593,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
       ),
     );
   }
-  
+
   Widget _buildEmptyView() {
     return Expanded(
       child: Center(
@@ -594,20 +624,21 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddSupplierScreen(),
-            ),
-          ).then((_) => _loadSuppliers());
-        },
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddSupplierScreen(),
+                  ),
+                ).then((_) => _loadSuppliers());
+              },
               icon: const Icon(Icons.add),
               label: const Text('Add Supplier'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryOrange,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -618,41 +649,42 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
       ),
     );
   }
-  
+
   Widget _buildErrorView() {
     return Expanded(
       child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: Colors.red.shade700,
-                            size: 48,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _errorMessage,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.red.shade700,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: _loadSuppliers,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryBlue,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            ),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                color: Colors.red.shade700,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.red.shade700,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _loadSuppliers,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 12),
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -691,76 +723,82 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : Column(
-                children: [
-                  // Header section with stats
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue,
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(24),
-                        bottomRight: Radius.circular(24),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha:0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
+          children: [
+            // Header section with stats
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryBlue,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: FadeTransition(
+                opacity: _fadeInAnimation,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Stats cards in a row
+                    Row(
+                      children: [
+                        _buildStatCard(
+                          'Total',
+                          _suppliers.length.toString(),
+                          Icons.business_center,
+                          Colors.white,
+                        ),
+                        const SizedBox(width: 12),
+                        _buildStatCard(
+                          'Active',
+                          _suppliers
+                              .where((s) => s.isActive)
+                              .length
+                              .toString(),
+                          Icons.check_circle_outline,
+                          Colors.greenAccent.shade100,
+                        ),
+                        const SizedBox(width: 12),
+                        _buildStatCard(
+                          'Inactive',
+                          _suppliers
+                              .where((s) => !s.isActive)
+                              .length
+                              .toString(),
+                          Icons.cancel_outlined,
+                          Colors.redAccent.shade100,
                         ),
                       ],
                     ),
-                    child: FadeTransition(
-                      opacity: _fadeInAnimation,
-                        child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Stats cards in a row
-                          Row(
-                          children: [
-                              _buildStatCard(
-                                'Total',
-                                _suppliers.length.toString(),
-                                Icons.business_center,
-                                Colors.white,
-                              ),
-                              const SizedBox(width: 12),
-                              _buildStatCard(
-                                'Active',
-                                _suppliers.where((s) => s.isActive).length.toString(),
-                                Icons.check_circle_outline,
-                                Colors.greenAccent.shade100,
-                              ),
-                              const SizedBox(width: 12),
-                              _buildStatCard(
-                                'Inactive',
-                                _suppliers.where((s) => !s.isActive).length.toString(),
-                                Icons.cancel_outlined,
-                                Colors.redAccent.shade100,
-                              ),
-                            ],
-                            ),
-                          ],
-                        ),
-                    ),
-                  ),
-                  
-                  // Error, empty view, or list
-                  _errorMessage.isNotEmpty
-                      ? _buildErrorView()
-                      : _suppliers.isEmpty
-                          ? _buildEmptyView()
-                          : Expanded(
-                              child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _suppliers.length,
-                        itemBuilder: (context, index) {
-                          final supplier = _suppliers[index];
-                                  return _buildSupplierCard(supplier, index);
-                        },
-                              ),
-                            ),
-                ],
-                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Error, empty view, or list
+            _errorMessage.isNotEmpty
+                ? _buildErrorView()
+                : _suppliers.isEmpty
+                ? _buildEmptyView()
+                : Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _suppliers.length,
+                itemBuilder: (context, index) {
+                  final supplier = _suppliers[index];
+                  return _buildSupplierCard(supplier, index);
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -768,7 +806,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
   Widget _buildSupplierCard(Supplier supplier, int index) {
     // Add staggered animation based on index
     final delay = Duration(milliseconds: 100 * index);
-    
+
     return FutureBuilder(
       future: Future.delayed(delay),
       builder: (context, snapshot) {
@@ -777,7 +815,7 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeOut,
           child: AnimatedPadding(
-            padding: snapshot.connectionState == ConnectionState.done 
+            padding: snapshot.connectionState == ConnectionState.done
                 ? EdgeInsets.zero
                 : const EdgeInsets.only(top: 20),
             duration: const Duration(milliseconds: 500),
@@ -797,101 +835,111 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
               confirmDismiss: (direction) async {
                 return await showDialog<bool>(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete Supplier'),
-                    content: Text('Are you sure you want to delete ${supplier.supplierName}?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
+                  builder: (context) =>
+                      AlertDialog(
+                        title: const Text('Delete Supplier'),
+                        content: Text(
+                            'Are you sure you want to delete ${supplier
+                                .supplierName}?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: TextButton.styleFrom(
+                                foregroundColor: Colors.red),
+                            child: const Text('Delete'),
+                          ),
+                        ],
                       ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: const Text('Delete'),
-                      ),
-                    ],
-                  ),
                 ) ?? false;
               },
               onDismissed: (direction) {
                 _deleteSupplier(supplier);
               },
               child: Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-                shadowColor: Colors.black.withValues(alpha:0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+                margin: const EdgeInsets.only(bottom: 16),
+                elevation: 2,
+                shadowColor: Colors.black.withValues(alpha: 0.1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: InkWell(
                   onTap: () => _showSupplierDetails(supplier),
                   borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                                color: AppTheme.primaryOrange.withValues(alpha:0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.business,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryOrange.withValues(
+                                    alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.business,
                                 color: AppTheme.primaryOrange,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        supplier.supplierName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'GST: ${supplier.gstNumber}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: supplier.isActive ? Colors.green.shade100 : Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(12),
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    supplier.supplierName,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'GST: ${supplier.gstNumber}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: supplier.isActive
+                                    ? Colors.green.shade100
+                                    : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: supplier.isActive ? Colors.green.shade300 : Colors.red.shade300,
+                                  color: supplier.isActive ? Colors.green
+                                      .shade300 : Colors.red.shade300,
                                 ),
-                  ),
-                  child: Text(
-                    supplier.isActive ? 'Active' : 'Inactive',
-                    style: TextStyle(
-                      color: supplier.isActive ? Colors.green.shade700 : Colors.red.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-                        
+                              ),
+                              child: Text(
+                                supplier.isActive ? 'Active' : 'Inactive',
+                                style: TextStyle(
+                                  color: supplier.isActive ? Colors.green
+                                      .shade700 : Colors.red.shade700,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
                         const SizedBox(height: 12),
-                        
+
                         // Contact info box
                         Container(
                           padding: const EdgeInsets.all(12),
@@ -929,9 +977,9 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 12),
-                        
+
                         // Location info
                         Row(
                           children: [
@@ -943,7 +991,9 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                '${supplier.address}, ${supplier.city}, ${supplier.state} - ${supplier.zipCode}',
+                                '${supplier.address}, ${supplier
+                                    .city}, ${supplier.state} - ${supplier
+                                    .zipCode}',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey.shade600,
@@ -952,38 +1002,40 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
                             ),
                           ],
                         ),
-            
-            // Actions
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton.icon(
-                              onPressed: () => _navigateToEditSupplier(supplier),
+
+                        // Actions
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () =>
+                                  _navigateToEditSupplier(supplier),
                               icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Edit'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.primaryBlue,
-                    side: BorderSide(color: AppTheme.primaryBlue),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  ),
-                ),
+                              label: const Text('Edit'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.primaryBlue,
+                                side: BorderSide(color: AppTheme.primaryBlue),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                              ),
+                            ),
                             const SizedBox(width: 8),
-                //             OutlinedButton.icon(
-                //               onPressed: () => _deleteSupplier(supplier),
-                //               icon: const Icon(Icons.delete_outline, size: 16),
-                //               label: const Text('Delete'),
-                //               style: OutlinedButton.styleFrom(
-                //                 foregroundColor: Colors.red,
-                //                 side: const BorderSide(color: Colors.red),
-                //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                //   ),
-                // ),
-              ],
-            ),
-          ],
-        ),
-      ),
+                            //             OutlinedButton.icon(
+                            //               onPressed: () => _deleteSupplier(supplier),
+                            //               icon: const Icon(Icons.delete_outline, size: 16),
+                            //               label: const Text('Delete'),
+                            //               style: OutlinedButton.styleFrom(
+                            //                 foregroundColor: Colors.red,
+                            //                 side: const BorderSide(color: Colors.red),
+                            //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            //   ),
+                            // ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1017,40 +1069,4 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: Colors.grey.shade600,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-} 
+}

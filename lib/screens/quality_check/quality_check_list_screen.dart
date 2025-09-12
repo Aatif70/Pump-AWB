@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../api/quality_check_repository.dart';
 import '../../models/quality_check_model.dart';
 import '../../theme.dart';
 import 'add_quality_check_screen.dart';
-import '../../widgets/custom_snackbar.dart';
 
 class QualityCheckListScreen extends StatefulWidget {
   const QualityCheckListScreen({Key? key}) : super(key: key);
