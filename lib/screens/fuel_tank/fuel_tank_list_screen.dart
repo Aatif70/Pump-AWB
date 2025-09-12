@@ -852,39 +852,45 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: color.withValues(alpha:0.2),
-                                blurRadius: 5,
-                                spreadRadius: 1,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: color.withValues(alpha:0.2),
+                                  blurRadius: 5,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.local_gas_station,
+                              color: color,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Flexible(
+                            child: Text(
+                              (tank.fuelTankName != null && tank.fuelTankName!.isNotEmpty)
+                                  ? tank.fuelTankName!
+                                  : tank.fuelType,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               ),
-                            ],
+                            ),
                           ),
-                          child: Icon(
-                            Icons.local_gas_station,
-                            color: color,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          (tank.fuelTankName != null && tank.fuelTankName!.isNotEmpty)
-                              ? tank.fuelTankName!
-                              : tank.fuelType,
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     // Status indicator
                     Container(

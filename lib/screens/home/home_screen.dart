@@ -348,17 +348,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         },
                       ),
 
-                      _buildQuickAccessItem(
-                        'Attendance',
-                        Icons.people_alt_rounded,
-                        Colors.pinkAccent,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const AttendanceScreen()),
-                          );
-                        },
-                      ),
 
 
                       const SizedBox(height: 8), // Reduced spacing
@@ -611,7 +600,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     const SizedBox(width: 10),
                                     const Expanded(
                                       child: Text(
-                                        'Setup is not finished yet. Complete onboarding to start operating.',
+                                        'Setup is not finished. \nComplete onboarding to start operating.',
                                         style: TextStyle(fontWeight: FontWeight.w600),
                                       ),
                                     ),
@@ -679,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 12),
                             // Fuel
                             _buildHeading('Fuel'),
                             const SizedBox(height: 12),
@@ -725,57 +714,65 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   },
                                 ),
 
-                                _buildQuickAccessItem(
-                                  'Vouchers',
-                                  Icons.local_post_office,
-                                  Colors.pinkAccent,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const VoucherScreen()),
-                                    );
-                                  },
-                                ),
-
-                                _buildQuickAccessItem(
-                                  'Booklets',
-                                  Icons.book,
-                                  Colors.red,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const BookletListScreen()),
-                                    );
-                                  },
-                                ),
-
-                                _buildQuickAccessItem(
-                                  'Customers',
-                                  Icons.people_alt_rounded,
-                                  Colors.pinkAccent,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const CustomerListScreen()),
-                                    );
-                                  },
-                                ),
-
-                                _buildQuickAccessItem(
-                                  'Vehicle Transaction',
-                                  Icons.people_alt_rounded,
-                                  Colors.pinkAccent,
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const VehicleTransactionListScreen()),
-                                    );
-                                  },
-                                ),
-
                               ],
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 12),
+
+
+// Fuel
+    _buildHeading('Vouchers'),
+    const SizedBox(height: 12),
+    GridView.count(
+    crossAxisCount: 3,
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    childAspectRatio: 0.9,
+    crossAxisSpacing: 12,
+    mainAxisSpacing: 12,
+    children: [
+
+
+                            _buildQuickAccessItem(
+                              'Booklets',
+                              Icons.book,
+                              Colors.red,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const BookletListScreen()),
+                                );
+                              },
+                            ),
+
+                            _buildQuickAccessItem(
+                              'Customers',
+                              Icons.people_alt_rounded,
+                              Colors.pinkAccent,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const CustomerListScreen()),
+                                );
+                              },
+                            ),
+
+                            _buildQuickAccessItem(
+                              'Vehicle Transaction',
+                              Icons.people_alt_rounded,
+                              Colors.pinkAccent,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const VehicleTransactionListScreen()),
+                                );
+                              },
+                            ),
+
+                            ],
+    ),
+
+
+
                             // Management
                             _buildHeading('Management'),
                             const SizedBox(height: 12),
@@ -822,7 +819,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 12),
                             // Business & Reports
                             _buildHeading('Business & Reports'),
                             const SizedBox(height: 12),
