@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../api/supplier_repository.dart';
 import '../../models/supplier_model.dart';
 import '../../theme.dart';
 import 'add_supplier_screen.dart';
 import 'edit_supplier_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class SupplierListScreen extends StatefulWidget {
   const SupplierListScreen({super.key});
@@ -154,11 +156,10 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
     
     // Check if supplier has a valid ID
     if (supplier.supplierDetailId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot delete supplier: Missing supplier ID'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Cannot delete supplier: Missing supplier ID',
+        isError: true,
       );
       return;
     }
@@ -176,19 +177,17 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
         });
         
         if (response.success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Supplier deleted successfully'),
-              backgroundColor: Colors.green,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Supplier deleted successfully',
+            isError: false,
           );
           _loadSuppliers();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete supplier: ${response.errorMessage}'),
-              backgroundColor: Colors.red,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Failed to delete supplier: ${response.errorMessage}',
+            isError: true,
           );
         }
       }
@@ -197,11 +196,10 @@ class _SupplierListScreenState extends State<SupplierListScreen> with SingleTick
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Error: $e',
+          isError: true,
         );
       }
     }

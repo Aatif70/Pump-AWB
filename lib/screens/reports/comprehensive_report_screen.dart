@@ -4,16 +4,17 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+
 // PDF generation imports
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
-
 import '../../api/api_constants.dart';
 import '../../models/comprehensive_report_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class ComprehensiveReportScreen extends StatefulWidget {
   const ComprehensiveReportScreen({super.key});
@@ -607,8 +608,10 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
   // Generate and preview PDF report
   Future<void> _generatePdfReport() async {
     if (reportData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No report data available for PDF export')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No report data available for PDF export',
+        isError: true,
       );
       return;
     }
@@ -626,8 +629,10 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
         name: '${reportData!.data.stationName}_Report_${_formatDate(reportData!.data.reportDate)}',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate PDF: ${e.toString()}')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Failed to generate PDF: ${e.toString()}',
+        isError: true,
       );
     } finally {
       setState(() {
@@ -639,8 +644,10 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
   // Share PDF report
   Future<void> _sharePdfReport() async {
     if (reportData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No report data available to share')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No report data available to share',
+        isError: true,
       );
       return;
     }
@@ -663,8 +670,10 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
         text: 'Comprehensive Daily Report - ${_formatDate(selectedDate)}',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share PDF: ${e.toString()}')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Failed to share PDF: ${e.toString()}',
+        isError: true,
       );
     } finally {
       setState(() {
@@ -1172,7 +1181,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: columns.map((columnName) {
-          return Container(
+          return SizedBox(
             width: cellWidth,
             child: Text(
               columnName,
@@ -1209,7 +1218,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.product,
@@ -1220,7 +1229,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.tank,
@@ -1228,7 +1237,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.dip.toString(),
@@ -1236,7 +1245,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.openingStockVol.toStringAsFixed(2),
@@ -1244,7 +1253,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.openingStockDensity.toStringAsFixed(2),
@@ -1252,7 +1261,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.loadVol.toStringAsFixed(2),
@@ -1260,7 +1269,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.loadDensity.toStringAsFixed(2),
@@ -1268,7 +1277,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.totalStockVol.toStringAsFixed(2),
@@ -1276,7 +1285,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.totalStockDensity.toStringAsFixed(2),
@@ -1284,7 +1293,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.closingDip.toString(),
@@ -1292,7 +1301,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.closingStockVol.toStringAsFixed(2),
@@ -1300,7 +1309,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.closingStockDensity.toStringAsFixed(2),
@@ -1308,7 +1317,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.dipSales.toStringAsFixed(2),
@@ -1316,7 +1325,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.meterSales.toStringAsFixed(2),
@@ -1324,7 +1333,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               tank.variation.toStringAsFixed(2),
@@ -1416,7 +1425,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               nozzle.dispenserUnit,
@@ -1427,7 +1436,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               nozzle.nozzle,
@@ -1435,7 +1444,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               nozzle.product,
@@ -1443,7 +1452,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               nozzle.tank,
@@ -1451,7 +1460,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               nozzle.opening.toStringAsFixed(2),
@@ -1459,7 +1468,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               nozzle.closing.toStringAsFixed(2),
@@ -1467,7 +1476,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               nozzle.testingLtrs.toStringAsFixed(2),
@@ -1475,7 +1484,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          Container(
+          SizedBox(
             width: cellWidth,
             child: Text(
               actualSales.toStringAsFixed(2),

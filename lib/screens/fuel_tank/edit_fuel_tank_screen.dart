@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../api/fuel_tank_repository.dart';
 import '../../models/fuel_tank_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 
 class EditFuelTankScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
   late final TextEditingController _capacityController;
   late final TextEditingController _fuelTypeController;
   late final TextEditingController _currentStockController;
+  late final TextEditingController _fuelTankNameController;
   late String _selectedStatus;
   
   bool _isLoading = false;
@@ -66,6 +68,7 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
     _capacityController = TextEditingController(text: widget.fuelTank.capacityInLiters.toString());
     _fuelTypeController = TextEditingController(text: widget.fuelTank.fuelType);
     _currentStockController = TextEditingController(text: widget.fuelTank.currentStock.toString());
+    _fuelTankNameController = TextEditingController(text: widget.fuelTank.fuelTankName ?? '');
     _selectedStatus = widget.fuelTank.status;
     
     // Initial preview values
@@ -128,6 +131,7 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
     _capacityController.dispose();
     _fuelTypeController.dispose();
     _currentStockController.dispose();
+    _fuelTankNameController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -187,6 +191,7 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
         currentStock: double.parse(_currentStockController.text),
         status: _selectedStatus,
         lastRefilledAt: widget.fuelTank.lastRefilledAt,
+        fuelTankName: _fuelTankNameController.text.isNotEmpty ? _fuelTankNameController.text : null,
       );
       
       // Log the request details
@@ -205,11 +210,10 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
       
       if (response.success) {
         developer.log('Fuel tank updated successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fuel tank updated successfully'),
-            backgroundColor: Colors.green,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Fuel tank updated successfully',
+          isError: false,
         );
         
         // Reset tracked value before leaving
@@ -225,11 +229,10 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
           _isLoading = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_errorMessage),
-            backgroundColor: Colors.red,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: _errorMessage,
+          isError: true,
         );
       }
     } catch (e) {
@@ -239,11 +242,10 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
         _isLoading = false;
       });
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Error: $e',
+        isError: true,
       );
     }
   }
@@ -295,7 +297,7 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Edit ${_fuelTypeController.text} Tank',
+                    'Edit ${_fuelTankNameController.text.isNotEmpty ? _fuelTankNameController.text : _fuelTypeController.text} Tank',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -401,6 +403,43 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
                                   filled: true,
                                   fillColor: Colors.grey.shade100,
                                 ),
+                              ),
+                              
+                              const SizedBox(height: 16),
+                              
+                              // Fuel Tank Name field
+                              Text(
+                                'Fuel Tank Name',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _fuelTankNameController,
+                                decoration: InputDecoration(
+                                  hintText: 'Enter fuel tank name',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: fuelColor, width: 2),
+                                  ),
+                                  prefixIcon: Icon(Icons.label_outline, color: fuelColor),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                ),
+                                validator: (value) {
+                                  // Optional field, no validation required
+                                  return null;
+                                },
                               ),
                               
                               const SizedBox(height: 16),
@@ -927,20 +966,14 @@ class _EditFuelTankScreenState extends State<EditFuelTankScreen> with SingleTick
   }
   
   Color _getFuelColor(String fuelType) {
-    switch(fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.blue.shade700;
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.grey.shade700;
   }
   
   Color _getLevelColor(double percentage) {

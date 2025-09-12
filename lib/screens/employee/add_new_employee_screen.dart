@@ -4,6 +4,7 @@ import '../../api/api_constants.dart';
 import '../../api/employee_repository.dart';
 import '../../models/employee_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 
 class AddNewEmployeeScreen extends StatefulWidget {
@@ -167,36 +168,24 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
 
       if (response.success) {
         developer.log('Employee created successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Employee added successfully')),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Employee added successfully',
+          isError: false,
         );
-
-        // Clear form
-        _formKey.currentState!.reset();
-        _firstNameController.clear();
-        _lastNameController.clear();
-        _emailController.clear();
-        _passwordController.clear();
-        _phoneController.clear();
-        _governmentIdController.clear();
-        _addressController.clear();
-        _cityController.clear();
-        _stateController.clear();
-        _zipCodeController.clear();
-        _emergencyContactController.clear();
-        setState(() {
-          _selectedRole = 'Attendant';
-          _dateOfBirth = DateTime.now().subtract(const Duration(days: 365 * 18));
-          _hireDate = DateTime.now();
-        });
+        // Navigate back to the employee list screen
+        Navigator.of(context).pop('added');
+        return;
       } else {
         developer.log('Failed to create employee: ${response.errorMessage}');
         setState(() {
           _errorMessage = response.errorMessage ?? 'Failed to add employee';
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage)),
+        showAnimatedSnackBar(
+          context: context,
+          message: _errorMessage,
+          isError: true,
         );
       }
     } catch (e) {
@@ -205,8 +194,10 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
         _errorMessage = e.toString();
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $_errorMessage')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Error: $_errorMessage',
+        isError: true,
       );
     } finally {
       setState(() {
@@ -275,11 +266,11 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Date of Birth
+                  // Date of Birth (Optional)
                   InkWell(
                     onTap: () => _selectDateOfBirth(context),
                     child: InputDecorator(
-                      decoration: AppTheme.inputDecoration('Date of Birth'),
+                      decoration: AppTheme.inputDecoration('Date of Birth (Optional)'),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -291,23 +282,17 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Government ID
+                  // Government ID (Optional)
                   TextFormField(
                     controller: _governmentIdController,
-                    decoration: AppTheme.inputDecoration('Government ID'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter government ID';
-                      }
-                      return null;
-                    },
+                    decoration: AppTheme.inputDecoration('Government ID (Optional)'),
                   ),
                   const SizedBox(height: 24),
 
                   // Contact Information Section
                   _buildSectionHeader('Contact Information'),
 
-                  // Email
+                  // Email (Required)
                   TextFormField(
                     controller: _emailController,
                     decoration: AppTheme.inputDecoration('Email'),
@@ -324,7 +309,7 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Phone
+                  // Phone Number (Required)
                   TextFormField(
                     controller: _phoneController,
                     decoration: AppTheme.inputDecoration('Phone Number'),
@@ -338,7 +323,7 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Emergency Contact
+                  // Emergency Contact (Required)
                   TextFormField(
                     controller: _emergencyContactController,
                     decoration: AppTheme.inputDecoration('Emergency Contact'),
@@ -355,29 +340,17 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                   // Address Section
                   _buildSectionHeader('Address'),
 
-                  // Address
+                  // Address (Optional)
                   TextFormField(
                     controller: _addressController,
-                    decoration: AppTheme.inputDecoration('Street Address'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter address';
-                      }
-                      return null;
-                    },
+                    decoration: AppTheme.inputDecoration('Street Address (Optional)'),
                   ),
                   const SizedBox(height: 16),
 
-                  // City
+                  // City (Optional)
                   TextFormField(
                     controller: _cityController,
-                    decoration: AppTheme.inputDecoration('City'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter city';
-                      }
-                      return null;
-                    },
+                    decoration: AppTheme.inputDecoration('City (Optional)'),
                   ),
                   const SizedBox(height: 16),
 
@@ -388,13 +361,7 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                         flex: 3,
                         child: TextFormField(
                           controller: _stateController,
-                          decoration: AppTheme.inputDecoration('State/Province'),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter state';
-                            }
-                            return null;
-                          },
+                          decoration: AppTheme.inputDecoration('State/Province (Optional)'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -402,14 +369,8 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                         flex: 2,
                         child: TextFormField(
                           controller: _zipCodeController,
-                          decoration: AppTheme.inputDecoration('Zip Code'),
+                          decoration: AppTheme.inputDecoration('Zip Code (Optional)'),
                           keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter zip code';
-                            }
-                            return null;
-                          },
                         ),
                       ),
                     ],
@@ -419,7 +380,7 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                   // Employment Information Section
                   _buildSectionHeader('Employment Information'),
 
-                  // Role Dropdown
+                  // Role (Required)
                   DropdownButtonFormField<String>(
                     decoration: AppTheme.inputDecoration('Role'),
                     value: _selectedRole,
@@ -440,7 +401,7 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Hire Date
+                  // Hire Date (Required)
                   InkWell(
                     onTap: () => _selectHireDate(context),
                     child: InputDecorator(
@@ -459,7 +420,7 @@ class _AddNewEmployeeScreenState extends State<AddNewEmployeeScreen> {
                   // Account Information Section
                   _buildSectionHeader('Account Information'),
 
-                  // Password
+                  // Password (Required)
                   TextFormField(
                     controller: _passwordController,
                     decoration: AppTheme.inputDecoration('Password'),

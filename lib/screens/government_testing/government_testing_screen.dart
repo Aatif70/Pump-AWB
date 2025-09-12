@@ -31,12 +31,12 @@ class _GovernmentTestingScreenState extends State<GovernmentTestingScreen> {
     });
 
     try {
-      print('DEBUG: GovernmentTestingScreen - Getting petrol pump ID');
+      debugPrint('DEBUG: GovernmentTestingScreen - Getting petrol pump ID');
       final String? petrolPumpId = await SharedPrefs.getPumpId();
-      print('DEBUG: GovernmentTestingScreen - Retrieved petrol pump ID: $petrolPumpId');
+      debugPrint('DEBUG: GovernmentTestingScreen - Retrieved petrol pump ID: $petrolPumpId');
       
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
-        print('DEBUG: GovernmentTestingScreen - Petrol pump ID is null or empty');
+        debugPrint('DEBUG: GovernmentTestingScreen - Petrol pump ID is null or empty');
         setState(() {
           _isLoading = false;
           _errorMessage = 'Failed to get petrol pump ID. Please login again.';
@@ -44,34 +44,34 @@ class _GovernmentTestingScreenState extends State<GovernmentTestingScreen> {
         return;
       }
       
-      print('DEBUG: GovernmentTestingScreen - Calling getAllGovernmentTestings');
+      debugPrint('DEBUG: GovernmentTestingScreen - Calling getAllGovernmentTestings');
       final response = await _governmentTestingRepository.getAllGovernmentTestings();
-      print('DEBUG: GovernmentTestingScreen - Got response, success: ${response.success}, data: ${response.data != null ? response.data!.length : 0} items');
+      debugPrint('DEBUG: GovernmentTestingScreen - Got response, success: ${response.success}, data: ${response.data != null ? response.data!.length : 0} items');
       
       if (mounted) {
         setState(() {
           _isLoading = false;
           if (response.success && response.data != null) {
             _testings = response.data!;
-            print('DEBUG: GovernmentTestingScreen - Total testings before filtering: ${_testings.length}');
+            debugPrint('DEBUG: GovernmentTestingScreen - Total testings before filtering: ${_testings.length}');
             
             // Filter by petrol pump ID if needed
             if (petrolPumpId.isNotEmpty) {
               _testings = _testings.where((testing) => 
                 testing.petrolPumpId == petrolPumpId
               ).toList();
-              print('DEBUG: GovernmentTestingScreen - After filtering by pump ID: ${_testings.length} testings');
+              debugPrint('DEBUG: GovernmentTestingScreen - After filtering by pump ID: ${_testings.length} testings');
             }
             
             _testings.sort((a, b) => (b.createdAt ?? DateTime.now()).compareTo(a.createdAt ?? DateTime.now()));
           } else {
             _errorMessage = response.errorMessage ?? 'Failed to load government testings';
-            print('DEBUG: GovernmentTestingScreen - Error: $_errorMessage');
+            debugPrint('DEBUG: GovernmentTestingScreen - Error: $_errorMessage');
           }
         });
       }
     } catch (e) {
-      print('DEBUG: GovernmentTestingScreen - Exception: ${e.toString()}');
+      debugPrint('DEBUG: GovernmentTestingScreen - Exception: ${e.toString()}');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -778,22 +778,16 @@ class _GovernmentTestingScreenState extends State<GovernmentTestingScreen> {
     );
   }
   
-  // Get color based on fuel type
+  // Get color based on fuel type (standardized)
   Color _getFuelTypeColor(String fuelType) {
-    switch(fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.blue.shade700;
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.grey.shade700;
   }
   
   // Get color based on approval status

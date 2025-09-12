@@ -6,6 +6,7 @@ import '../../api/shift_repository.dart';
 import '../../models/employee_model.dart';
 import '../../models/shift_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 
 class AssignStaffScreen extends StatefulWidget {
@@ -251,23 +252,11 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
             _errorMessage += 'Failed to assign $employeeName: ${response.errorMessage}\n';
             
             // Show a toast message for the error
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error assigning $employeeName to shift'),
-                backgroundColor: Colors.red,
-                duration: const Duration(seconds: 3),
-                action: SnackBarAction(
-                  label: 'RETRY',
-                  textColor: Colors.white,
-                  onPressed: () {
-                    // Clear error message and retry the assignment
-                    setState(() {
-                      _errorMessage = '';
-                    });
-                    _saveAssignedEmployees();
-                  },
-                ),
-              ),
+            showAnimatedSnackBar(
+              context: context,
+              message: 'Error assigning $employeeName to shift',
+              isError: true,
+              duration: const Duration(seconds: 3),
             );
           }
         } catch (e) {
@@ -302,12 +291,11 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
           employeeName = "${employee.firstName} ${employee.lastName}";
           
           // Show success message for the individual assignment
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$employeeName assigned to shift'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: '$employeeName assigned to shift',
+            isError: false,
+            duration: const Duration(seconds: 2),
           );
         }
       }
@@ -341,11 +329,10 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
             
             if (updateResponse.success) {
               // Show success message before returning
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All employees successfully assigned to shift'),
-                  backgroundColor: Colors.green,
-                ),
+              showAnimatedSnackBar(
+                context: context,
+                message: 'All employees successfully assigned to shift',
+                isError: false,
               );
               
               // Wait a moment to show the success message, then return
@@ -376,11 +363,10 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
           });
           
           // Show success message before returning
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Employees assigned successfully'),
-              backgroundColor: Colors.green,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Employees assigned successfully',
+            isError: false,
           );
           
           // Wait a moment to show the success message, then return
@@ -831,11 +817,10 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
   Future<void> _removeEmployeeFromShift(Employee employee) async {
     // Make sure we have valid IDs
     if (employee.id == null || widget.shift.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot remove employee: Missing IDs'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Cannot remove employee: Missing IDs',
+        isError: true,
       );
       return;
     }
@@ -886,11 +871,10 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
         
         if (response.success) {
           // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${employee.firstName} ${employee.lastName} has been removed from the shift'),
-              backgroundColor: Colors.green,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: '${employee.firstName} ${employee.lastName} has been removed from the shift',
+            isError: false,
           );
           
           // Remove from local lists
@@ -900,11 +884,10 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
           });
         } else {
           // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response.errorMessage ?? 'Failed to remove employee from shift'),
-              backgroundColor: Colors.red,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: response.errorMessage ?? 'Failed to remove employee from shift',
+            isError: true,
           );
           setState(() {
             _errorMessage = response.errorMessage ?? 'Failed to remove employee from shift';
@@ -918,11 +901,10 @@ class _AssignStaffScreenState extends State<AssignStaffScreen> {
           _errorMessage = 'Error: ${e.toString()}';
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Error: ${e.toString()}',
+          isError: true,
         );
       }
     }

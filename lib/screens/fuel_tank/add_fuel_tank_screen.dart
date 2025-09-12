@@ -5,6 +5,7 @@ import '../../api/fuel_tank_repository.dart';
 import '../../models/fuel_tank_model.dart';
 import '../../models/fuel_type_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 
 class AddFuelTankScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
   final _capacityController = TextEditingController();
   final _fuelTypeController = TextEditingController();
   final _currentStockController = TextEditingController();
+  final _fuelTankNameController = TextEditingController();
 
   String _selectedStatus = 'Inactive'; // Default status
   
@@ -116,6 +118,7 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
     _capacityController.dispose();
     _fuelTypeController.dispose();
     _currentStockController.dispose();
+    _fuelTankNameController.dispose();
     super.dispose();
   }
   
@@ -126,15 +129,10 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
     }
     
     if (_selectedFuelTypeId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select a fuel type'),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Please select a fuel type',
+        isError: true,
       );
       return;
     }
@@ -166,6 +164,7 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
         currentStock: double.parse(_currentStockController.text),
         status: _selectedStatus,
         fuelTypeId: _selectedFuelTypeId,
+        fuelTankName: _fuelTankNameController.text.isNotEmpty ? _fuelTankNameController.text : null,
       );
       
       // Log the request details
@@ -179,40 +178,24 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
       
       if (response.success) {
         developer.log('Fuel tank created successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Fuel tank added successfully'),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Fuel tank added successfully',
+          isError: false,
         );
         
-        // Clear form
-        _capacityController.clear();
-        _fuelTypeController.clear();
-        _currentStockController.clear();
-        setState(() {
-          _selectedStatus = 'Inactive';
-          _selectedFuelTypeId = null;
-        });
+        // Navigate back to list screen and trigger refresh
+        Navigator.pop(context, true);
       } else {
         developer.log('Failed to create fuel tank: ${response.errorMessage}');
         setState(() {
           _errorMessage = response.errorMessage ?? 'Failed to add fuel tank';
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_errorMessage),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: _errorMessage,
+          isError: true,
         );
       }
     } catch (e) {
@@ -221,15 +204,10 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
         _errorMessage = e.toString();
       });
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Error: $e',
+        isError: true,
       );
     } finally {
       setState(() {
@@ -243,34 +221,73 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
     return GestureDetector(
       onTap: _dismissKeyboard,
       child: Scaffold(
+        backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          title: const Text('Add New Fuel Tank'),
-          centerTitle: true,
+          title: const Text('Add Fuel Tank'),
+          backgroundColor: AppTheme.primaryBlue,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
         ),
         body: SafeArea(
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'New Fuel Tank',
-                    style: AppTheme.headingStyle,
-                    textAlign: TextAlign.center,
+          child: Column(
+            children: [
+              // Header with consistent styling to edit screen
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add details for the new fuel storage tank',
-                    style: AppTheme.subheadingStyle.copyWith(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha:0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  const SizedBox(height: 24),
+                  ],
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Add Fuel Tank',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                  // Text(
+                  //   'New Fuel Tank',
+                  //   style: AppTheme.headingStyle,
+                  //   textAlign: TextAlign.center,
+                  // ),
+                  // const SizedBox(height: 8),
+                  // Text(
+                  //   'Add details for the new fuel storage tank',
+                  //   style: AppTheme.subheadingStyle.copyWith(
+                  //     fontSize: 14,
+                  //     color: AppTheme.textSecondary,
+                  //   ),
+                  //   textAlign: TextAlign.center,
+                  // ),
+                  //
+                  // const SizedBox(height: 24),
                   
                   // Tank Details Card
                   _buildSectionTitle('Tank Details'),
@@ -369,6 +386,43 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
                               if (value == null || value.isEmpty) {
                                 return 'Please select a fuel type';
                               }
+                              return null;
+                            },
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // Fuel Tank Name field
+                          Text(
+                            'Fuel Tank Name',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _fuelTankNameController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter fuel tank name',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+                              ),
+                              prefixIcon: Icon(Icons.label_outline, color: AppTheme.primaryBlue),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                            validator: (value) {
+                              // Optional field, no validation required
                               return null;
                             },
                           ),
@@ -626,8 +680,12 @@ class _AddFuelTankScreenState extends State<AddFuelTankScreen> {
               ),
             ),
           ),
-        ),
+              )
+        ],
+
+              )
       ),
-    );
+    ),
+  );
   }
 } 

@@ -9,6 +9,7 @@ import '../../models/fuel_delivery_model.dart';
 import '../../models/fuel_tank_model.dart';
 import '../../models/supplier_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class AddFuelDeliveryScreen extends StatefulWidget {
   final FuelTank? fuelTank;
@@ -185,21 +186,19 @@ class _AddFuelDeliveryScreenState extends State<AddFuelDeliveryScreen> {
     }
     
     if (_selectedFuelTank == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a fuel tank'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Please select a fuel tank',
+        isError: true,
       );
       return;
     }
     
     if (_selectedSupplier == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a supplier'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Please select a supplier',
+        isError: true,
       );
       return;
     }
@@ -223,14 +222,14 @@ class _AddFuelDeliveryScreenState extends State<AddFuelDeliveryScreen> {
       );
       
       // Log the data being sent
-      print('FUEL DELIVERY - SENDING DATA:');
-      print('Delivery Date: ${fuelDelivery.deliveryDate}');
-      print('Fuel Tank ID: ${fuelDelivery.fuelTankId}');
-      print('Invoice Number: ${fuelDelivery.invoiceNumber}');
-      print('Quantity Received: ${fuelDelivery.quantityReceived}');
-      print('Supplier ID: ${fuelDelivery.supplierId}');
-      print('Density: ${fuelDelivery.density}');
-      print('Temperature: ${fuelDelivery.temperature}');
+      debugPrint('FUEL DELIVERY - SENDING DATA:');
+      debugPrint('Delivery Date: ${fuelDelivery.deliveryDate}');
+      debugPrint('Fuel Tank ID: ${fuelDelivery.fuelTankId}');
+      debugPrint('Invoice Number: ${fuelDelivery.invoiceNumber}');
+      debugPrint('Quantity Received: ${fuelDelivery.quantityReceived}');
+      debugPrint('Supplier ID: ${fuelDelivery.supplierId}');
+      debugPrint('Density: ${fuelDelivery.density}');
+      debugPrint('Temperature: ${fuelDelivery.temperature}');
 
       // Call API
       final response = await _fuelDeliveryRepository.addFuelDelivery(fuelDelivery);
@@ -349,20 +348,14 @@ class _AddFuelDeliveryScreenState extends State<AddFuelDeliveryScreen> {
   Color _getFuelColor(String? fuelType) {
     if (fuelType == null) return Colors.grey.shade700;
     
-    switch(fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.blue.shade700;
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.grey.shade700;
   }
   
   // Get color based on tank level percentage

@@ -6,6 +6,7 @@ import '../../theme.dart';
 import '../home/home_screen.dart';
 import '../employee/employee_dashboard_screen.dart';
 import '../../utils/jwt_decoder.dart';
+import '../../widgets/custom_snackbar.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
@@ -28,7 +29,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
-  String _errorMessage = '';
   
   // Animation controllers
   late AnimationController _animationController;
@@ -80,7 +80,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     
     setState(() {
       _isLoading = true;
-      _errorMessage = '';
     });
     
     final authRepository = AuthRepository();
@@ -192,11 +191,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           }
         } else {
           developer.log('ERROR: Token is null in successful response');
-          _errorMessage = 'Authentication successful but no token received';
           
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login successful but no token received. This is unusual.')),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Login successful but no token received. This is unusual.',
+            isError: true,
           );
           
           setState(() {
@@ -215,15 +215,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         developer.log('Showing error message: $errorMsg');
         
         setState(() {
-          _errorMessage = errorMsg;
           _isLoading = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMsg),
-            backgroundColor: Colors.red.shade700,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: errorMsg,
+          isError: true,
         );
       }
     } catch (error) {
@@ -231,17 +229,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       developer.log('Exception caught in _authenticate(): $error');
       
       setState(() {
-        _errorMessage = error.toString();
         _isLoading = false;
       });
       
       if (!mounted) return;
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $error'),
-          backgroundColor: Colors.red.shade700,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Error: $error',
+        isError: true,
       );
     }
   }
@@ -513,41 +509,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     ),
                                   ),
                                 ),
-                                
-                                // Error Message
-                                if (_errorMessage.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 16.0),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Colors.red.shade200,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.error_outline,
-                                            color: Colors.red.shade700,
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              _errorMessage,
-                                              style: TextStyle(
-                                                color: Colors.red.shade700,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
                                 
                                 const SizedBox(height: 32),
                                 

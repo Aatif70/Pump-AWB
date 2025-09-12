@@ -14,6 +14,7 @@ class FuelTank {
   final bool isLowStock; // Made optional with default
   final double remainingCapacity; // Made optional but with default calculation
   final String? fuelTypeId; // ID of the related fuel type
+  final String? fuelTankName; // Name of the fuel tank
 
   FuelTank({
     this.fuelTankId,
@@ -29,6 +30,7 @@ class FuelTank {
     bool? isLowStock, // Optional with default
     double? remainingCapacity, // Optional with default calculation
     this.fuelTypeId, // Optional fuel type ID
+    this.fuelTankName, // Optional fuel tank name
   }) : 
     // Calculate these values if not provided
     stockPercentage = stockPercentage ?? (capacityInLiters > 0 ? (currentStock / capacityInLiters * 100) : 0),
@@ -83,6 +85,7 @@ class FuelTank {
       isLowStock: isLowStock,
       remainingCapacity: remainingCapacity,
       fuelTypeId: json['fuelTypeId'] as String?,
+      fuelTankName: json['fuelTankName'] as String?,
     );
   }
 
@@ -100,6 +103,11 @@ class FuelTank {
     // Add fuelTypeId if it exists
     if (fuelTypeId != null && fuelTypeId!.isNotEmpty) {
       data['fuelTypeId'] = fuelTypeId;
+    }
+    
+    // Add fuelTankName if it exists
+    if (fuelTankName != null && fuelTankName!.isNotEmpty) {
+      data['fuelTankName'] = fuelTankName;
     }
     
     return data;

@@ -4,6 +4,7 @@ import '../../models/shift_model.dart';
 import '../../theme.dart';
 import 'dart:developer' as developer;
 import '../../api/employee_shift_repository.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EditShiftScreen extends StatefulWidget {
   final Shift shift;
@@ -173,15 +174,10 @@ class _EditShiftScreenState extends State<EditShiftScreen> {
         if (response.success) {
           developer.log('Shift updated successfully');
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Shift updated successfully'),
-              backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Shift updated successfully',
+            isError: false,
           );
           
           // Return true to indicate success
@@ -314,15 +310,10 @@ class _EditShiftScreenState extends State<EditShiftScreen> {
         
         if (response.success) {
           developer.log('Shift deleted successfully');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Shift deleted successfully'),
-              backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Shift deleted successfully',
+            isError: false,
           );
           
           // Return true to indicate success and refresh the list

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../api/fuel_dispenser_repository.dart';
 import '../../models/fuel_dispenser_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 
 class AddFuelDispenserScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _AddFuelDispenserScreenState extends State<AddFuelDispenserScreen> {
   // Form controllers
   final _dispenserNumberController = TextEditingController();
   final _numberOfNozzlesController = TextEditingController(text: '1');
+  final _dispenserNameController = TextEditingController();
   
   // Repository
   final _dispenserRepository = FuelDispenserRepository();
@@ -45,6 +47,7 @@ class _AddFuelDispenserScreenState extends State<AddFuelDispenserScreen> {
   void dispose() {
     _dispenserNumberController.dispose();
     _numberOfNozzlesController.dispose();
+    _dispenserNameController.dispose();
     super.dispose();
   }
   
@@ -92,7 +95,9 @@ class _AddFuelDispenserScreenState extends State<AddFuelDispenserScreen> {
         petrolPumpId: _petrolPumpId!,
         status: _selectedStatus,
         numberOfNozzles: int.parse(_numberOfNozzlesController.text),
-        fuelType: "<string>", id: '', // Use "<string>" as fuelType
+        fuelType: null,
+        dispenserName: _dispenserNameController.text.isNotEmpty ? _dispenserNameController.text : null,
+        id: '',
       );
 
       final validationErrors = dispenser.validate();
@@ -114,11 +119,10 @@ class _AddFuelDispenserScreenState extends State<AddFuelDispenserScreen> {
       if (response.success) {
         developer.log('Fuel dispenser added successfully');
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fuel dispenser added successfully'),
-            backgroundColor: Colors.green,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Fuel dispenser added successfully',
+          isError: false,
         );
         
         // Return true to refresh the dispensers list screen if navigating back
@@ -200,6 +204,19 @@ class _AddFuelDispenserScreenState extends State<AddFuelDispenserScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    // Dispenser Name (optional)
+                    const Text('Dispenser Name'),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _dispenserNameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        hintText: 'Enter dispenser name',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
                     // Dispenser Number
                     const Text('Dispenser Number'),
                     const SizedBox(height: 8),

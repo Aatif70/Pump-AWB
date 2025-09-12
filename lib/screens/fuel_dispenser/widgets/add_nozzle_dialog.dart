@@ -135,7 +135,7 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
         
       if (matchingTanks.isNotEmpty) {
         selectedFuelTank = matchingTanks.first;
-        print("INIT: Auto-selected fuel tank: ${selectedFuelTank?.fuelTankId}");
+        debugPrint("INIT: Auto-selected fuel tank: ${selectedFuelTank?.fuelTankId}");
       }
     }
   }
@@ -188,6 +188,13 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
   
   // Get color for a fuel type
   Color getFuelTypeColor(String fuelTypeName) {
+    // Enforce standardized color scheme regardless of API values
+    final name = (fuelTypeName).toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+
     // First check in API-loaded fuel types
     final apiType = _fuelTypes.where((type) => type.name == fuelTypeName).toList();
     if (apiType.isNotEmpty && apiType.first.color != null && apiType.first.color!.isNotEmpty) {
@@ -289,6 +296,14 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
         
     // Get current selected tank ID
     final currentTankId = selectedFuelTank?.fuelTankId;
+
+    // Build a unique list of fuel types from available tanks to avoid duplicate dropdown values
+    final uniqueFuelTypes = widget.fuelTanks
+        .map((tank) => tank.fuelType)
+        .where((name) => name != null && name.isNotEmpty)
+        .cast<String>()
+        .toSet()
+        .toList();
     
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -452,7 +467,7 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               DropdownButtonFormField<String>(
-                                value: selectedFuelType,
+                                value: uniqueFuelTypes.contains(selectedFuelType) ? selectedFuelType : null,
                                 decoration: InputDecoration(
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                                   border: OutlineInputBorder(
@@ -486,10 +501,10 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
                                 isExpanded: true,
                                 borderRadius: BorderRadius.circular(8),
                                 isDense: true,
-                                items: widget.fuelTanks.map((tank) {
-                                  final color = getFuelTypeColor(tank.fuelType);
+                                items: uniqueFuelTypes.map((fuelName) {
+                                  final color = getFuelTypeColor(fuelName);
                                   return DropdownMenuItem<String>(
-                                    value: tank.fuelType,
+                                    value: fuelName,
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -504,7 +519,7 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
                                         const SizedBox(width: 8),
                                         Flexible(
                                           child: Text(
-                                            tank.fuelType,
+                                            fuelName,
                                             style: const TextStyle(fontSize: 14),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -534,7 +549,7 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
                                         if (matchingTanks.isNotEmpty) {
                                           // Automatically select the first matching tank
                                           selectedFuelTank = matchingTanks.first;
-                                          print('Auto-selected matching tank: ${selectedFuelTank!.fuelTankId}');
+                                          debugPrint('Auto-selected matching tank: ${selectedFuelTank!.fuelTankId}');
                                         }
                                       }
                                     });
@@ -782,7 +797,7 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
                                     const SizedBox(width: 8),
                                     Flexible(
                                       child: Text(
-                                        'Tank ${tank.fuelTankId?.substring(0, math.min(4, tank.fuelTankId?.length ?? 0)) ?? ""} - ${tank.fuelType}',
+                                        ' ${tank.fuelTankName?.substring(0, math.min(4, tank.fuelTankId?.length ?? 0)) ?? ""} - ${tank.fuelType}',
                                         style: const TextStyle(fontSize: 14),
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -801,14 +816,14 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
                               );
                             }).toList(),
                             validator: (value) {
-                              print("VALIDATE TANK: $value");
+                              debugPrint("VALIDATE TANK: $value");
                               if (value == null || value.isEmpty) {
                                 return 'Please select a fuel tank';
                               }
                               return null;
                             },
                             onChanged: (value) {
-                              print("TANK CHANGED: Selected tank ID: $value");
+                              debugPrint("TANK CHANGED: Selected tank ID: $value");
                               if (value != null) {
                                 setState(() {
                                   final selectedTank = filteredTanks.firstWhere(
@@ -820,7 +835,7 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
                                   // Also update the fuel type to match the tank
                                   if (selectedTank.fuelType != null && selectedTank.fuelType!.isNotEmpty) {
                                     selectedFuelType = selectedTank.fuelType!;
-                                    print("TANK CHANGED: Updated fuel type to: $selectedFuelType");
+                                    debugPrint("TANK CHANGED: Updated fuel type to: $selectedFuelType");
                                   }
                                 });
                               }
@@ -1118,27 +1133,27 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
   }
 
   void _createNozzle() {
-    print("CREATE_NOZZLE: Starting nozzle creation process");
+    debugPrint("CREATE_NOZZLE: Starting nozzle creation process");
     
-    // Print the current state of critical fields
-    print("CREATE_NOZZLE: Current state of fields:");
-    print("  - Selected Fuel Type: $selectedFuelType");
-    print("  - Selected Fuel Tank: ${selectedFuelTank?.fuelTankId}");
-    print("  - Selected Nozzle Number: $selectedNozzleNumber");
-    print("  - Selected Status: $selectedStatus");
+    // debugPrint the current state of critical fields
+    debugPrint("CREATE_NOZZLE: Current state of fields:");
+    debugPrint("  - Selected Fuel Type: $selectedFuelType");
+    debugPrint("  - Selected Fuel Tank: ${selectedFuelTank?.fuelTankId}");
+    debugPrint("  - Selected Nozzle Number: $selectedNozzleNumber");
+    debugPrint("  - Selected Status: $selectedStatus");
     
     // Do validation before calling validate() to identify specific issues
     if (selectedFuelTank == null) {
-      print("CREATE_NOZZLE: Validation would fail - No fuel tank selected");
+      debugPrint("CREATE_NOZZLE: Validation would fail - No fuel tank selected");
     }
     
-    print("CREATE_NOZZLE: Calling form validation...");
-    print("CREATE_NOZZLE: Form validation state: ${formKey.currentState?.validate()}");
+    debugPrint("CREATE_NOZZLE: Calling form validation...");
+    debugPrint("CREATE_NOZZLE: Form validation state: ${formKey.currentState?.validate()}");
     
     if (formKey.currentState!.validate()) {
       // Double-check that a fuel tank is selected
       if (selectedFuelTank == null) {
-        print("CREATE_NOZZLE: Error - No fuel tank selected");
+        debugPrint("CREATE_NOZZLE: Error - No fuel tank selected");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Error: A fuel tank must be selected'),
@@ -1154,15 +1169,15 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
       }
 
       final sanitizedDispenserId = widget.dispenserId.trim();
-      print("CREATE_NOZZLE: Dispenser ID: $sanitizedDispenserId");
+      debugPrint("CREATE_NOZZLE: Dispenser ID: $sanitizedDispenserId");
       
       // Get the fuel type ID if available
       final fuelTypeId = getFuelTypeIdByName(selectedFuelType);
-      print("CREATE_NOZZLE: Fuel Type: $selectedFuelType, FuelTypeId: $fuelTypeId");
-      print("CREATE_NOZZLE: Selected Fuel Tank ID: ${selectedFuelTank?.fuelTankId}");
-      print("CREATE_NOZZLE: Selected Status: $selectedStatus");
-      print("CREATE_NOZZLE: Selected Nozzle Number: $selectedNozzleNumber");
-      print("CREATE_NOZZLE: Last Calibration Date: $selectedCalibrationDate");
+      debugPrint("CREATE_NOZZLE: Fuel Type: $selectedFuelType, FuelTypeId: $fuelTypeId");
+      debugPrint("CREATE_NOZZLE: Selected Fuel Tank ID: ${selectedFuelTank?.fuelTankId}");
+      debugPrint("CREATE_NOZZLE: Selected Status: $selectedStatus");
+      debugPrint("CREATE_NOZZLE: Selected Nozzle Number: $selectedNozzleNumber");
+      debugPrint("CREATE_NOZZLE: Last Calibration Date: $selectedCalibrationDate");
       
       final newNozzle = Nozzle(
         fuelDispenserUnitId: sanitizedDispenserId,
@@ -1176,12 +1191,12 @@ class _AddNozzleDialogState extends State<AddNozzleDialog> with SingleTickerProv
         assignedEmployee: selectedEmployee?.id,
       );
       
-      print("CREATE_NOZZLE: Created nozzle object: ${newNozzle.toJson()}");
-      print("CREATE_NOZZLE: Returning nozzle to caller");
+      debugPrint("CREATE_NOZZLE: Created nozzle object: ${newNozzle.toJson()}");
+      debugPrint("CREATE_NOZZLE: Returning nozzle to caller");
       
       Navigator.pop(context, newNozzle);
     } else {
-      print("CREATE_NOZZLE: Form validation failed");
+      debugPrint("CREATE_NOZZLE: Form validation failed");
       
       // Show a more descriptive error message
       ScaffoldMessenger.of(context).showSnackBar(

@@ -42,7 +42,7 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
   }
 
   Future<void> _loadEmployees() async {
-    print('LOADING: Starting to load employees from API');
+    debugPrint('LOADING: Starting to load employees from API');
     setState(() {
       _isLoading = true;
       _isError = false;
@@ -50,9 +50,9 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
     });
 
     try {
-      print('LOADING: Calling repository.getAllEmployees()');
+      debugPrint('LOADING: Calling repository.getAllEmployees()');
       final response = await _repository.getAllEmployees();
-      print('LOADING: Got response from getAllEmployees, success=${response.success}, count=${response.data?.length ?? 0}');
+      debugPrint('LOADING: Got response from getAllEmployees, success=${response.success}, count=${response.data?.length ?? 0}');
 
       if (mounted) {
         setState(() {
@@ -62,14 +62,14 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
                 .where((emp) => emp.id != null && !_recentlyDeletedIds.contains(emp.id))
                 .toList();
                 
-            print('LOADING SUCCESS: Loaded ${_employees.length} employees (after filtering deleted)');
+            debugPrint('LOADING SUCCESS: Loaded ${_employees.length} employees (after filtering deleted)');
             
             _saveDeletedIds();
             
             if (_employees.isNotEmpty) {
-              print('EMPLOYEE SAMPLE:');
+              debugPrint('EMPLOYEE SAMPLE:');
               for (var i = 0; i < ((_employees.length > 3) ? 3 : _employees.length); i++) {
-                print('  - [${i+1}] ID=${_employees[i].id}, Name=${_employees[i].firstName} ${_employees[i].lastName}, Active=${_employees[i].isActive}');
+                debugPrint('  - [${i+1}] ID=${_employees[i].id}, Name=${_employees[i].firstName} ${_employees[i].lastName}, Active=${_employees[i].isActive}');
               }
             }
             
@@ -81,12 +81,12 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
           } else {
             _isError = true;
             _errorMessage = response.errorMessage ?? 'Failed to load employees';
-            print('LOADING ERROR: $_errorMessage');
+            debugPrint('LOADING ERROR: $_errorMessage');
           }
         });
       }
     } catch (e) {
-      print('LOADING EXCEPTION: $e');
+      debugPrint('LOADING EXCEPTION: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -99,17 +99,17 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
 
   Future<void> _saveDeletedIds() async {
     try {
-      print('SAVE: Would save ${_recentlyDeletedIds.length} deleted IDs');
+      debugPrint('SAVE: Would save ${_recentlyDeletedIds.length} deleted IDs');
     } catch (e) {
-      print('ERROR: Failed to save deleted IDs: $e');
+      debugPrint('ERROR: Failed to save deleted IDs: $e');
     }
   }
 
   Future<void> _loadDeletedIds() async {
     try {
-      print('LOAD: Would load deleted IDs');
+      debugPrint('LOAD: Would load deleted IDs');
     } catch (e) {
-      print('ERROR: Failed to load deleted IDs: $e');
+      debugPrint('ERROR: Failed to load deleted IDs: $e');
     }
   }
 
@@ -281,27 +281,27 @@ class _EmployeeListScreenState extends State<EmployeeListScreen> {
   }
 
   void _viewEmployeeDetails(Employee employee) {
-    print('NAVIGATE: Viewing details for employee ID=${employee.id}, Name=${employee.firstName} ${employee.lastName}, isActive=${employee.isActive}');
+    debugPrint('NAVIGATE: Viewing details for employee ID=${employee.id}, Name=${employee.firstName} ${employee.lastName}, isActive=${employee.isActive}');
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EmployeeDetailScreen(employeeId: employee.id!),
       ),
     ).then((result) {
-      print('RETURNED from EmployeeDetailScreen with result: $result');
+      debugPrint('RETURNED from EmployeeDetailScreen with result: $result');
       
       // Check if employee was deleted or just edited
       if (result == 'deleted') {
         // For deletion, add ID to deleted list
         if (employee.id != null) {
           _recentlyDeletedIds.add(employee.id!);
-          print('Added ${employee.id} to recently deleted list to filter out');
+          debugPrint('Added ${employee.id} to recently deleted list to filter out');
           _saveDeletedIds();
         }
         _loadEmployees();
       } else if (result == 'edited') {
         // For editing, just refresh the list
-        print('Refreshing employee list after updates');
+        debugPrint('Refreshing employee list after updates');
         _loadEmployees();
       }
     });

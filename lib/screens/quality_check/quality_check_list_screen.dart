@@ -4,6 +4,7 @@ import '../../api/quality_check_repository.dart';
 import '../../models/quality_check_model.dart';
 import '../../theme.dart';
 import 'add_quality_check_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class QualityCheckListScreen extends StatefulWidget {
   const QualityCheckListScreen({Key? key}) : super(key: key);
@@ -48,10 +49,10 @@ class _QualityCheckListScreenState extends State<QualityCheckListScreen> {
           _isLoading = false;
           if (response.success && response.data != null) {
             _qualityChecks = response.data!;
-            print('Loaded ${_qualityChecks.length} quality checks');
+            debugPrint('Loaded ${_qualityChecks.length} quality checks');
           } else {
             _errorMessage = response.errorMessage ?? 'Failed to load quality checks';
-            print('Error loading quality checks: $_errorMessage');
+            debugPrint('Error loading quality checks: $_errorMessage');
           }
         });
       }
@@ -60,7 +61,7 @@ class _QualityCheckListScreenState extends State<QualityCheckListScreen> {
         setState(() {
           _isLoading = false;
           _errorMessage = e.toString();
-          print('Exception loading quality checks: $e');
+          debugPrint('Exception loading quality checks: $e');
         });
       }
     }
@@ -353,7 +354,7 @@ class _QualityCheckListScreenState extends State<QualityCheckListScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Quality Checks'),
+        title: const Text('Quality Checks (Dip)'),
         backgroundColor: AppTheme.primaryBlue,
         elevation: 0,
         foregroundColor: Colors.white,
@@ -1122,20 +1123,14 @@ class _QualityCheckListScreenState extends State<QualityCheckListScreen> {
   }
 
   Color _getColorForFuelType(String fuelType) {
-    switch(fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.blue.shade700;
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.grey.shade700;
   }
   
   Color _getStatusColor(String status) {

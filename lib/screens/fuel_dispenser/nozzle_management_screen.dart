@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +21,7 @@ import 'widgets/add_nozzle_dialog.dart';
 import 'widgets/nozzle_card.dart';
 import 'widgets/nozzle_status_summary.dart';
 import 'widgets/employee_assignment_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class NozzleManagementScreen extends StatefulWidget {
   final FuelDispenser? dispenser;
@@ -69,24 +71,24 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(ApiConstants.authTokenKey);
       
-      print('==================== NOZZLE MANAGEMENT ====================');
-      print('NozzleManagementScreen: Auth token check: ${token != null ? 'Token exists' : 'No token found'}');
+      debugPrint('==================== NOZZLE MANAGEMENT ====================');
+      debugPrint('NozzleManagementScreen: Auth token check: ${token != null ? 'Token exists' : 'No token found'}');
       developer.log('NozzleManagementScreen: Auth token check: ${token != null ? 'Token exists' : 'No token found'}');
       if (token != null) {
-        print('NozzleManagementScreen: Token length: ${token.length}');
-        print('NozzleManagementScreen: Token preview: ${token.substring(0, token.length > 10 ? 10 : token.length)}...');
+        debugPrint('NozzleManagementScreen: Token length: ${token.length}');
+        debugPrint('NozzleManagementScreen: Token preview: ${token.substring(0, token.length > 10 ? 10 : token.length)}...');
         developer.log('NozzleManagementScreen: Token length: ${token.length}');
         developer.log('NozzleManagementScreen: Token preview: ${token.substring(0, token.length > 10 ? 10 : token.length)}...');
       }
     } catch (e) {
-      print('NozzleManagementScreen: Error checking auth token: $e');
+      debugPrint('NozzleManagementScreen: Error checking auth token: $e');
       developer.log('NozzleManagementScreen: Error checking auth token: $e');
     }
   }
 
   // Load all dispensers or a specific one
   Future<void> _loadDispensers() async {
-    print('NozzleManagementScreen: Loading dispensers');
+    debugPrint('NozzleManagementScreen: Loading dispensers');
     developer.log('NozzleManagementScreen: Loading dispensers');
     setState(() {
       _isLoading = true;
@@ -96,7 +98,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
     try {
       // If a specific dispenser was passed, only load that one
       if (widget.dispenser != null) {
-        print('NozzleManagementScreen: Loading single dispenser #${widget.dispenser!.dispenserNumber}');
+        debugPrint('NozzleManagementScreen: Loading single dispenser #${widget.dispenser!.dispenserNumber}');
         _dispensers = [widget.dispenser!];
         
         // Ensure the dispenser has a valid ID before trying to load nozzles
@@ -105,7 +107,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         if (dispenserId.isNotEmpty) {
           await _loadNozzlesForDispenser(dispenserId);
         } else {
-          print('NozzleManagementScreen: Warning - dispenser has null/empty ID: ${widget.dispenser!.dispenserNumber}');
+          debugPrint('NozzleManagementScreen: Warning - dispenser has null/empty ID: ${widget.dispenser!.dispenserNumber}');
           developer.log('NozzleManagementScreen: Warning - dispenser has null/empty ID: ${widget.dispenser!.dispenserNumber}');
           // Initialize with empty list for this dispenser to prevent null errors
           _nozzlesMap[widget.dispenser!.id] = [];
@@ -119,18 +121,18 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       
       // Otherwise load all dispensers
       final response = await _dispenserRepository.getFuelDispensers();
-      print('NozzleManagementScreen: Dispenser fetch response success: ${response.success}');
+      debugPrint('NozzleManagementScreen: Dispenser fetch response success: ${response.success}');
       
       if (!mounted) return;
       
       if (response.success) {
         _dispensers = response.data ?? [];
-        print('NozzleManagementScreen: Loaded ${_dispensers.length} dispensers');
+        debugPrint('NozzleManagementScreen: Loaded ${_dispensers.length} dispensers');
         developer.log('NozzleManagementScreen: Loaded ${_dispensers.length} dispensers');
         
         // Initialize empty nozzle lists for each dispenser
         for (var dispenser in _dispensers) {
-          print('NozzleManagementScreen: Processing dispenser #${dispenser.dispenserNumber}, ID: ${dispenser.id}');
+          debugPrint('NozzleManagementScreen: Processing dispenser #${dispenser.dispenserNumber}, ID: ${dispenser.id}');
           
           // Ensure the dispenser has a valid ID before trying to load nozzles
           final dispenserId = dispenser.id ?? '';
@@ -138,7 +140,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           if (dispenserId.isNotEmpty) {
             await _loadNozzlesForDispenser(dispenserId);
           } else {
-            print('NozzleManagementScreen: Warning - dispenser has null/empty ID: ${dispenser.dispenserNumber}');
+            debugPrint('NozzleManagementScreen: Warning - dispenser has null/empty ID: ${dispenser.dispenserNumber}');
             developer.log('NozzleManagementScreen: Warning - dispenser has null/empty ID: ${dispenser.dispenserNumber}');
             // Initialize with empty list for this dispenser to prevent null errors
             _nozzlesMap[dispenser.id] = [];
@@ -148,9 +150,9 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         setState(() {
           _isLoading = false;
         });
-        print('NozzleManagementScreen: Finished loading all dispensers and nozzles');
+        debugPrint('NozzleManagementScreen: Finished loading all dispensers and nozzles');
       } else {
-        print('NozzleManagementScreen: Error loading dispensers: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Error loading dispensers: ${response.errorMessage}');
         developer.log('NozzleManagementScreen: Error loading dispensers: ${response.errorMessage}');
         setState(() {
           _isLoading = false;
@@ -158,7 +160,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         });
       }
     } catch (e) {
-      print('NozzleManagementScreen: Exception when loading dispensers: $e');
+      debugPrint('NozzleManagementScreen: Exception when loading dispensers: $e');
       developer.log('NozzleManagementScreen: Exception when loading dispensers: $e');
       if (!mounted) return;
       
@@ -172,23 +174,23 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
   // Load nozzles for a specific dispenser
   Future<void> _loadNozzlesForDispenser(String dispenserId) async {
     if (dispenserId.isEmpty) {
-      print('NozzleManagementScreen: Cannot load nozzles - empty dispenser ID provided');
+      debugPrint('NozzleManagementScreen: Cannot load nozzles - empty dispenser ID provided');
       developer.log('NozzleManagementScreen: Cannot load nozzles - empty dispenser ID provided');
       return;
     }
     
-    print('NozzleManagementScreen: Loading nozzles for dispenser: $dispenserId');
+    debugPrint('NozzleManagementScreen: Loading nozzles for dispenser: $dispenserId');
     developer.log('NozzleManagementScreen: Loading nozzles for dispenser: $dispenserId');
     try {
       // Get nozzles for this specific dispenser ID instead of all nozzles
       final response = await _nozzleRepository.getNozzlesByDispenserId(dispenserId);
-      print('NozzleManagementScreen: Nozzles fetch response success: ${response.success}');
+      debugPrint('NozzleManagementScreen: Nozzles fetch response success: ${response.success}');
       
       if (!mounted) return;
       
       if (response.success) {
         final nozzles = response.data ?? [];
-        print('NozzleManagementScreen: Retrieved ${nozzles.length} nozzles');
+        debugPrint('NozzleManagementScreen: Retrieved ${nozzles.length} nozzles');
         developer.log('NozzleManagementScreen: Retrieved ${nozzles.length} nozzles');
         
         // For each nozzle, fetch the employee assignment
@@ -202,28 +204,28 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           _nozzlesMap[dispenserId] = nozzles;
         });
         
-        print('NozzleManagementScreen: Loaded ${nozzles.length} nozzles for dispenser: $dispenserId');
+        debugPrint('NozzleManagementScreen: Loaded ${nozzles.length} nozzles for dispenser: $dispenserId');
         developer.log('NozzleManagementScreen: Loaded ${nozzles.length} nozzles for dispenser: $dispenserId');
         
-        // Print details about each nozzle for debugging
+        // debugPrint details about each nozzle for debugging
         if (nozzles.isNotEmpty) {
           for (var nozzle in nozzles) {
-            print('  - Nozzle #${nozzle.nozzleNumber}: ${nozzle.fuelType ?? ''}, Status: ${nozzle.status}');
+            debugPrint('  - Nozzle #${nozzle.nozzleNumber}: ${nozzle.fuelType ?? ''}, Status: ${nozzle.status}');
             if (nozzle.assignedEmployee != null && nozzle.assignedEmployee!.isNotEmpty) {
-              print('    - Assigned Employee: ${nozzle.assignedEmployee}');
+              debugPrint('    - Assigned Employee: ${nozzle.assignedEmployee}');
             } else {
-              print('    - No employee assigned');
+              debugPrint('    - No employee assigned');
             }
           }
         } else {
-          print('NozzleManagementScreen: No nozzles found for this dispenser');
+          debugPrint('NozzleManagementScreen: No nozzles found for this dispenser');
         }
       } else {
-        print('NozzleManagementScreen: Failed to load nozzles: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to load nozzles: ${response.errorMessage}');
         developer.log('NozzleManagementScreen: Failed to load nozzles: ${response.errorMessage}');
       }
     } catch (e) {
-      print('NozzleManagementScreen: Error loading nozzles for dispenser $dispenserId: $e');
+      debugPrint('NozzleManagementScreen: Error loading nozzles for dispenser $dispenserId: $e');
       developer.log('NozzleManagementScreen: Error loading nozzles for dispenser $dispenserId: $e');
     }
   }
@@ -232,7 +234,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
   Future<void> _fetchEmployeeAssignmentForNozzle(Nozzle nozzle) async {
     if (nozzle.id == null) return;
     
-    print('NozzleManagementScreen: Fetching employee assignment for nozzle #${nozzle.nozzleNumber}');
+    debugPrint('NozzleManagementScreen: Fetching employee assignment for nozzle #${nozzle.nozzleNumber}');
     try {
       final response = await _employeeNozzleAssignmentRepository.getNozzleAssignmentsByNozzleId(nozzle.id!);
       
@@ -260,19 +262,19 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           // Update the nozzle with the assignment info
           nozzle.assignedEmployee = '$employeeName${shiftInfo.isNotEmpty ? ' - $shiftInfo' : ''}';
           nozzle.assignmentId = assignmentId; // Store the assignment ID for removal
-          print('NozzleManagementScreen: Assigned employee for nozzle #${nozzle.nozzleNumber}: ${nozzle.assignedEmployee}, assignmentId: ${nozzle.assignmentId}');
+          debugPrint('NozzleManagementScreen: Assigned employee for nozzle #${nozzle.nozzleNumber}: ${nozzle.assignedEmployee}, assignmentId: ${nozzle.assignmentId}');
         } else {
           nozzle.assignedEmployee = null;
           nozzle.assignmentId = null;
-          print('NozzleManagementScreen: No employee ID found in assignment data for nozzle #${nozzle.nozzleNumber}');
+          debugPrint('NozzleManagementScreen: No employee ID found in assignment data for nozzle #${nozzle.nozzleNumber}');
         }
       } else {
         nozzle.assignedEmployee = null;
         nozzle.assignmentId = null;
-        print('NozzleManagementScreen: No assignment found for nozzle #${nozzle.nozzleNumber}');
+        debugPrint('NozzleManagementScreen: No assignment found for nozzle #${nozzle.nozzleNumber}');
       }
     } catch (e) {
-      print('NozzleManagementScreen: Error fetching assignment for nozzle #${nozzle.nozzleNumber}: $e');
+      debugPrint('NozzleManagementScreen: Error fetching assignment for nozzle #${nozzle.nozzleNumber}: $e');
       nozzle.assignedEmployee = null;
       nozzle.assignmentId = null;
     }
@@ -286,20 +288,19 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
 
   // Add a new nozzle
   Future<void> _addNozzle(String dispenserId, FuelDispenser dispenser, int nozzleNumber) async {
-    print('NozzleManagementScreen: Attempting to add nozzle #$nozzleNumber to dispenser: $dispenserId');
+    debugPrint('NozzleManagementScreen: Attempting to add nozzle #$nozzleNumber to dispenser: $dispenserId');
     developer.log('NozzleManagementScreen: Attempting to add nozzle #$nozzleNumber to dispenser: $dispenserId');
     
     // Validate dispenser ID format
     if (!_isValidUuid(dispenserId)) {
-      print('NozzleManagementScreen: Warning - dispenser ID may not be a valid UUID: $dispenserId');
+      debugPrint('NozzleManagementScreen: Warning - dispenser ID may not be a valid UUID: $dispenserId');
       developer.log('NozzleManagementScreen: Warning - dispenser ID may not be a valid UUID: $dispenserId');
       // Show warning to user about invalid ID
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Warning: Dispenser ID may not be valid: $dispenserId'),
-          backgroundColor: Colors.orange,
-          duration: const Duration(seconds: 5),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Warning: Dispenser ID may not be valid: $dispenserId',
+        isError: true,
+        duration: const Duration(seconds: 5),
       );
     }
     
@@ -308,17 +309,16 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
     final maxAllowedNozzles = dispenser.numberOfNozzles;
     
     if (existingNozzles.length >= maxAllowedNozzles) {
-      print('NozzleManagementScreen: Cannot add nozzle - maximum capacity reached (${existingNozzles.length}/$maxAllowedNozzles)');
+      debugPrint('NozzleManagementScreen: Cannot add nozzle - maximum capacity reached (${existingNozzles.length}/$maxAllowedNozzles)');
       developer.log('NozzleManagementScreen: Cannot add nozzle - maximum capacity reached (${existingNozzles.length}/$maxAllowedNozzles)');
       
       if (!mounted) return;
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cannot add nozzle - maximum capacity of $maxAllowedNozzles nozzles reached'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Cannot add nozzle - maximum capacity of $maxAllowedNozzles nozzles reached',
+        isError: true,
+        duration: const Duration(seconds: 3),
       );
       return;
     }
@@ -327,15 +327,14 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
     final existingNozzle = existingNozzles.where((n) => n.nozzleNumber == nozzleNumber).firstOrNull;
     
     if (existingNozzle != null) {
-      print('NozzleManagementScreen: Nozzle already exists at position $nozzleNumber');
+      debugPrint('NozzleManagementScreen: Nozzle already exists at position $nozzleNumber');
       developer.log('NozzleManagementScreen: Nozzle already exists at position $nozzleNumber');
       if (!mounted) return;
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('A nozzle already exists in this position'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'A nozzle already exists in this position',
+        isError: true,
       );
       return;
     }
@@ -344,40 +343,40 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
     final newNozzle = await _showAddNozzleDialog(dispenserId, dispenser, nozzleNumber);
     
     if (newNozzle != null) {
-      print('NozzleManagementScreen: New nozzle created with data:');
-      print('  - Dispenser ID: ${newNozzle.fuelDispenserUnitId}');
-      print('  - Nozzle #: ${newNozzle.nozzleNumber}');
-      print('  - Status: ${newNozzle.status}');
-      print('  - Calibration Date: ${newNozzle.lastCalibrationDate}');
+      debugPrint('NozzleManagementScreen: New nozzle created with data:');
+      debugPrint('  - Dispenser ID: ${newNozzle.fuelDispenserUnitId}');
+      debugPrint('  - Nozzle #: ${newNozzle.nozzleNumber}');
+      debugPrint('  - Status: ${newNozzle.status}');
+      debugPrint('  - Calibration Date: ${newNozzle.lastCalibrationDate}');
       
       developer.log('NozzleManagementScreen: New nozzle created, sending to API: ${newNozzle.toJson()}');
       try {
         setState(() => _isLoading = true);
         
         // Debug API request details
-        print('API Request - Dispenser ID: $dispenserId');
-        print('API Request - Nozzle data: ${newNozzle.toJson()}');
-        print('API Request - Nozzle details:');
-        print('  - Dispenser ID: ${newNozzle.fuelDispenserUnitId}');
-        print('  - Nozzle #: ${newNozzle.nozzleNumber}');
-        print('  - Fuel Type: ${newNozzle.fuelType}');
-        print('  - Fuel Type ID: ${newNozzle.fuelTypeId}');
-        print('  - Fuel Tank ID: ${newNozzle.fuelTankId}');
-        print('  - Status: ${newNozzle.status}');
-        print('  - Petrol Pump ID: ${newNozzle.petrolPumpId}');
-        print('  - Last Calibration: ${newNozzle.lastCalibrationDate}');
-        print('  - Assigned Employee: ${newNozzle.assignedEmployee}');
+        debugPrint('API Request - Dispenser ID: $dispenserId');
+        debugPrint('API Request - Nozzle data: ${newNozzle.toJson()}');
+        debugPrint('API Request - Nozzle details:');
+        debugPrint('  - Dispenser ID: ${newNozzle.fuelDispenserUnitId}');
+        debugPrint('  - Nozzle #: ${newNozzle.nozzleNumber}');
+        debugPrint('  - Fuel Type: ${newNozzle.fuelType}');
+        debugPrint('  - Fuel Type ID: ${newNozzle.fuelTypeId}');
+        debugPrint('  - Fuel Tank ID: ${newNozzle.fuelTankId}');
+        debugPrint('  - Status: ${newNozzle.status}');
+        debugPrint('  - Petrol Pump ID: ${newNozzle.petrolPumpId}');
+        debugPrint('  - Last Calibration: ${newNozzle.lastCalibrationDate}');
+        debugPrint('  - Assigned Employee: ${newNozzle.assignedEmployee}');
         developer.log('API Request - Dispenser ID: $dispenserId');
         developer.log('API Request - Nozzle data: ${newNozzle.toJson()}');
         
-        print('Making API call to nozzle repository...');
+        debugPrint('Making API call to nozzle repository...');
         final response = await _nozzleRepository.addNozzle(newNozzle);
-        print('API call completed.');
-        print('API Response - Success: ${response.success}');
+        debugPrint('API call completed.');
+        debugPrint('API Response - Success: ${response.success}');
         if (!response.success) {
-          print('API Response - Error: ${response.errorMessage}');
+          debugPrint('API Response - Error: ${response.errorMessage}');
         } else if (response.data != null) {
-          print('API Response - Created Nozzle ID: ${response.data?.id}');
+          debugPrint('API Response - Created Nozzle ID: ${response.data?.id}');
         }
         
         if (!mounted) return;
@@ -385,63 +384,55 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         setState(() => _isLoading = false);
         
         if (response.success) {
-          print('NozzleManagementScreen: Nozzle added successfully');
+          debugPrint('NozzleManagementScreen: Nozzle added successfully');
           developer.log('NozzleManagementScreen: Nozzle added successfully');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Nozzle added successfully'),
-              backgroundColor: Colors.green,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Nozzle added successfully',
+            isError: false,
           );
           
           // Reload nozzles for this dispenser
-          print('NozzleManagementScreen: Reloading nozzles after successful addition');
+          debugPrint('NozzleManagementScreen: Reloading nozzles after successful addition');
           await _loadNozzlesForDispenser(dispenserId);
         } else {
-          print('NozzleManagementScreen: Failed to add nozzle: ${response.errorMessage}');
+          debugPrint('NozzleManagementScreen: Failed to add nozzle: ${response.errorMessage}');
           developer.log('NozzleManagementScreen: Failed to add nozzle: ${response.errorMessage}');
           
           // Check if it's an auth error
           if (response.errorMessage?.contains('Authentication failed') == true) {
-            print('NozzleManagementScreen: Authentication error detected');
+            debugPrint('NozzleManagementScreen: Authentication error detected');
             // Show auth error with more info
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Authentication failed. Please log out and log in again.'),
-                backgroundColor: Colors.red,
-                duration: const Duration(seconds: 5),
-                action: SnackBarAction(
-                  label: 'OK',
-                  onPressed: () {},
-                ),
-              ),
+            showAnimatedSnackBar(
+              context: context,
+              message: 'Authentication failed. Please log out and log in again.',
+              isError: true,
+              duration: const Duration(seconds: 5),
             );
           } else {
             // Show general error
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to add nozzle: ${response.errorMessage}'),
-                backgroundColor: Colors.red,
-              ),
+            showAnimatedSnackBar(
+              context: context,
+              message: 'Failed to add nozzle: ${response.errorMessage}',
+              isError: true,
             );
           }
         }
       } catch (e) {
-        print('NozzleManagementScreen: Exception when adding nozzle: $e');
+        debugPrint('NozzleManagementScreen: Exception when adding nozzle: $e');
         developer.log('NozzleManagementScreen: Exception when adding nozzle: $e');
         if (!mounted) return;
         
         setState(() => _isLoading = false);
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Error: $e',
+          isError: true,
         );
       }
     } else {
-      print('NozzleManagementScreen: Nozzle dialog was canceled or returned null');
+      debugPrint('NozzleManagementScreen: Nozzle dialog was canceled or returned null');
       developer.log('NozzleManagementScreen: Nozzle dialog was canceled or returned null');
     }
   }
@@ -456,8 +447,8 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
 
   // Show dialog to add a new nozzle
   Future<Nozzle?> _showAddNozzleDialog(String dispenserId, FuelDispenser dispenser, int nozzleNumber) async {
-    print('NozzleManagementScreen: Opening add nozzle dialog for position #$nozzleNumber');
-    print('NozzleManagementScreen: Dispenser details - ID: ${dispenser.id}, Number: ${dispenser.dispenserNumber}');
+    debugPrint('NozzleManagementScreen: Opening add nozzle dialog for position #$nozzleNumber');
+    debugPrint('NozzleManagementScreen: Dispenser details - ID: ${dispenser.id}, Number: ${dispenser.dispenserNumber}');
     developer.log('NozzleManagementScreen: Opening add nozzle dialog for position #$nozzleNumber');
     developer.log('NozzleManagementScreen: Dispenser details - ID: ${dispenser.id}, Number: ${dispenser.dispenserNumber}');
     
@@ -476,28 +467,19 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
   Color _getFuelTypeColor(String? fuelType) {
     if (fuelType == null) return Colors.blueGrey.shade700;
     
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.orange.shade800;
-      case 'premium':
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'premium diesel':
-        return Colors.deepPurple.shade800;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.indigo.shade700;
-      default:
-        return Colors.blueGrey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.blueGrey.shade700;
   }
 
   // Activate a nozzle
   Future<void> _activateNozzle(Nozzle nozzle) async {
-    print('NozzleManagementScreen: Activating nozzle #${nozzle.nozzleNumber}');
+    debugPrint('NozzleManagementScreen: Activating nozzle #${nozzle.nozzleNumber}');
     setState(() => _isLoading = true);
     
     try {
@@ -514,15 +496,15 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         assignedEmployee: nozzle.assignedEmployee,
       );
       
-      print('NozzleManagementScreen: Activating nozzle #${nozzle.nozzleNumber}');
-      print('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
+      debugPrint('NozzleManagementScreen: Activating nozzle #${nozzle.nozzleNumber}');
+      debugPrint('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
       developer.log('NozzleManagementScreen: Activating nozzle #${nozzle.nozzleNumber}');
       developer.log('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
       
       final response = await _nozzleRepository.updateNozzle(updatedNozzle);
-      print('API Response - Success: ${response.success}');
+      debugPrint('API Response - Success: ${response.success}');
       if (!response.success) {
-        print('API Response - Error: ${response.errorMessage}');
+        debugPrint('API Response - Error: ${response.errorMessage}');
       }
       
       if (!mounted) return;
@@ -530,11 +512,11 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       setState(() => _isLoading = false);
       
       if (response.success) {
-        print('NozzleManagementScreen: Nozzle activated successfully');
+        debugPrint('NozzleManagementScreen: Nozzle activated successfully');
         developer.log('NozzleManagementScreen: Nozzle activated successfully');
         
         // Reload nozzles for this dispenser and fetch employee assignment
-        print('NozzleManagementScreen: Reloading nozzles after activation');
+        debugPrint('NozzleManagementScreen: Reloading nozzles after activation');
         await _loadNozzlesForDispenser(nozzle.fuelDispenserUnitId);
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -544,7 +526,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           ),
         );
       } else {
-        print('NozzleManagementScreen: Failed to activate nozzle: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to activate nozzle: ${response.errorMessage}');
         developer.log('NozzleManagementScreen: Failed to activate nozzle: ${response.errorMessage}');
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -555,7 +537,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         );
       }
     } catch (e) {
-      print('NozzleManagementScreen: Exception when activating nozzle: $e');
+      debugPrint('NozzleManagementScreen: Exception when activating nozzle: $e');
       developer.log('NozzleManagementScreen: Exception when activating nozzle: $e');
       
       if (!mounted) return;
@@ -573,7 +555,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
 
   // Deactivate a nozzle
   Future<void> _deactivateNozzle(Nozzle nozzle) async {
-    print('NozzleManagementScreen: Deactivating nozzle #${nozzle.nozzleNumber}');
+    debugPrint('NozzleManagementScreen: Deactivating nozzle #${nozzle.nozzleNumber}');
     setState(() => _isLoading = true);
     
     try {
@@ -590,15 +572,15 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         assignedEmployee: nozzle.assignedEmployee,
       );
       
-      print('NozzleManagementScreen: Deactivating nozzle #${nozzle.nozzleNumber}');
-      print('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
+      debugPrint('NozzleManagementScreen: Deactivating nozzle #${nozzle.nozzleNumber}');
+      debugPrint('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
       developer.log('NozzleManagementScreen: Deactivating nozzle #${nozzle.nozzleNumber}');
       developer.log('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
       
       final response = await _nozzleRepository.updateNozzle(updatedNozzle);
-      print('API Response - Success: ${response.success}');
+      debugPrint('API Response - Success: ${response.success}');
       if (!response.success) {
-        print('API Response - Error: ${response.errorMessage}');
+        debugPrint('API Response - Error: ${response.errorMessage}');
       }
       
       if (!mounted) return;
@@ -606,11 +588,11 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       setState(() => _isLoading = false);
       
       if (response.success) {
-        print('NozzleManagementScreen: Nozzle deactivated successfully');
+        debugPrint('NozzleManagementScreen: Nozzle deactivated successfully');
         developer.log('NozzleManagementScreen: Nozzle deactivated successfully');
         
         // Reload nozzles for this dispenser and fetch employee assignment
-        print('NozzleManagementScreen: Reloading nozzles after deactivation');
+        debugPrint('NozzleManagementScreen: Reloading nozzles after deactivation');
         await _loadNozzlesForDispenser(nozzle.fuelDispenserUnitId);
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -620,7 +602,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           ),
         );
       } else {
-        print('NozzleManagementScreen: Failed to deactivate nozzle: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to deactivate nozzle: ${response.errorMessage}');
         developer.log('NozzleManagementScreen: Failed to deactivate nozzle: ${response.errorMessage}');
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -631,7 +613,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         );
       }
     } catch (e) {
-      print('NozzleManagementScreen: Exception when deactivating nozzle: $e');
+      debugPrint('NozzleManagementScreen: Exception when deactivating nozzle: $e');
       developer.log('NozzleManagementScreen: Exception when deactivating nozzle: $e');
       
       if (!mounted) return;
@@ -649,7 +631,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
 
   // Set a nozzle to maintenance
   Future<void> _setNozzleToMaintenance(Nozzle nozzle) async {
-    print('NozzleManagementScreen: Setting nozzle #${nozzle.nozzleNumber} to maintenance');
+    debugPrint('NozzleManagementScreen: Setting nozzle #${nozzle.nozzleNumber} to maintenance');
     setState(() => _isLoading = true);
     
     try {
@@ -666,15 +648,15 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         assignedEmployee: nozzle.assignedEmployee,
       );
       
-      print('NozzleManagementScreen: Setting nozzle #${nozzle.nozzleNumber} to maintenance');
-      print('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
+      debugPrint('NozzleManagementScreen: Setting nozzle #${nozzle.nozzleNumber} to maintenance');
+      debugPrint('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
       developer.log('NozzleManagementScreen: Setting nozzle #${nozzle.nozzleNumber} to maintenance');
       developer.log('NozzleManagementScreen: Updated nozzle: ${updatedNozzle.toJson()}');
       
       final response = await _nozzleRepository.updateNozzle(updatedNozzle);
-      print('API Response - Success: ${response.success}');
+      debugPrint('API Response - Success: ${response.success}');
       if (!response.success) {
-        print('API Response - Error: ${response.errorMessage}');
+        debugPrint('API Response - Error: ${response.errorMessage}');
       }
       
       if (!mounted) return;
@@ -682,11 +664,11 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       setState(() => _isLoading = false);
       
       if (response.success) {
-        print('NozzleManagementScreen: Nozzle set to maintenance successfully');
+        debugPrint('NozzleManagementScreen: Nozzle set to maintenance successfully');
         developer.log('NozzleManagementScreen: Nozzle set to maintenance successfully');
         
         // Reload nozzles for this dispenser and fetch employee assignment
-        print('NozzleManagementScreen: Reloading nozzles after setting to maintenance');
+        debugPrint('NozzleManagementScreen: Reloading nozzles after setting to maintenance');
         await _loadNozzlesForDispenser(nozzle.fuelDispenserUnitId);
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -696,7 +678,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           ),
         );
       } else {
-        print('NozzleManagementScreen: Failed to set nozzle to maintenance: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to set nozzle to maintenance: ${response.errorMessage}');
         developer.log('NozzleManagementScreen: Failed to set nozzle to maintenance: ${response.errorMessage}');
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -707,7 +689,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         );
       }
     } catch (e) {
-      print('NozzleManagementScreen: Exception when setting nozzle to maintenance: $e');
+      debugPrint('NozzleManagementScreen: Exception when setting nozzle to maintenance: $e');
       developer.log('NozzleManagementScreen: Exception when setting nozzle to maintenance: $e');
       
       if (!mounted) return;
@@ -725,7 +707,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
 
   // Delete a nozzle
   Future<void> _deleteNozzle(Nozzle nozzle) async {
-    print('NozzleManagementScreen: Deleting nozzle #${nozzle.nozzleNumber}');
+    debugPrint('NozzleManagementScreen: Deleting nozzle #${nozzle.nozzleNumber}');
     developer.log('NozzleManagementScreen: Deleting nozzle #${nozzle.nozzleNumber}');
     
     // Show confirmation dialog before deletion
@@ -770,7 +752,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
     );
     
     if (confirmed != true) {
-      print('NozzleManagementScreen: Delete operation canceled by user');
+      debugPrint('NozzleManagementScreen: Delete operation canceled by user');
       return;
     }
     
@@ -783,7 +765,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       
       // Use proper API URL from ApiConstants
       final url = ApiConstants.getNozzleByIdUrl(nozzle.id!);
-      print('NozzleManagementScreen: Delete URL: $url');
+      debugPrint('NozzleManagementScreen: Delete URL: $url');
       developer.log('NozzleManagementScreen: Delete URL: $url');
       
       // Get authentication token from SharedPreferences
@@ -805,7 +787,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         headers: headers,
       );
       
-      print('NozzleManagementScreen: Delete response status: ${response.statusCode}');
+      debugPrint('NozzleManagementScreen: Delete response status: ${response.statusCode}');
       developer.log('NozzleManagementScreen: Delete response status: ${response.statusCode}');
       
       if (!mounted) return;
@@ -814,7 +796,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       
       if (response.statusCode == ApiConstants.statusOk || 
           response.statusCode == ApiConstants.statusNoContent) {
-        print('NozzleManagementScreen: Nozzle deleted successfully');
+        debugPrint('NozzleManagementScreen: Nozzle deleted successfully');
         developer.log('NozzleManagementScreen: Nozzle deleted successfully');
         
         // Reload nozzles for this dispenser
@@ -827,7 +809,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           ),
         );
       } else {
-        print('NozzleManagementScreen: Failed to delete nozzle: ${response.statusCode}, ${response.body}');
+        debugPrint('NozzleManagementScreen: Failed to delete nozzle: ${response.statusCode}, ${response.body}');
         developer.log('NozzleManagementScreen: Failed to delete nozzle: ${response.statusCode}, ${response.body}');
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -838,7 +820,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         );
       }
     } catch (e) {
-      print('NozzleManagementScreen: Exception when deleting nozzle: $e');
+      debugPrint('NozzleManagementScreen: Exception when deleting nozzle: $e');
       developer.log('NozzleManagementScreen: Exception when deleting nozzle: $e');
       
       if (!mounted) return;
@@ -856,7 +838,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
 
   // Show employee assignment dialog - improved design
   Future<void> _showEmployeeAssignmentDialog(Nozzle nozzle) async {
-    print('NozzleManagementScreen: Showing employee assignment dialog for nozzle #${nozzle.nozzleNumber}');
+    debugPrint('NozzleManagementScreen: Showing employee assignment dialog for nozzle #${nozzle.nozzleNumber}');
     developer.log('NozzleManagementScreen: Showing employee assignment dialog for nozzle #${nozzle.nozzleNumber}');
     
     if (_shifts.isEmpty) {
@@ -872,7 +854,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
     // We no longer need to exclude employees that are already assigned to other nozzles
     // since an employee can be assigned to multiple nozzles
     
-    print('NozzleManagementScreen: All employees are available for assignment');
+    debugPrint('NozzleManagementScreen: All employees are available for assignment');
     
     final assignmentData = await EmployeeAssignmentScreen.navigate(
       context: context,
@@ -896,7 +878,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
     final DateTime? endDate = assignmentData['endDate'];
     
     if (nozzleId == null) {
-      print('NozzleManagementScreen: Error - nozzle ID is null');
+      debugPrint('NozzleManagementScreen: Error - nozzle ID is null');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error: Cannot assign to an unsaved nozzle'),
@@ -906,7 +888,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       return;
     }
     
-    print('NozzleManagementScreen: Assigning employee ID "$employeeId" to nozzle ID "$nozzleId" for shift ID "$shiftId"');
+    debugPrint('NozzleManagementScreen: Assigning employee ID "$employeeId" to nozzle ID "$nozzleId" for shift ID "$shiftId"');
     developer.log('NozzleManagementScreen: Assigning employee to nozzle with data: $assignmentData');
     
     setState(() => _isLoading = true);
@@ -938,7 +920,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       setState(() => _isLoading = false);
       
       if (response.success) {
-        print('NozzleManagementScreen: Employee assigned successfully');
+        debugPrint('NozzleManagementScreen: Employee assigned successfully');
         developer.log('NozzleManagementScreen: Employee assigned successfully');
         
         // Format dates for display
@@ -989,7 +971,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           ),
         );
       } else {
-        print('NozzleManagementScreen: Failed to assign employee: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to assign employee: ${response.errorMessage}');
         developer.log('NozzleManagementScreen: Failed to assign employee: ${response.errorMessage}');
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1000,7 +982,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         );
       }
     } catch (e) {
-      print('NozzleManagementScreen: Exception when assigning employee: $e');
+      debugPrint('NozzleManagementScreen: Exception when assigning employee: $e');
       developer.log('NozzleManagementScreen: Exception when assigning employee: $e');
       
       if (!mounted) return;
@@ -1053,12 +1035,12 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
                     
                     // Limit nozzle positions to the number specified when creating the dispenser
                     final maxNozzles = dispenser.numberOfNozzles;
-                    print('Dispenser ${dispenser.dispenserNumber} has max nozzles: $maxNozzles');
+                    debugPrint('Dispenser ${dispenser.dispenserNumber} has max nozzles: $maxNozzles');
                     developer.log('Dispenser ${dispenser.dispenserNumber} has max nozzles: $maxNozzles');
                     
                     // Calculate current nozzle count for this dispenser
                     final currentNozzleCount = nozzles.length;
-                    print('Dispenser ${dispenser.dispenserNumber} has current nozzle count: $currentNozzleCount');
+                    debugPrint('Dispenser ${dispenser.dispenserNumber} has current nozzle count: $currentNozzleCount');
                     developer.log('Dispenser ${dispenser.dispenserNumber} has current nozzle count: $currentNozzleCount');
                     
                     // If already at max capacity, show as disabled
@@ -2160,7 +2142,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
   // Load fuel tanks for dropdown
   Future<void> _loadFuelTanks() async {
     try {
-      print('NozzleManagementScreen: Loading fuel tanks');
+      debugPrint('NozzleManagementScreen: Loading fuel tanks');
       developer.log('NozzleManagementScreen: Loading fuel tanks');
       
       final response = await _fuelTankRepository.getAllFuelTanks();
@@ -2168,24 +2150,24 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       if (!mounted) return;
       
       if (response.success && response.data != null) {
-        print('NozzleManagementScreen: Loaded ${response.data!.length} fuel tanks');
+        debugPrint('NozzleManagementScreen: Loaded ${response.data!.length} fuel tanks');
         developer.log('NozzleManagementScreen: Loaded ${response.data!.length} fuel tanks');
         setState(() {
           _fuelTanks = response.data!;
         });
       } else {
-        print('NozzleManagementScreen: Failed to load fuel tanks: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to load fuel tanks: ${response.errorMessage}');
         developer.log('NozzleManagementScreen: Failed to load fuel tanks: ${response.errorMessage}');
       }
     } catch (e) {
-      print('NozzleManagementScreen: Error loading fuel tanks: $e');
+      debugPrint('NozzleManagementScreen: Error loading fuel tanks: $e');
       developer.log('NozzleManagementScreen: Error loading fuel tanks: $e');
     }
   }
 
   // Method to load employees from the repository
   Future<void> _loadEmployees() async {
-    print('NozzleManagementScreen: Loading employees');
+    debugPrint('NozzleManagementScreen: Loading employees');
     
     try {
       final response = await _employeeRepository.getAllEmployees();
@@ -2195,19 +2177,19 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           _employees = response.data!
             .where((employee) => employee.isActive)
             .toList();
-          print('NozzleManagementScreen: Loaded ${_employees.length} active employees');
+          debugPrint('NozzleManagementScreen: Loaded ${_employees.length} active employees');
         });
       } else {
-        print('NozzleManagementScreen: Failed to load employees: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to load employees: ${response.errorMessage}');
       }
     } catch (e) {
-      print('NozzleManagementScreen: Error loading employees: $e');
+      debugPrint('NozzleManagementScreen: Error loading employees: $e');
     }
   }
 
   // Method to load shifts from the repository
   Future<void> _loadShifts() async {
-    print('NozzleManagementScreen: Loading shifts');
+    debugPrint('NozzleManagementScreen: Loading shifts');
     
     try {
       final response = await _shiftRepository.getAllShifts();
@@ -2215,13 +2197,13 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       if (response.success && response.data != null) {
         setState(() {
           _shifts = response.data!;
-          print('NozzleManagementScreen: Loaded ${_shifts.length} shifts');
+          debugPrint('NozzleManagementScreen: Loaded ${_shifts.length} shifts');
         });
       } else {
-        print('NozzleManagementScreen: Failed to load shifts: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to load shifts: ${response.errorMessage}');
       }
     } catch (e) {
-      print('NozzleManagementScreen: Error loading shifts: $e');
+      debugPrint('NozzleManagementScreen: Error loading shifts: $e');
     }
   }
 
@@ -2277,7 +2259,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
   // Remove employee from nozzle
   Future<void> _removeEmployeeFromNozzle(Nozzle nozzle) async {
     if (nozzle.assignmentId == null || nozzle.assignmentId!.isEmpty) {
-      print('NozzleManagementScreen: Cannot remove employee, no assignment ID available');
+      debugPrint('NozzleManagementScreen: Cannot remove employee, no assignment ID available');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cannot remove employee: Assignment ID not available'),
@@ -2287,13 +2269,13 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       return;
     }
 
-    print('NozzleManagementScreen: Removing employee from nozzle #${nozzle.nozzleNumber}, assignmentId: ${nozzle.assignmentId}');
+    debugPrint('NozzleManagementScreen: Removing employee from nozzle #${nozzle.nozzleNumber}, assignmentId: ${nozzle.assignmentId}');
     
     // Show confirmation dialog first
     final confirmed = await _showRemoveEmployeeConfirmation(context, nozzle);
     
     if (!confirmed) {
-      print('NozzleManagementScreen: Employee removal cancelled by user');
+      debugPrint('NozzleManagementScreen: Employee removal cancelled by user');
       return;
     }
     
@@ -2307,7 +2289,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
       setState(() => _isLoading = false);
       
       if (response.success) {
-        print('NozzleManagementScreen: Employee removed successfully from nozzle #${nozzle.nozzleNumber}');
+        debugPrint('NozzleManagementScreen: Employee removed successfully from nozzle #${nozzle.nozzleNumber}');
         
         // Update the UI by clearing the assignment
         setState(() {
@@ -2322,7 +2304,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
           ),
         );
       } else {
-        print('NozzleManagementScreen: Failed to remove employee: ${response.errorMessage}');
+        debugPrint('NozzleManagementScreen: Failed to remove employee: ${response.errorMessage}');
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2332,7 +2314,7 @@ class _NozzleManagementScreenState extends State<NozzleManagementScreen> {
         );
       }
     } catch (e) {
-      print('NozzleManagementScreen: Exception when removing employee: $e');
+      debugPrint('NozzleManagementScreen: Exception when removing employee: $e');
       
       if (!mounted) return;
       

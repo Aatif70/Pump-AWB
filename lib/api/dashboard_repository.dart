@@ -187,14 +187,26 @@ class DashboardRepository {
       final url = '${ApiConstants.baseUrl}/api/Dashboard/inventory/status';
       
       developer.log('DashboardRepository: Getting inventory status');
+      developer.log('DashboardRepository:getInventoryStatus URL => ' + url);
       
       // Use authentication headers
       final headers = await _getHeaders();
+      final safeHeaders = Map<String, String>.from(headers);
+      if (safeHeaders.containsKey('Authorization')) {
+        // Mask the token to avoid leaking secrets
+        final token = safeHeaders['Authorization']!;
+        safeHeaders['Authorization'] = token.length > 20
+            ? token.substring(0, 10) + '...' + token.substring(token.length - 5)
+            : '***masked***';
+      }
+      developer.log('DashboardRepository:getInventoryStatus headers => ' + safeHeaders.toString());
       
       final response = await http.get(
         Uri.parse(url),
         headers: headers,
       );
+      developer.log('DashboardRepository:getInventoryStatus status=${response.statusCode}');
+      developer.log('DashboardRepository:getInventoryStatus rawBody=${response.body}');
       
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -236,14 +248,25 @@ class DashboardRepository {
       final url = '${ApiConstants.baseUrl}/api/Dashboard/inventory/consumption-rates?days=$days';
       
       developer.log('DashboardRepository: Getting consumption rates for $days days');
+      developer.log('DashboardRepository:getConsumptionRates URL => ' + url);
       
       // Use authentication headers
       final headers = await _getHeaders();
+      final safeHeaders = Map<String, String>.from(headers);
+      if (safeHeaders.containsKey('Authorization')) {
+        final token = safeHeaders['Authorization']!;
+        safeHeaders['Authorization'] = token.length > 20
+            ? token.substring(0, 10) + '...' + token.substring(token.length - 5)
+            : '***masked***';
+      }
+      developer.log('DashboardRepository:getConsumptionRates headers => ' + safeHeaders.toString());
       
       final response = await http.get(
         Uri.parse(url),
         headers: headers,
       );
+      developer.log('DashboardRepository:getConsumptionRates status=${response.statusCode}');
+      developer.log('DashboardRepository:getConsumptionRates rawBody=${response.body}');
       
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -289,14 +312,25 @@ class DashboardRepository {
       final url = '${ApiConstants.baseUrl}/api/FuelType/petrolpump/$petrolPumpId';
       
       developer.log('DashboardRepository: Getting fuel types for petrol pump ID: $petrolPumpId');
+      developer.log('DashboardRepository:getFuelTypes URL => ' + url);
       
       // Use authentication headers
       final headers = await _getHeaders();
+      final safeHeaders = Map<String, String>.from(headers);
+      if (safeHeaders.containsKey('Authorization')) {
+        final token = safeHeaders['Authorization']!;
+        safeHeaders['Authorization'] = token.length > 20
+            ? token.substring(0, 10) + '...' + token.substring(token.length - 5)
+            : '***masked***';
+      }
+      developer.log('DashboardRepository:getFuelTypes headers => ' + safeHeaders.toString());
       
       final response = await http.get(
         Uri.parse(url),
         headers: headers,
       );
+      developer.log('DashboardRepository:getFuelTypes status=${response.statusCode}');
+      developer.log('DashboardRepository:getFuelTypes rawBody=${response.body}');
       
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);

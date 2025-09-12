@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -63,6 +64,17 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     
     try {
       final response = await _dashboardRepository.getFuelTypes();
+      print('InventoryScreen._fetchFuelTypes: response.success=${response.success}');
+      if (response.data != null) {
+        print('InventoryScreen._fetchFuelTypes: received fuel types count=${response.data!.length}');
+        if (response.data!.isNotEmpty) {
+          final sample = response.data!.first;
+          print('InventoryScreen._fetchFuelTypes: sample -> id=${sample.fuelTypeId}, name=${sample.name}');
+        }
+      }
+      if (!response.success) {
+        print('InventoryScreen._fetchFuelTypes: errorMessage=${response.errorMessage}');
+      }
       
       if (mounted) {
         setState(() {
@@ -76,7 +88,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
               _fuelTypeIdToName[fuelType.fuelTypeId] = fuelType.name;
             }
             
-            developer.log('InventoryScreen: Successfully loaded ${_fuelTypes.length} fuel types');
+            print('InventoryScreen: Successfully loaded ${_fuelTypes.length} fuel types');
           }
         });
       }
@@ -85,13 +97,16 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         setState(() {
           _isLoadingFuelTypes = false;
         });
-        developer.log('InventoryScreen: Error loading fuel types: $e');
+        print('InventoryScreen: Error loading fuel types: $e');
       }
     }
   }
   
-  // Get fuel type name from ID
-  String getFuelTypeName(String fuelTypeId) {
+  // Get fuel type name from ID (handles nulls safely)
+  String getFuelTypeName(String? fuelTypeId) {
+    if (fuelTypeId == null || fuelTypeId.isEmpty) {
+      return 'Unknown';
+    }
     return _fuelTypeIdToName[fuelTypeId] ?? fuelTypeId;
   }
   
@@ -104,6 +119,17 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     
     try {
       final response = await _dashboardRepository.getInventoryStatus();
+      print('InventoryScreen._fetchInventoryStatus: response.success=${response.success}');
+      if (response.data != null) {
+        print('InventoryScreen._fetchInventoryStatus: items=${response.data!.length}');
+        if (response.data!.isNotEmpty) {
+          final sample = response.data!.first;
+          print('InventoryScreen._fetchInventoryStatus: sample -> tankName=${sample.tankName}, fuelType=${sample.fuelType}, currentStock=${sample.currentStock}, capacity=${sample.capacityInLiters}');
+        }
+      }
+      if (!response.success) {
+        print('InventoryScreen._fetchInventoryStatus: errorMessage=${response.errorMessage}');
+      }
       
       if (mounted) {
         setState(() {
@@ -123,6 +149,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           _inventoryErrorMessage = 'Error: $e';
           _isLoadingInventory = false;
         });
+        print('InventoryScreen._fetchInventoryStatus: exception=$e');
       }
     }
   }
@@ -136,6 +163,17 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     
     try {
       final response = await _dashboardRepository.getConsumptionRates(_consumptionDays);
+      print('InventoryScreen._fetchConsumptionRates: response.success=${response.success}, days=$_consumptionDays');
+      if (response.data != null) {
+        print('InventoryScreen._fetchConsumptionRates: items=${response.data!.length}');
+        if (response.data!.isNotEmpty) {
+          final sample = response.data!.first;
+          print('InventoryScreen._fetchConsumptionRates: sample -> fuelTypeId=${sample.fuelTypeId}, avgDaily=${sample.averageDailyConsumption}, weekday=${sample.weekdayAverage}, weekend=${sample.weekendAverage}');
+        }
+      }
+      if (!response.success) {
+        print('InventoryScreen._fetchConsumptionRates: errorMessage=${response.errorMessage}');
+      }
       
       if (mounted) {
         setState(() {
@@ -154,6 +192,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
           _consumptionErrorMessage = 'Error: $e';
           _isLoadingConsumption = false;
         });
+        print('InventoryScreen._fetchConsumptionRates: exception=$e');
       }
     }
   }
@@ -389,13 +428,13 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            Text(
-              'Period: ',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade700,
-              ),
-            ),
+            // Text(
+            //   'Period: ',
+            //   style: TextStyle(
+            //     fontSize: 14,
+            //     color: Colors.grey.shade700,
+            //   ),
+            // ),
             const SizedBox(width: 8),
             _buildPeriodChip(7, 'Last 7 days'),
             const SizedBox(width: 8),
@@ -586,7 +625,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'Last delivery: ${DateFormat('dd MMM, yyyy').format(inventory.lastDeliveryDate)}',
+                            'Last delivery: ${inventory.lastDeliveryDate != null ? DateFormat('dd MMM, yyyy').format(inventory.lastDeliveryDate!) : 'N/A'}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,
@@ -608,7 +647,7 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            'Last delivery: ${DateFormat('dd MMM, yyyy').format(inventory.lastDeliveryDate)}',
+                            'Last delivery: ${inventory.lastDeliveryDate != null ? DateFormat('dd MMM, yyyy').format(inventory.lastDeliveryDate!) : 'N/A'}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,
@@ -679,210 +718,162 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     // Get the fuel type name from the ID
     final fuelTypeName = getFuelTypeName(consumption.fuelTypeId);
     
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Fuel type header with improved UI
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                color: _primaryColor.withValues(alpha:0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.local_gas_station, color: _primaryColor, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Fuel Type: ${consumption.fuelType}',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Consumption stats - more responsive layout
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth < 320) {
-                  // Extremely small screens - stack vertically
-                  return Column(
-                    children: [
-                      _buildConsumptionStatVertical(
-                        'Daily Average',
-                        '${NumberFormat.compact().format(consumption.averageDailyConsumption)} L',
-                        _primaryColor,
-                      ),
-                      SizedBox(height: 8),
-                      _buildConsumptionStatVertical(
-                        'Weekday Average',
-                        '${NumberFormat.compact().format(consumption.weekdayAverage)} L',
-                        Colors.blue.shade700,
-                      ),
-                      SizedBox(height: 8),
-                      _buildConsumptionStatVertical(
-                        'Weekend Average',
-                        '${NumberFormat.compact().format(consumption.weekendAverage)} L',
-                        Colors.purple.shade700,
-                      ),
-                    ],
-                  );
-                } else {
-                  // Normal layout
-                  return Row(
-                    children: [
-                      _buildConsumptionStat(
-                        'Daily Avg',
-                        '${NumberFormat.compact().format(consumption.averageDailyConsumption)} L',
-                        _primaryColor,
-                      ),
-                      _buildConsumptionStat(
-                        'Weekday',
-                        '${NumberFormat.compact().format(consumption.weekdayAverage)} L',
-                        Colors.blue.shade700,
-                      ),
-                      _buildConsumptionStat(
-                        'Weekend',
-                        '${NumberFormat.compact().format(consumption.weekendAverage)} L',
-                        Colors.purple.shade700,
-                      ),
-                    ],
-                  );
-                }
-              }
-            ),
-            
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 16),
-            
-            // Peak consumption
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _accentColor.withValues(alpha:0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _accentColor.withValues(alpha:0.2)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.trending_up,
-                    color: _accentColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Peak Consumption',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            // For very small screens, show in multiple lines
-                            if (constraints.maxWidth < 220) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${NumberFormat.compact().format(consumption.peakDayConsumption)} L',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: _accentColor,
-                                    ),
-                                  ),
-                                  Text(
-                                    'on ${consumption.peakDay}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${consumption.formattedPeakDate}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            } else {
-                              return Text(
-                                '${NumberFormat.compact().format(consumption.peakDayConsumption)} L on ${consumption.peakDay}, ${consumption.formattedPeakDate}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade700,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
-                              );
-                            }
-                          }
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  // Vertical consumption stat for very small screens
-  Widget _buildConsumptionStatVertical(String label, String value, Color color) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha:0.07),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha:0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade700,
+          // Fuel type header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _primaryColor.withValues(alpha:0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fuelTypeName.isNotEmpty ? fuelTypeName : (consumption.fuelType ?? 'Unknown'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Consumption Rate',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_consumptionDays} Days',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: color,
+          
+          // Consumption stats
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                // Consumption stats
+                Row(
+                  children: [
+                    _buildInventoryStatItem(
+                      '${NumberFormat.compact().format(consumption.averageDailyConsumption)} L',
+                      'Daily Average',
+                      Icons.trending_down,
+                      _primaryColor,
+                    ),
+                    _buildInventoryStatItem(
+                      '${NumberFormat.compact().format(consumption.weekdayAverage)} L',
+                      'Weekday Avg',
+                      Icons.calendar_today,
+                      Colors.blue.shade700,
+                    ),
+                    _buildInventoryStatItem(
+                      '${NumberFormat.compact().format(consumption.weekendAverage)} L',
+                      'Weekend Avg',
+                      Icons.weekend,
+                      Colors.purple.shade700,
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 8),
+                
+                // Peak consumption info
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (constraints.maxWidth < 350) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Peak: ${NumberFormat.compact().format(consumption.peakDayConsumption)} L',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Date: ${consumption.formattedPeakDate}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      );
+                    } else {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Peak: ${NumberFormat.compact().format(consumption.peakDayConsumption)} L',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Date: ${consumption.formattedPeakDate}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      );
+                    }
+                  }
+                ),
+              ],
             ),
           ),
         ],
@@ -890,39 +881,4 @@ class _InventoryScreenState extends State<InventoryScreen> with SingleTickerProv
     );
   }
   
-  Widget _buildConsumptionStat(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha:0.07),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade700,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 } 

@@ -181,27 +181,27 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
           notes: _notesController.text.isNotEmpty ? _notesController.text : null,
         );
         
-        // Debug print statements
-        print('===== DEBUGGING FUEL DELIVERY ORDER =====');
-        print('Invoice Number: ${order.invoiceNumber}');
-        print('Delivery Date: ${order.deliveryDate}');
-        print('Supplier ID: ${order.supplierId}');
-        print('Truck Number: ${order.truckNumber}');
-        print('Driver Name: ${order.driverName}');
-        print('Driver Contact: ${order.driverContactNumber}');
-        print('Total Compartments: ${order.totalCompartments}');
-        print('Notes: ${order.notes}');
-        print('Compartment Details:');
+        // Debug debugPrint statements
+        debugPrint('===== DEBUGGING FUEL DELIVERY ORDER =====');
+        debugPrint('Invoice Number: ${order.invoiceNumber}');
+        debugPrint('Delivery Date: ${order.deliveryDate}');
+        debugPrint('Supplier ID: ${order.supplierId}');
+        debugPrint('Truck Number: ${order.truckNumber}');
+        debugPrint('Driver Name: ${order.driverName}');
+        debugPrint('Driver Contact: ${order.driverContactNumber}');
+        debugPrint('Total Compartments: ${order.totalCompartments}');
+        debugPrint('Notes: ${order.notes}');
+        debugPrint('Compartment Details:');
         for (var i = 0; i < order.compartmentDetails.length; i++) {
           final comp = order.compartmentDetails[i];
-          print('  Compartment #${i+1}:');
-          print('    Compartment Number: ${comp.compartmentNumber}');
-          print('    Fuel Tank ID: ${comp.fuelTankId}');
-          print('    Quantity: ${comp.quantityInCompartment}');
-          print('    Density: ${comp.density}');
-          print('    Temperature: ${comp.temperature}');
-          print('    Delivery Sequence: ${comp.deliverySequence}');
-          print('    Notes: ${comp.notes}');
+          debugPrint('  Compartment #${i+1}:');
+          debugPrint('    Compartment Number: ${comp.compartmentNumber}');
+          debugPrint('    Fuel Tank ID: ${comp.fuelTankId}');
+          debugPrint('    Quantity: ${comp.quantityInCompartment}');
+          debugPrint('    Density: ${comp.density}');
+          debugPrint('    Temperature: ${comp.temperature}');
+          debugPrint('    Delivery Sequence: ${comp.deliverySequence}');
+          debugPrint('    Notes: ${comp.notes}');
         }
         
         final response = await _repository.createFuelDeliveryOrder(order);
@@ -227,8 +227,8 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
           }
         }
       } catch (e) {
-        print('===== ERROR IN SUBMIT FORM =====');
-        print(e.toString());
+        debugPrint('===== ERROR IN SUBMIT FORM =====');
+        debugPrint(e.toString());
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -275,7 +275,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha:0.1),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 )
@@ -405,7 +405,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha:0.05),
                     blurRadius: 10,
                     spreadRadius: 0,
                     offset: const Offset(0, 2),
@@ -422,7 +422,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          color: AppTheme.primaryBlue.withValues(alpha:0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -754,7 +754,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha:0.05),
                     blurRadius: 10,
                     spreadRadius: 0,
                     offset: const Offset(0, 2),
@@ -771,7 +771,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
+                          color: Colors.green.withValues(alpha:0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -857,7 +857,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: compartmentColor.withOpacity(0.1),
+            color: compartmentColor.withValues(alpha:0.1),
             blurRadius: 8,
             spreadRadius: 0,
             offset: const Offset(0, 2),
@@ -871,7 +871,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: compartmentColor.withOpacity(0.1),
+              color: compartmentColor.withValues(alpha:0.1),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
@@ -882,7 +882,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: compartmentColor.withOpacity(0.2),
+                        color: compartmentColor.withValues(alpha:0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -905,7 +905,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                 IconButton(
                   icon: Icon(Icons.delete_outline, color: Colors.red.shade600, size: 20),
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.red.withOpacity(0.1),
+                    backgroundColor: Colors.red.withValues(alpha:0.1),
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(8),
                   ),
@@ -953,7 +953,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                     return DropdownMenuItem<String>(
                       value: tank.fuelTankId,
                       child: Text(
-                        'Tank: ${tank.fuelType}',
+                        '${tank.fuelType} : ${tank.fuelTankName}',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
@@ -1000,7 +1000,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
+                        color: Colors.grey.withValues(alpha:0.05),
                         blurRadius: 4,
                         spreadRadius: 0,
                         offset: const Offset(0, 2),
@@ -1089,7 +1089,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
+                        color: Colors.grey.withValues(alpha:0.05),
                         blurRadius: 4,
                         spreadRadius: 0,
                         offset: const Offset(0, 2),
@@ -1160,7 +1160,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Temperature (Optional)",
+                                  "Temperature",
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
@@ -1233,7 +1233,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
+                        color: Colors.grey.withValues(alpha:0.05),
                         blurRadius: 4,
                         spreadRadius: 0,
                         offset: const Offset(0, 2),

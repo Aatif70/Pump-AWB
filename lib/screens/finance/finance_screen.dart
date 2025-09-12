@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import '../../api/api_constants.dart';
 import '../../theme.dart';
 import '../../screens/login/login_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class FinanceScreen extends StatefulWidget {
   const FinanceScreen({Key? key}) : super(key: key);
@@ -1319,19 +1320,23 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
       padding: const EdgeInsets.only(left: 12, right: 12, bottom: 16, top: 8),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Calculate bar dimensions based on available space
-          final barWidth = math.min(
-            24.0, // Maximum bar width
-            (constraints.maxWidth - 20) / (displayCount * 1.5)
-          );
-          
-          // Calculate spacing between bars
-          final totalBarWidth = barWidth * data.length;
-          final remainingWidth = constraints.maxWidth - totalBarWidth;
-          final spacing = data.length > 1 ? remainingWidth / (data.length + 1) : 20.0;
-          
+          // Safeguard against unbounded constraints producing NaN
+          final double availableWidth = constraints.hasBoundedWidth && constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : 320.0;
+          final double availableHeight = constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : 250.0;
+
+          // Calculate bar dimensions with sane defaults
+          final double barWidth = math.max(8.0, math.min(24.0, (availableWidth - 20) / (displayCount * 1.8)));
+          const double spacing = 12.0; // fixed spacing to avoid NaNs
+
           // Height for the chart area (excluding labels)
-          final chartHeight = constraints.maxHeight - 56; 
+          final double chartHeight = math.max(120.0, availableHeight - 56);
+
+          // Ensure denominator is non-zero for height calculation
+          final double safeMaxRevenue = (maxRevenue.isFinite && maxRevenue > 0) ? maxRevenue : 1.0;
           
           return Column(
             children: [
@@ -1382,8 +1387,8 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
                               // Generate bars
                               ...List.generate(data.length, (index) {
                                 final item = data[index];
-                                final barHeightPercentage = item.totalRevenue / maxRevenue;
-                                final rawBarHeight = barHeightPercentage * chartHeight;
+                                final double barHeightPercentage = (item.totalRevenue / safeMaxRevenue).clamp(0.0, 1.0);
+                                final double rawBarHeight = barHeightPercentage * chartHeight;
                                 
                                 // Ensure minimum height of 2 for visibility even for small values
                                 final barHeight = math.max(rawBarHeight, 2.0);
@@ -1591,11 +1596,10 @@ class _FinanceScreenState extends State<FinanceScreen> with TickerProviderStateM
     if (!mounted) return;
     
     // Show a snackbar before redirecting
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Session expired. Please log in again.'),
-        backgroundColor: Colors.red,
-      ),
+    showAnimatedSnackBar(
+      context: context,
+      message: 'Session expired. Please log in again.',
+      isError: true,
     );
     
     // Delay briefly to allow snackbar to be seen

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import '../models/government_testing_model.dart';
 import 'api_constants.dart';
@@ -10,33 +11,33 @@ class GovernmentTestingRepository {
   Future<ApiResponse<GovernmentTesting>> submitGovernmentTesting(GovernmentTesting testing) async {
     try {
       // Debug logs for tracking
-      print('TESTING_DEBUG: Sending testing data:');
-      print('TESTING_DEBUG: employeeId: ${testing.employeeId}');
-      print('TESTING_DEBUG: nozzleId: ${testing.nozzleId}');
-      print('TESTING_DEBUG: petrolPumpId: ${testing.petrolPumpId}');
-      print('TESTING_DEBUG: shiftId: ${testing.shiftId}');
-      print('TESTING_DEBUG: testingLiters: ${testing.testingLiters}');
-      print('TESTING_DEBUG: notes: ${testing.notes}');
+      debugPrint('TESTING_DEBUG: Sending testing data:');
+      debugPrint('TESTING_DEBUG: employeeId: ${testing.employeeId}');
+      debugPrint('TESTING_DEBUG: nozzleId: ${testing.nozzleId}');
+      debugPrint('TESTING_DEBUG: petrolPumpId: ${testing.petrolPumpId}');
+      debugPrint('TESTING_DEBUG: shiftId: ${testing.shiftId}');
+      debugPrint('TESTING_DEBUG: testingLiters: ${testing.testingLiters}');
+      debugPrint('TESTING_DEBUG: notes: ${testing.notes}');
       
       // Handle potential null or empty fuelTankId 
       if (testing.fuelTankId == null || testing.fuelTankId!.isEmpty) {
-        print('TESTING_DEBUG: fuelTankId is null or empty, setting to null for JSON payload');
+        debugPrint('TESTING_DEBUG: fuelTankId is null or empty, setting to null for JSON payload');
         testing.fuelTankId = null; // Set to null instead of empty string for API
       }
       
       // Ensure fuelTypeId is set
       if (testing.fuelTypeId == null || testing.fuelTypeId!.isEmpty) {
-        print('TESTING_DEBUG: Warning - fuelTypeId is not set');
+        debugPrint('TESTING_DEBUG: Warning - fuelTypeId is not set');
       }
       
       // Convert to JSON
       final jsonPayload = testing.toJson();
-      print('TESTING_DEBUG: Full JSON payload:');
-      print('TESTING_DEBUG: ${json.encode(jsonPayload)}');
+      debugPrint('TESTING_DEBUG: Full JSON payload:');
+      debugPrint('TESTING_DEBUG: ${json.encode(jsonPayload)}');
 
       // Get authentication token
       final token = await ApiConstants.getAuthToken();
-      print('TESTING_DEBUG: Authentication token present: ${token != null && token.isNotEmpty}');
+      debugPrint('TESTING_DEBUG: Authentication token present: ${token != null && token.isNotEmpty}');
       if (token == null || token.isEmpty) {
         return ApiResponse<GovernmentTesting>(
           success: false,
@@ -45,7 +46,7 @@ class GovernmentTestingRepository {
       }
 
       final uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.governmentTestingEndpoint}');
-      print('API_CONSTANTS: Government Testing URL: $uri');
+      debugPrint('API_CONSTANTS: Government Testing URL: $uri');
 
       final response = await http.post(
         uri,
@@ -58,20 +59,20 @@ class GovernmentTestingRepository {
       );
 
       // Log the response for debugging
-      print('TESTING_DEBUG: Response status code: ${response.statusCode}');
-      print('TESTING_DEBUG: Response body: ${response.body}');
+      debugPrint('TESTING_DEBUG: Response status code: ${response.statusCode}');
+      debugPrint('TESTING_DEBUG: Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = json.decode(response.body);
         
         if (responseData['success'] == true) {
-          print('TESTING_DEBUG: Successfully submitted government testing data');
+          debugPrint('TESTING_DEBUG: Successfully submitted government testing data');
           return ApiResponse<GovernmentTesting>(
             success: true,
             data: GovernmentTesting.fromJson(responseData['data']),
           );
         } else {
-          print('TESTING_DEBUG: API returned success: false - ${responseData['message']}');
+          debugPrint('TESTING_DEBUG: API returned success: false - ${responseData['message']}');
           return ApiResponse<GovernmentTesting>(
             success: false,
             errorMessage: responseData['message'] ?? 'Failed to submit government testing data',
@@ -86,13 +87,13 @@ class GovernmentTestingRepository {
             final errorResponse = json.decode(response.body);
             if (errorResponse['message'] != null) {
               errorMessage = errorResponse['message'];
-              print('TESTING_DEBUG: Error message from API: $errorMessage');
+              debugPrint('TESTING_DEBUG: Error message from API: $errorMessage');
             }
             
             // Check for validation errors
             if (errorResponse['validationErrors'] != null) {
               final validationErrors = errorResponse['validationErrors'];
-              print('TESTING_DEBUG: Validation errors: $validationErrors');
+              debugPrint('TESTING_DEBUG: Validation errors: $validationErrors');
               
               // Build more detailed error message
               if (validationErrors is Map && validationErrors.isNotEmpty) {
@@ -108,10 +109,10 @@ class GovernmentTestingRepository {
           } else {
             // Empty response body
             errorMessage = 'Status code ${response.statusCode}: ${response.reasonPhrase}';
-            print('TESTING_DEBUG: Empty response body with status code: ${response.statusCode}');
+            debugPrint('TESTING_DEBUG: Empty response body with status code: ${response.statusCode}');
           }
         } catch (e) {
-          print('TESTING_DEBUG: Error parsing error response: $e');
+          debugPrint('TESTING_DEBUG: Error parsing error response: $e');
           errorMessage = 'Status code ${response.statusCode}: ${response.reasonPhrase}';
         }
         
@@ -121,7 +122,7 @@ class GovernmentTestingRepository {
         );
       }
     } catch (e) {
-      print('TESTING_DEBUG: Exception during submission: $e');
+      debugPrint('TESTING_DEBUG: Exception during submission: $e');
       return ApiResponse<GovernmentTesting>(
         success: false,
         errorMessage: 'An error occurred: ${e.toString()}',
@@ -132,12 +133,12 @@ class GovernmentTestingRepository {
   // Get all government testings
   Future<ApiResponse<List<GovernmentTesting>>> getAllGovernmentTestings() async {
     try {
-      print('TESTING_DEBUG: Getting all government testings');
+      debugPrint('TESTING_DEBUG: Getting all government testings');
       
       // Get authentication token
       final token = await ApiConstants.getAuthToken();
       if (token == null || token.isEmpty) {
-        print('TESTING_DEBUG: Authentication token is missing');
+        debugPrint('TESTING_DEBUG: Authentication token is missing');
         return ApiResponse<List<GovernmentTesting>>(
           success: false,
           errorMessage: 'Authentication token is missing. Please login again.',
@@ -147,10 +148,10 @@ class GovernmentTestingRepository {
       // Get petrol pump ID
       final prefs = await SharedPreferences.getInstance();
       final petrolPumpId = prefs.getString('petrolPumpId');
-      print('TESTING_DEBUG: Retrieved petrolPumpId: $petrolPumpId');
+      debugPrint('TESTING_DEBUG: Retrieved petrolPumpId: $petrolPumpId');
       
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
-        print('TESTING_DEBUG: Petrol pump ID is missing');
+        debugPrint('TESTING_DEBUG: Petrol pump ID is missing');
         return ApiResponse<List<GovernmentTesting>>(
           success: false,
           errorMessage: 'Petrol pump ID is missing. Please login again.',
@@ -159,7 +160,7 @@ class GovernmentTestingRepository {
       
       // Include petrol pump ID in the URL
       final uri = Uri.parse(ApiConstants.getGovernmentTestingByPumpUrl(petrolPumpId));
-      print('TESTING_DEBUG: API URL: $uri');
+      debugPrint('TESTING_DEBUG: API URL: $uri');
 
       final response = await http.get(
         uri,
@@ -169,8 +170,8 @@ class GovernmentTestingRepository {
         },
       );
       
-      print('TESTING_DEBUG: Response status code: ${response.statusCode}');
-      print('TESTING_DEBUG: Response body: ${response.body}');
+      debugPrint('TESTING_DEBUG: Response status code: ${response.statusCode}');
+      debugPrint('TESTING_DEBUG: Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -181,21 +182,21 @@ class GovernmentTestingRepository {
               .map((json) => GovernmentTesting.fromJson(json))
               .toList();
               
-          print('TESTING_DEBUG: Successfully retrieved ${testings.length} government testings');
+          debugPrint('TESTING_DEBUG: Successfully retrieved ${testings.length} government testings');
 
           return ApiResponse<List<GovernmentTesting>>(
             success: true,
             data: testings,
           );
         } else {
-          print('TESTING_DEBUG: API returned success: false - ${responseData['message']}');
+          debugPrint('TESTING_DEBUG: API returned success: false - ${responseData['message']}');
           return ApiResponse<List<GovernmentTesting>>(
             success: false,
             errorMessage: responseData['message'] ?? 'Failed to get government testings',
           );
         }
       } else {
-        print('TESTING_DEBUG: Failed with status code: ${response.statusCode}');
+        debugPrint('TESTING_DEBUG: Failed with status code: ${response.statusCode}');
         String errorMessage = 'Failed to get government testings';
         
         try {
@@ -206,7 +207,7 @@ class GovernmentTestingRepository {
             }
           }
         } catch (e) {
-          print('TESTING_DEBUG: Error parsing response: $e');
+          debugPrint('TESTING_DEBUG: Error parsing response: $e');
         }
         
         return ApiResponse<List<GovernmentTesting>>(
@@ -215,7 +216,7 @@ class GovernmentTestingRepository {
         );
       }
     } catch (e) {
-      print('TESTING_DEBUG: Exception during getAllGovernmentTestings: $e');
+      debugPrint('TESTING_DEBUG: Exception during getAllGovernmentTestings: $e');
       return ApiResponse<List<GovernmentTesting>>(
         success: false,
         errorMessage: e.toString(),

@@ -6,6 +6,7 @@ import '../../api/api_constants.dart';
 import '../../models/attendance_model.dart';
 import '../../theme.dart';
 import '../login/login_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EmployeeAttendanceScreen extends StatefulWidget {
   final String employeeId;
@@ -101,8 +102,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
     }
     
     try {
-      print('⏳ Fetching attendance summary for employeeId: ${widget.employeeId}');
-      print('⏳ Date range: ${_startDate.toIso8601String()} to ${_endDate.toIso8601String()}');
+      debugPrint('⏳ Fetching attendance summary for employeeId: ${widget.employeeId}');
+      debugPrint('⏳ Date range: ${_startDate.toIso8601String()} to ${_endDate.toIso8601String()}');
       
       final response = await _attendanceRepository.getEmployeeAttendanceSummary(
         widget.employeeId,
@@ -110,9 +111,9 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
         _endDate,
       );
       
-      print('✅ API Response received: ${response.success}');
+      debugPrint('✅ API Response received: ${response.success}');
       if (response.errorMessage != null) {
-        print('⚠️ API Error message: ${response.errorMessage}');
+        debugPrint('⚠️ API Error message: ${response.errorMessage}');
         
         // Check for authentication error
         if (response.errorMessage!.contains('Authentication failed') || 
@@ -123,39 +124,39 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
       }
       
       if (response.data != null) {
-        print('📊 Attendance Summary Data:');
-        print('   - Employee: ${response.data!.employeeName}');
-        print('   - Date Range: ${response.data!.startDate} to ${response.data!.endDate}');
-        print('   - Working Days: ${response.data!.totalWorkingDays}');
-        print('   - Present: ${response.data!.daysPresent}');
-        print('   - Absent: ${response.data!.daysAbsent}');
-        print('   - Late: ${response.data!.daysLate}');
-        print('   - Attendance %: ${response.data!.attendancePercentage}');
-        print('   - Total Hours: ${response.data!.totalHoursWorked}');
-        print('   - Avg Hours/Day: ${response.data!.averageHoursPerDay}');
-        print('   - Details count: ${response.data!.attendanceDetails.length}');
+        debugPrint('📊 Attendance Summary Data:');
+        debugPrint('   - Employee: ${response.data!.employeeName}');
+        debugPrint('   - Date Range: ${response.data!.startDate} to ${response.data!.endDate}');
+        debugPrint('   - Working Days: ${response.data!.totalWorkingDays}');
+        debugPrint('   - Present: ${response.data!.daysPresent}');
+        debugPrint('   - Absent: ${response.data!.daysAbsent}');
+        debugPrint('   - Late: ${response.data!.daysLate}');
+        debugPrint('   - Attendance %: ${response.data!.attendancePercentage}');
+        debugPrint('   - Total Hours: ${response.data!.totalHoursWorked}');
+        debugPrint('   - Avg Hours/Day: ${response.data!.averageHoursPerDay}');
+        debugPrint('   - Details count: ${response.data!.attendanceDetails.length}');
         
         // Check for negative hours which might indicate a data issue
         if (response.data!.totalHoursWorked < 0) {
-          print('⚠️ WARNING: Negative total hours detected: ${response.data!.totalHoursWorked}');
+          debugPrint('⚠️ WARNING: Negative total hours detected: ${response.data!.totalHoursWorked}');
         }
         
-        // Print first attendance detail if available
+        // debugPrint first attendance detail if available
         if (response.data!.attendanceDetails.isNotEmpty) {
           final detail = response.data!.attendanceDetails.first;
-          print('   - First attendance detail:');
-          print('     * ID: ${detail.employeeAttendanceId}');
-          print('     * CheckIn: ${detail.checkInTime}');
-          print('     * CheckOut: ${detail.checkOutTime}');
-          print('     * Total Hours: ${detail.totalHours}');
-          print('     * Status: ${detail.status}');
-          print('     * Is Late: ${detail.isLate}');
+          debugPrint('   - First attendance detail:');
+          debugPrint('     * ID: ${detail.employeeAttendanceId}');
+          debugPrint('     * CheckIn: ${detail.checkInTime}');
+          debugPrint('     * CheckOut: ${detail.checkOutTime}');
+          debugPrint('     * Total Hours: ${detail.totalHours}');
+          debugPrint('     * Status: ${detail.status}');
+          debugPrint('     * Is Late: ${detail.isLate}');
           
           // Check for time inconsistency
           if (detail.checkOutTime != null && detail.checkInTime.isAfter(detail.checkOutTime!)) {
-            print('⚠️ WARNING: CheckIn time is after CheckOut time!');
-            print('     * CheckIn: ${detail.checkInTime}');
-            print('     * CheckOut: ${detail.checkOutTime}');
+            debugPrint('⚠️ WARNING: CheckIn time is after CheckOut time!');
+            debugPrint('     * CheckIn: ${detail.checkInTime}');
+            debugPrint('     * CheckOut: ${detail.checkOutTime}');
           }
         }
       }
@@ -170,7 +171,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
             // If the API response contains "Unexpected end of input", create a default summary
             if (response.errorMessage != null && 
                 response.errorMessage!.contains("Unexpected end of input")) {
-              print('⚠️ Creating default attendance summary due to API error');
+              debugPrint('⚠️ Creating default attendance summary due to API error');
               _attendanceSummary = _createDefaultAttendanceSummary();
               _summaryError = 'Using default data due to server response issue';
             } else {
@@ -181,8 +182,8 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
         });
       }
     } catch (e) {
-      print('❌ Error in fetchAttendanceSummary: $e');
-      print('❌ Error stack trace: ${StackTrace.current}');
+      debugPrint('❌ Error in fetchAttendanceSummary: $e');
+      debugPrint('❌ Error stack trace: ${StackTrace.current}');
       
       if (mounted) {
         setState(() {
@@ -1436,7 +1437,7 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
   
   // Handle authentication error by redirecting to login
   void _handleAuthError() {
-    print('🔒 Authentication error detected, redirecting to login');
+    debugPrint('🔒 Authentication error detected, redirecting to login');
     
     // Clear the auth token
     SharedPreferences.getInstance().then((prefs) {
@@ -1450,11 +1451,10 @@ class _EmployeeAttendanceScreenState extends State<EmployeeAttendanceScreen> {
         );
         
         // Show a snackbar on the login screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Session expired. Please log in again.'),
-            backgroundColor: Colors.red,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Session expired. Please log in again.',
+          isError: true,
         );
       }
     });

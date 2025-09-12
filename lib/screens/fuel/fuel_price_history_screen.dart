@@ -49,7 +49,7 @@ class _FuelPriceHistoryScreenState extends State<FuelPriceHistoryScreen> {
     
     try {
       developer.log('FuelPriceHistoryScreen: Fetching price history for ${widget.fuelType}');
-      print('DEBUG: Fetching price history for ${widget.fuelType}, fuelTypeId: ${widget.fuelTypeId}');
+      debugPrint('DEBUG: Fetching price history for ${widget.fuelType}, fuelTypeId: ${widget.fuelTypeId}');
       
       // Check if fuelTypeId is available
       if (widget.fuelTypeId == null || widget.fuelTypeId!.isEmpty) {
@@ -60,7 +60,7 @@ class _FuelPriceHistoryScreenState extends State<FuelPriceHistoryScreen> {
         });
         
         developer.log('FuelPriceHistoryScreen: Error - Fuel type ID is required');
-        print('DEBUG: Error - Fuel type ID is required for price history');
+        debugPrint('DEBUG: Error - Fuel type ID is required for price history');
         return;
       }
       
@@ -79,7 +79,7 @@ class _FuelPriceHistoryScreenState extends State<FuelPriceHistoryScreen> {
         });
         
         developer.log('FuelPriceHistoryScreen: Retrieved ${_priceHistory.length} prices');
-        print('DEBUG: Retrieved ${_priceHistory.length} prices for ${widget.fuelType}');
+        debugPrint('DEBUG: Retrieved ${_priceHistory.length} prices for ${widget.fuelType}');
       } else {
         setState(() {
           _errorMessage = response.errorMessage ?? 'Failed to load price history';
@@ -88,7 +88,7 @@ class _FuelPriceHistoryScreenState extends State<FuelPriceHistoryScreen> {
         });
         
         developer.log('FuelPriceHistoryScreen: Error getting price history: $_errorMessage');
-        print('DEBUG: Error getting price history: $_errorMessage');
+        debugPrint('DEBUG: Error getting price history: $_errorMessage');
       }
     } catch (e) {
       setState(() {
@@ -98,7 +98,7 @@ class _FuelPriceHistoryScreenState extends State<FuelPriceHistoryScreen> {
       });
       
       developer.log('FuelPriceHistoryScreen: Exception: $e');
-      print('DEBUG: Exception in price history screen: $e');
+      debugPrint('DEBUG: Exception in price history screen: $e');
     }
   }
   

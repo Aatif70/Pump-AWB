@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../api/shift_sales_repository.dart';
 import '../../models/shift_sales_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class ShiftSalesScreen extends StatefulWidget {
   final String employeeId;
@@ -111,12 +112,11 @@ class _ShiftSalesScreenState extends State<ShiftSalesScreen> {
       if (response.success) {
         _addDebugLog('Submission successful');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Shift sales submitted successfully'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Shift sales submitted successfully',
+            isError: false,
+            duration: const Duration(seconds: 2),
           );
           
           // Navigate back to dashboard (pop twice - once for this screen, once for nozzle reading screen)
@@ -200,11 +200,11 @@ class _ShiftSalesScreenState extends State<ShiftSalesScreen> {
               setState(() {
                 _showDebugInfo = !_showDebugInfo;
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(_showDebugInfo ? 'Debug mode enabled' : 'Debug mode disabled'),
-                  duration: Duration(seconds: 1),
-                ),
+              showAnimatedSnackBar(
+                context: context,
+                message: _showDebugInfo ? 'Debug mode enabled' : 'Debug mode disabled',
+                isError: false,
+                duration: const Duration(seconds: 1),
               );
             },
             tooltip: 'Toggle Debug Info',

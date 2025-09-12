@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,7 @@ import '../../models/quality_check_model.dart';
 import '../../theme.dart';
 import '../../utils/shared_prefs.dart';
 import '../../api/api_constants.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class AddQualityCheckScreen extends StatefulWidget {
   const AddQualityCheckScreen({Key? key}) : super(key: key);
@@ -43,7 +45,7 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
   
   // Quality status options
   final List<String> _qualityStatusOptions = [
-    'Excellent', 'Good', 'Average', 'Warning', 'Poor', 'Critical'
+     'Good', 'Average', 'Poor'
   ];
   
   // Animation
@@ -92,7 +94,14 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
     });
 
     try {
+      debugPrint('===== API CALL: FETCH FUEL TANKS - REQUEST =====');
+      debugPrint('GET /fuel-tanks (no body)');
       final response = await _fuelTankRepository.getAllFuelTanks();
+
+      debugPrint('===== API CALL: FETCH FUEL TANKS - RESPONSE =====');
+      debugPrint('success: ${response.success}');
+      debugPrint('data length: ${response.data?.length ?? 0}');
+      debugPrint('error: ${response.errorMessage}');
 
       if (mounted) {
         setState(() {
@@ -110,6 +119,8 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
         });
       }
     } catch (e) {
+      debugPrint('===== API CALL: FETCH FUEL TANKS - ERROR =====');
+      debugPrint(e.toString());
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -129,6 +140,9 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
       final selectedTank = _fuelTanks.firstWhere((tank) => tank.fuelTankId == tankId);
       _selectedFuelType = selectedTank.fuelType;
     });
+
+    debugPrint('===== UI EVENT: FUEL TANK SELECTED =====');
+    debugPrint('tankId: $tankId');
   }
   
   // Validate and submit the form
@@ -136,17 +150,19 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
     if (!_formKey.currentState!.validate()) return;
     
     if (_selectedFuelTankId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a fuel tank')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Please select a fuel tank',
+        isError: true,
       );
       return;
     }
     
-    // Parse form values
+    // Parse form values (optional fields may be empty)
     final double density = double.parse(_densityController.text);
-    final double temperature = double.parse(_temperatureController.text);
-    final double waterContent = double.parse(_waterContentController.text);
-    final double depth = double.parse(_depthController.text);
+    final double temperature = double.tryParse(_temperatureController.text) ?? 0.0;
+    final double waterContent = double.tryParse(_waterContentController.text) ?? 0.0;
+    final double depth = double.tryParse(_depthController.text) ?? 0.0;
     
     setState(() {
       _isSaving = true;
@@ -185,9 +201,24 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
         checkedBy: checkedBy,
         checkedAt: DateTime.now(),
       );
-      
+
+      // Log request payload
+      debugPrint('===== API CALL: ADD QUALITY CHECK - REQUEST =====');
+      try {
+        final prettyJson = const JsonEncoder.withIndent('  ').convert(qualityCheck.toJson());
+        debugPrint(prettyJson);
+      } catch (_) {
+        debugPrint(qualityCheck.toJson().toString());
+      }
+
       // Send to API
       final response = await _qualityCheckRepository.addQualityCheck(qualityCheck);
+
+      // Log response
+      debugPrint('===== API CALL: ADD QUALITY CHECK - RESPONSE =====');
+      debugPrint('success: ${response.success}');
+      debugPrint('data: ${response.data}');
+      debugPrint('error: ${response.errorMessage}');
       
       if (mounted) {
         setState(() {
@@ -195,33 +226,32 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
         });
         
         if (response.success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Quality check added successfully'),
-              backgroundColor: Colors.green,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Quality check added successfully',
+            isError: false,
           );
           // Return to previous screen with success indicator
           Navigator.pop(context, true);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to add quality check: ${response.errorMessage}'),
-              backgroundColor: Colors.red,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Failed to add quality check: ${response.errorMessage}',
+            isError: true,
           );
         }
       }
     } catch (e) {
+      debugPrint('===== API CALL: ADD QUALITY CHECK - ERROR =====');
+      debugPrint(e.toString());
       if (mounted) {
         setState(() {
           _isSaving = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Error: $e',
+          isError: true,
         );
       }
     }
@@ -570,8 +600,8 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
                 onChanged: _onFuelTankChanged,
                 isExpanded: true, // Make dropdown take full width
                 items: _fuelTanks.map((FuelTank tank) {
-                  final String tankLabel = 'Tank (${tank.fuelType})';
-                  final String tankInfo = '${tank.currentStock.toStringAsFixed(0)}L / ${tank.capacityInLiters.toStringAsFixed(0)}L';
+                  final String tankLabel = '${tank.fuelTankName} : ${tank.fuelType}';
+                  final String tankInfo = '${tank.capacityInLiters.toStringAsFixed(0)}L';
                   
                   return DropdownMenuItem<String>(
                     value: tank.fuelTankId,
@@ -795,11 +825,17 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
             if (value == null || value.isEmpty) {
               return 'Required';
             }
-            if (double.tryParse(value) == null) {
+            final parsed = double.tryParse(value);
+            if (parsed == null) {
               return 'Invalid number';
+            }
+            if (parsed < 0.001 || parsed > 2) {
+              return 'Must be between 0.001 and 2';
             }
             return null;
           },
+          maxDecimals: 3,
+          helper: 'Allowed range: 0.001 – 2 (up to 3 decimals)',
         ),
         
         const SizedBox(height: 16),
@@ -813,7 +849,7 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
           color: Colors.orange.shade700,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Required';
+              return null; // optional
             }
             if (double.tryParse(value) == null) {
               return 'Invalid number';
@@ -833,13 +869,13 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
           color: Colors.blue.shade700,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Required';
+              return null; // optional
             }
-            if (double.tryParse(value) == null) {
+            final parsed = double.tryParse(value);
+            if (parsed == null) {
               return 'Invalid number';
             }
-            final double waterContent = double.parse(value);
-            if (waterContent < 0 || waterContent > 100) {
+            if (parsed < 0 || parsed > 100) {
               return 'Must be 0-100%';
             }
             return null;
@@ -857,7 +893,7 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
           color: Colors.purple.shade700,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Required';
+              return null; // optional
             }
             if (double.tryParse(value) == null) {
               return 'Invalid number';
@@ -881,32 +917,50 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
     required IconData icon,
     required Color color,
     required String? Function(String?) validator,
+    int maxDecimals = 2,
+    String? helper,
   }) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade100,
+            prefixIcon: Icon(icon, color: color),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp('^\\d+\\.?\\d{0,${maxDecimals}}')),
+          ],
+          validator: validator,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: color.withAlpha(220),
+          ),
         ),
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        prefixIcon: Icon(icon, color: color),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        floatingLabelBehavior: FloatingLabelBehavior.never,
-      ),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+        if (helper != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            helper,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
       ],
-      validator: validator,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: color.withAlpha(220),
-      ),
     );
   }
   
@@ -1091,20 +1145,14 @@ class _AddQualityCheckScreenState extends State<AddQualityCheckScreen> with Sing
   
   // Helper methods
   Color _getColorForFuelType(String fuelType) {
-    switch(fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.blue.shade700;
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.grey.shade700;
   }
   
   Color _getColorForQualityStatus(String status) {

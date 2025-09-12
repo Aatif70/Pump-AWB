@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import '../models/api_response.dart';
 import '../models/fuel_price_model.dart';
@@ -13,7 +14,7 @@ class FuelPriceRepository {
   // Get fuel price for the selected nozzle
   Future<ApiResponse<FuelPrice>> getFuelPrice(String nozzleId) async {
     try {
-      print('DEBUG: Fetching fuel price for nozzle ID: $nozzleId');
+      debugPrint('DEBUG: Fetching fuel price for nozzle ID: $nozzleId');
       
       // Get auth token from shared preferences
       final token = await ApiConstants.getAuthToken();
@@ -22,7 +23,7 @@ class FuelPriceRepository {
       final petrolPumpId = await SharedPrefs.getPumpId();
       
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
-        print('DEBUG: No petrol pump ID found in shared preferences');
+        debugPrint('DEBUG: No petrol pump ID found in shared preferences');
         return ApiResponse<FuelPrice>(
           success: false,
           errorMessage: 'Petrol pump ID not found',
@@ -30,7 +31,7 @@ class FuelPriceRepository {
         );
       }
       
-      print('DEBUG: Using petrol pump ID: $petrolPumpId');
+      debugPrint('DEBUG: Using petrol pump ID: $petrolPumpId');
       
       // First, get the nozzle details to get the fuel type
       final nozzleRepo = NozzleRepository();
@@ -41,14 +42,14 @@ class FuelPriceRepository {
       if (nozzleResponse.success && nozzleResponse.data != null) {
         fuelTypeId = nozzleResponse.data!.fuelTypeId;
         fuelTypeName = nozzleResponse.data!.fuelType;
-        print('DEBUG: Got fuel type ID for nozzle: $fuelTypeId, Fuel type name: $fuelTypeName');
+        debugPrint('DEBUG: Got fuel type ID for nozzle: $fuelTypeId, Fuel type name: $fuelTypeName');
       } else {
-        print('DEBUG: Could not get fuel type for nozzle. Will use default price.');
+        debugPrint('DEBUG: Could not get fuel type for nozzle. Will use default price.');
       }
       
       // Use the API constants to get the proper URL format
       final url = Uri.parse(ApiConstants.getCurrentPricesByPetrolPumpUrl(petrolPumpId));
-      print('DEBUG: Fuel price API URL: $url');
+      debugPrint('DEBUG: Fuel price API URL: $url');
       
       final response = await http.get(
         url,
@@ -58,11 +59,11 @@ class FuelPriceRepository {
         },
       );
 
-      print('DEBUG: Fuel price response status code: ${response.statusCode}');
+      debugPrint('DEBUG: Fuel price response status code: ${response.statusCode}');
       
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body);
-        print('DEBUG: Fuel price response data: $responseBody');
+        debugPrint('DEBUG: Fuel price response data: $responseBody');
         
         // Extract data list from response
         List<dynamic> pricesList = [];
@@ -75,7 +76,7 @@ class FuelPriceRepository {
         }
         
         if (pricesList.isEmpty) {
-          print('DEBUG: No prices found in response');
+          debugPrint('DEBUG: No prices found in response');
           return ApiResponse<FuelPrice>(
             success: false,
             errorMessage: 'No fuel prices found',
@@ -86,11 +87,11 @@ class FuelPriceRepository {
         // If we have a fuel type ID, try to find the matching price
         FuelPrice? matchedPrice;
         
-        // Print all available fuel types and prices for debugging
-        print('DEBUG: Available fuel types and prices:');
+        // debugPrint all available fuel types and prices for debugging
+        debugPrint('DEBUG: Available fuel types and prices:');
         for (var priceData in pricesList) {
           if (priceData is Map) {
-            print('DEBUG: FuelTypeId: ${priceData['fuelTypeId']}, FuelTypeName: ${priceData['fuelTypeName']}, Price: ${priceData['pricePerLiter']}');
+            debugPrint('DEBUG: FuelTypeId: ${priceData['fuelTypeId']}, FuelTypeName: ${priceData['fuelTypeName']}, Price: ${priceData['pricePerLiter']}');
           }
         }
         
@@ -101,7 +102,7 @@ class FuelPriceRepository {
                 priceData.containsKey('fuelTypeId') && 
                 priceData['fuelTypeId'] == fuelTypeId) {
               matchedPrice = FuelPrice.fromJson(Map<String, dynamic>.from(priceData));
-              print('DEBUG: Found matching price by fuel type ID: ${matchedPrice.price}');
+              debugPrint('DEBUG: Found matching price by fuel type ID: ${matchedPrice.price}');
             }
           }
           
@@ -112,7 +113,7 @@ class FuelPriceRepository {
                   priceData.containsKey('fuelTypeName') &&
                   priceData['fuelTypeName'].toString().toLowerCase() == fuelTypeName.toLowerCase()) {
                 matchedPrice = FuelPrice.fromJson(Map<String, dynamic>.from(priceData));
-                print('DEBUG: Found matching price by fuel type name: ${matchedPrice.price}');
+                debugPrint('DEBUG: Found matching price by fuel type name: ${matchedPrice.price}');
               }
             }
           }
@@ -121,7 +122,7 @@ class FuelPriceRepository {
         // If no match found, use the first price in the list
         if (matchedPrice == null && pricesList.isNotEmpty) {
           matchedPrice = FuelPrice.fromJson(Map<String, dynamic>.from(pricesList[0]));
-          print('DEBUG: No match found. Using first price in list: ${matchedPrice.price}');
+          debugPrint('DEBUG: No match found. Using first price in list: ${matchedPrice.price}');
         }
         
         if (matchedPrice != null) {
@@ -131,7 +132,7 @@ class FuelPriceRepository {
           );
         } else {
           // Fallback to default price if no prices found
-          print('DEBUG: Using default price as fallback');
+          debugPrint('DEBUG: Using default price as fallback');
           return ApiResponse<FuelPrice>(
             success: true,
             data: FuelPrice(price: 95.0), // Default price
@@ -139,7 +140,7 @@ class FuelPriceRepository {
           );
         }
       } else {
-        print('DEBUG: Failed to load fuel price. Status code: ${response.statusCode}, Response: ${response.body}');
+        debugPrint('DEBUG: Failed to load fuel price. Status code: ${response.statusCode}, Response: ${response.body}');
         return ApiResponse<FuelPrice>(
           success: false,
           errorMessage: 'Failed to load fuel price (Status: ${response.statusCode})',
@@ -147,7 +148,7 @@ class FuelPriceRepository {
         );
       }
     } catch (e) {
-      print('ERROR in getFuelPrice: $e');
+      debugPrint('ERROR in getFuelPrice: $e');
       // Return a default price in case of error to prevent app crash
       return ApiResponse<FuelPrice>(
         success: true, // Mark as success to allow app to continue
@@ -164,7 +165,7 @@ class FuelPriceRepository {
       final petrolPumpId = await SharedPrefs.getPumpId();
       
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
-        print('DEBUG: No petrol pump ID found for getAllFuelPrices');
+        debugPrint('DEBUG: No petrol pump ID found for getAllFuelPrices');
         return ApiResponse<List<FuelPrice>>(
           success: false,
           errorMessage: 'Petrol pump ID not found',
@@ -173,7 +174,7 @@ class FuelPriceRepository {
       }
       
       final url = Uri.parse(ApiConstants.getCurrentPricesByPetrolPumpUrl(petrolPumpId));
-      print('DEBUG: Getting all fuel prices from: $url');
+      debugPrint('DEBUG: Getting all fuel prices from: $url');
       
       // Get auth token from shared preferences
       final token = await ApiConstants.getAuthToken();
@@ -186,7 +187,7 @@ class FuelPriceRepository {
         },
       );
 
-      print('DEBUG: All prices response status code: ${response.statusCode}');
+      debugPrint('DEBUG: All prices response status code: ${response.statusCode}');
       
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
@@ -202,7 +203,7 @@ class FuelPriceRepository {
           }
         }
         
-        print('DEBUG: Parsed ${pricesJson.length} prices from API');
+        debugPrint('DEBUG: Parsed ${pricesJson.length} prices from API');
         
         final List<FuelPrice> prices = pricesJson
             .map((json) => FuelPrice.fromJson(Map<String, dynamic>.from(json)))
@@ -213,14 +214,14 @@ class FuelPriceRepository {
           data: prices,
         );
       } else {
-        print('DEBUG: Failed to load all fuel prices. Status: ${response.statusCode}');
+        debugPrint('DEBUG: Failed to load all fuel prices. Status: ${response.statusCode}');
         return ApiResponse<List<FuelPrice>>(
           success: false,
           errorMessage: 'Failed to load fuel prices (Status: ${response.statusCode})',
         );
       }
     } catch (e) {
-      print('ERROR in getAllFuelPrices: $e');
+      debugPrint('ERROR in getAllFuelPrices: $e');
       return ApiResponse<List<FuelPrice>>(
         success: false,
         errorMessage: 'An error occurred: $e',

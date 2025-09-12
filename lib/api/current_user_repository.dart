@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/current_user_model.dart';
@@ -30,7 +31,7 @@ class CurrentUserRepository {
       );
 
       if (response.statusCode == 200) {
-        print('Current user API response: ${response.body}');
+        debugPrint('Current user API response: ${response.body}');
         final jsonResponse = json.decode(response.body);
         
         // Check if the response has a 'data' field containing employee info
@@ -51,7 +52,7 @@ class CurrentUserRepository {
             errorMessage: null,
           );
         } else {
-          print('Current user API response missing data field');
+          debugPrint('Current user API response missing data field');
           return ApiResponse<CurrentUser>(
             success: false,
             data: null,
@@ -59,7 +60,7 @@ class CurrentUserRepository {
           );
         }
       } else {
-        print('Current user API failed. Status code: ${response.statusCode}, Response: ${response.body}');
+        debugPrint('Current user API failed. Status code: ${response.statusCode}, Response: ${response.body}');
         return ApiResponse<CurrentUser>(
           success: false,
           data: null,
@@ -67,7 +68,7 @@ class CurrentUserRepository {
         );
       }
     } catch (e) {
-      print('Exception in getCurrentUser: $e');
+      debugPrint('Exception in getCurrentUser: $e');
       return ApiResponse<CurrentUser>(
         success: false,
         data: null,

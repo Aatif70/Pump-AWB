@@ -7,6 +7,7 @@ import 'nozzle_management_screen.dart';
 import 'dart:developer' as developer;
 import '../../models/nozzle_model.dart';
 import '../../api/nozzle_repository.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class FuelDispenserListScreen extends StatefulWidget {
   const FuelDispenserListScreen({super.key});
@@ -77,26 +78,26 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
       // Clear previous nozzle data
       _dispenserNozzles = {};
       
-      print('Starting to load nozzles for ${_dispensers.length} dispensers');
+      debugPrint('Starting to load nozzles for ${_dispensers.length} dispensers');
       developer.log('Starting to load nozzles for ${_dispensers.length} dispensers');
       
       // Load nozzles for each dispenser
       for (var dispenser in _dispensers) {
         if (dispenser.id != null) {
-          print('Loading nozzles for dispenser #${dispenser.dispenserNumber} (ID: ${dispenser.id})');
+          debugPrint('Loading nozzles for dispenser #${dispenser.dispenserNumber} (ID: ${dispenser.id})');
           final nozzles = await _loadNozzlesForDispenser(dispenser.id!);
-          print('Loaded ${nozzles.length} nozzles for dispenser #${dispenser.dispenserNumber}');
+          debugPrint('Loaded ${nozzles.length} nozzles for dispenser #${dispenser.dispenserNumber}');
           
           if (nozzles.isNotEmpty) {
             _dispenserNozzles[dispenser.id] = nozzles;
-            print('Added ${nozzles.length} nozzles to cache for dispenser #${dispenser.dispenserNumber}');
+            debugPrint('Added ${nozzles.length} nozzles to cache for dispenser #${dispenser.dispenserNumber}');
           } else {
-            print('No nozzles found for dispenser #${dispenser.dispenserNumber}');
+            debugPrint('No nozzles found for dispenser #${dispenser.dispenserNumber}');
           }
         }
       }
 
-      print('Finished loading nozzles. Nozzle data cache has ${_dispenserNozzles.length} dispensers with nozzles');
+      debugPrint('Finished loading nozzles. Nozzle data cache has ${_dispenserNozzles.length} dispensers with nozzles');
       
       if (mounted) {
         setState(() {
@@ -104,7 +105,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
         });
       }
     } catch (e) {
-      print('Error while loading all nozzles: $e');
+      debugPrint('Error while loading all nozzles: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -117,21 +118,21 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
   // Load nozzles for a specific dispenser
   Future<List<Nozzle>> _loadNozzlesForDispenser(String dispenserId) async {
     try {
-      print('Requesting nozzles for dispenser ID: $dispenserId');
+      debugPrint('Requesting nozzles for dispenser ID: $dispenserId');
       final response = await _nozzleRepository.getNozzlesByDispenserId(dispenserId);
       
-      print('Nozzle API response success: ${response.success}');
+      debugPrint('Nozzle API response success: ${response.success}');
       if (response.success) {
-        print('Nozzle API data: ${response.data != null ? response.data!.length : 'null'} nozzles');
+        debugPrint('Nozzle API data: ${response.data != null ? response.data!.length : 'null'} nozzles');
       } else {
-        print('Nozzle API error: ${response.errorMessage}');
+        debugPrint('Nozzle API error: ${response.errorMessage}');
       }
       
       if (response.success && response.data != null) {
         return response.data!;
       }
     } catch (e) {
-      print('Exception when loading nozzles for dispenser $dispenserId: $e');
+      debugPrint('Exception when loading nozzles for dispenser $dispenserId: $e');
       developer.log('Error loading nozzles for dispenser $dispenserId: $e');
     }
     return [];
@@ -142,7 +143,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
     if (dispenserId == null) return [];
     
     final nozzles = _dispenserNozzles[dispenserId] ?? [];
-    print('Retrieved ${nozzles.length} nozzles from cache for dispenser ID: $dispenserId');
+    debugPrint('Retrieved ${nozzles.length} nozzles from cache for dispenser ID: $dispenserId');
     return nozzles;
   }
 
@@ -188,12 +189,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
       if (!mounted) return;
 
       if (response.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Dispenser deleted successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        _showSnackBar('Dispenser deleted successfully', isError: false);
 
         _loadDispensers();
       } else {
@@ -202,12 +198,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
           _errorMessage = response.errorMessage ?? 'Failed to delete dispenser';
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $_errorMessage'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnackBar('Error: $_errorMessage', isError: true);
       }
     } catch (e) {
       if (!mounted) return;
@@ -217,12 +208,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
         _errorMessage = 'Error: $e';
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar('Error: $e', isError: true);
     }
   }
 
@@ -247,19 +233,19 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
       final dispenser = _dispensers.firstWhere((d) => d.id == dispenserId);
 
       if (dispenser.id == null) {
-        _showSnackBar('Could not update dispenser: Dispenser ID is missing');
+        _showSnackBar('Could not update dispenser: Dispenser ID is missing', isError: true);
         return;
       }
 
       // Validate numberOfNozzles is within required range and log values
-      print('DISPENSER_UPDATE: Original numberOfNozzles: ${dispenser.numberOfNozzles}');
+      debugPrint('DISPENSER_UPDATE: Original numberOfNozzles: ${dispenser.numberOfNozzles}');
       
       int safeNumberOfNozzles = dispenser.numberOfNozzles;
       if (safeNumberOfNozzles < 1) {
-        print('DISPENSER_UPDATE: Correcting invalid nozzle count to 1');
+        debugPrint('DISPENSER_UPDATE: Correcting invalid nozzle count to 1');
         safeNumberOfNozzles = 1;
       } else if (safeNumberOfNozzles > 6) {
-        print('DISPENSER_UPDATE: Correcting invalid nozzle count to 6');
+        debugPrint('DISPENSER_UPDATE: Correcting invalid nozzle count to 6');
         safeNumberOfNozzles = 6;
       }
       
@@ -274,12 +260,12 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
         fuelType: dispenser.fuelType, // Keep original value without modifying
       );
 
-      print('DISPENSER_UPDATE: Status change from ${dispenser.status} to $newStatus');
-      print('DISPENSER_UPDATE: Updated numberOfNozzles: ${updatedDispenser.numberOfNozzles}');
-      print('DISPENSER_UPDATE: Using original fuelType: ${dispenser.fuelType}');
+      debugPrint('DISPENSER_UPDATE: Status change from ${dispenser.status} to $newStatus');
+      debugPrint('DISPENSER_UPDATE: Updated numberOfNozzles: ${updatedDispenser.numberOfNozzles}');
+      debugPrint('DISPENSER_UPDATE: Using original fuelType: ${dispenser.fuelType}');
 
       // Show loading indicator
-      _showSnackBar('Updating dispenser status...');
+      _showSnackBar('Updating dispenser status...', isError: false);
 
       // Optimistically update UI
       setState(() {
@@ -296,7 +282,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
       if (!mounted) return;
 
       if (response.success && response.data != null) {
-        _showSnackBar('Dispenser status updated successfully');
+        _showSnackBar('Dispenser status updated successfully', isError: false);
         
         // Refresh dispensers to ensure UI is updated with latest data from server
         _loadDispensers();
@@ -308,10 +294,10 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
             _dispensers[index] = dispenser;
           }
         });
-        _showSnackBar('Failed to update dispenser status: ${response.errorMessage}');
+        _showSnackBar('Failed to update dispenser status: ${response.errorMessage}', isError: true);
       }
     } catch (e) {
-      _showSnackBar('An error occurred: $e');
+      _showSnackBar('An error occurred: $e', isError: true);
     }
   }
 
@@ -341,23 +327,14 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
       return Colors.blueGrey.shade700; // Default color when fuel type is null
     }
     
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.orange.shade800;
-      case 'premium':
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'premium diesel':
-        return Colors.deepPurple.shade800;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.indigo.shade700;
-      default:
-        return Colors.blueGrey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.blueGrey.shade700;
   }
 
   @override
@@ -600,11 +577,14 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
                                       color: Colors.white,
                                     ),
                                   ),
+
                                 ),
                                 const SizedBox(width: 8),
                                 Flexible(
                                   child: Text(
-                                    'Dispenser',
+                                    (dispenser.dispenserName != null && dispenser.dispenserName!.isNotEmpty)
+                                        ? dispenser.dispenserName!
+                                        : 'Dispenser',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -706,13 +686,13 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
   List<Map<String, dynamic>> _getRealNozzleStatuses(FuelDispenser dispenser) {
     // Return empty list if no dispenser ID
     if (dispenser.id == null) {
-      print('Cannot get nozzle statuses: dispenser ID is null');
+      debugPrint('Cannot get nozzle statuses: dispenser ID is null');
       return [];
     }
     
     // Get real nozzles for this dispenser
     final nozzles = _getNozzlesForDispenser(dispenser.id);
-    print('Getting nozzle statuses for dispenser #${dispenser.dispenserNumber}: found ${nozzles.length} nozzles');
+    debugPrint('Getting nozzle statuses for dispenser #${dispenser.dispenserNumber}: found ${nozzles.length} nozzles');
     
     // Convert to the format we need for display
     final statuses = nozzles.map((nozzle) => {
@@ -734,7 +714,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
       return posA.compareTo(posB);
     });
     
-    print('Returning ${statuses.length} nozzle statuses for dispenser #${dispenser.dispenserNumber}');
+    debugPrint('Returning ${statuses.length} nozzle statuses for dispenser #${dispenser.dispenserNumber}');
     return statuses;
   }
 
@@ -786,7 +766,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    '#${dispenser.dispenserNumber}',
+                    '#${dispenser.dispenserNumber}  ',
                     style: TextStyle(
                       color: dispenserColor,
                       fontWeight: FontWeight.bold,
@@ -1056,7 +1036,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
                                           ),
                                         ),
                                         child: Text(
-                                          '#${dispenser.dispenserNumber}',
+                                          '#${dispenser.dispenserNumber}${(dispenser.dispenserName != null && dispenser.dispenserName!.isNotEmpty) ? ' • ' + dispenser.dispenserName! : ''}',
                                           textAlign: TextAlign.center,
                                           style: const TextStyle(
                                             color: Colors.white,
@@ -1102,7 +1082,7 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Dispenser #${dispenser.dispenserNumber}',
+                                        '${(dispenser.dispenserName != null && dispenser.dispenserName!.isNotEmpty) ? dispenser.dispenserName! : 'Dispenser'} • #${dispenser.dispenserNumber}',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -1381,9 +1361,11 @@ class _FuelDispenserListScreenState extends State<FuelDispenserListScreen> {
     );
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+  void _showSnackBar(String message, {bool isError = false}) {
+    showAnimatedSnackBar(
+      context: context,
+      message: message,
+      isError: isError,
     );
   }
 }

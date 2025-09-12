@@ -18,8 +18,8 @@ class ShiftSalesReportResponse {
       data: (json['data'] as List)
           .map((e) => ShiftSalesReport.fromJson(e as Map<String, dynamic>))
           .toList(),
-      success: json['success'],
-      message: json['message'],
+      success: json['success'] ?? true,
+      message: json['message']?.toString() ?? '',
       validationErrors: json['validationErrors'],
     );
   }
@@ -164,12 +164,12 @@ class ShiftComparison {
 
   factory ShiftComparison.fromJson(Map<String, dynamic> json) {
     return ShiftComparison(
-      bestPerformingShift: json['bestPerformingShift'],
-      bestShiftVolume: json['bestShiftVolume'].toDouble(),
-      worstPerformingShift: json['worstPerformingShift'],
-      worstShiftVolume: json['worstShiftVolume'].toDouble(),
-      averageShiftVolume: json['averageShiftVolume'].toDouble(),
-      shiftVolumeVariance: json['shiftVolumeVariance'].toDouble(),
+      bestPerformingShift: (json['bestPerformingShift'] ?? '-') as String,
+      bestShiftVolume: (json['bestShiftVolume'] as num?)?.toDouble() ?? 0.0,
+      worstPerformingShift: (json['worstPerformingShift'] ?? '-') as String,
+      worstShiftVolume: (json['worstShiftVolume'] as num?)?.toDouble() ?? 0.0,
+      averageShiftVolume: (json['averageShiftVolume'] as num?)?.toDouble() ?? 0.0,
+      shiftVolumeVariance: (json['shiftVolumeVariance'] as num?)?.toDouble() ?? 0.0,
     );
   }
 } 

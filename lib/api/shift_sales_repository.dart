@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/shift_sale_model.dart';
@@ -80,12 +81,12 @@ class ShiftSalesRepository {
 
   // Submit shift sales
   Future<ApiResponse<shift_model.ShiftSales>> submitShiftSales(shift_model.ShiftSales shiftSales) async {
-    print('SHIFT_SALES_DEBUG: ----- BEGIN SHIFT SALES SUBMISSION -----');
-    print('SHIFT_SALES_DEBUG: Preparing to submit shift sales data');
+    debugPrint('SHIFT_SALES_DEBUG: ----- BEGIN SHIFT SALES SUBMISSION -----');
+    debugPrint('SHIFT_SALES_DEBUG: Preparing to submit shift sales data');
     
     // Pre-submission validation
     if (shiftSales.nozzleId == null || shiftSales.nozzleId!.isEmpty) {
-      print('SHIFT_SALES_DEBUG: Validation error - Missing nozzleId');
+      debugPrint('SHIFT_SALES_DEBUG: Validation error - Missing nozzleId');
       return ApiResponse<shift_model.ShiftSales>(
         success: false,
         errorMessage: 'Missing nozzleId in sales data',
@@ -93,7 +94,7 @@ class ShiftSalesRepository {
     }
     
     if (shiftSales.shiftId == null || shiftSales.shiftId!.isEmpty) {
-      print('SHIFT_SALES_DEBUG: Validation error - Missing shiftId');
+      debugPrint('SHIFT_SALES_DEBUG: Validation error - Missing shiftId');
       return ApiResponse<shift_model.ShiftSales>(
         success: false,
         errorMessage: 'Missing shiftId in sales data',
@@ -101,7 +102,7 @@ class ShiftSalesRepository {
     }
     
     if (shiftSales.employeeId == null || shiftSales.employeeId!.isEmpty) {
-      print('SHIFT_SALES_DEBUG: Validation error - Missing employeeId');
+      debugPrint('SHIFT_SALES_DEBUG: Validation error - Missing employeeId');
       return ApiResponse<shift_model.ShiftSales>(
         success: false,
         errorMessage: 'Missing employeeId in sales data',
@@ -109,7 +110,7 @@ class ShiftSalesRepository {
     }
     
     if (shiftSales.petrolPumpId == null || shiftSales.petrolPumpId!.isEmpty) {
-      print('SHIFT_SALES_DEBUG: Validation error - Missing petrolPumpId');
+      debugPrint('SHIFT_SALES_DEBUG: Validation error - Missing petrolPumpId');
       return ApiResponse<shift_model.ShiftSales>(
         success: false,
         errorMessage: 'Missing petrolPumpId in sales data',
@@ -117,50 +118,50 @@ class ShiftSalesRepository {
     }
     
     if (shiftSales.litersSold <= 0) {
-      print('SHIFT_SALES_DEBUG: Validation warning - litersSold is zero or negative: ${shiftSales.litersSold}');
+      debugPrint('SHIFT_SALES_DEBUG: Validation warning - litersSold is zero or negative: ${shiftSales.litersSold}');
       // Just a warning, not returning error
     }
     
     if (shiftSales.totalAmount <= 0) {
-      print('SHIFT_SALES_DEBUG: Validation warning - totalAmount is zero or negative: ${shiftSales.totalAmount}');
+      debugPrint('SHIFT_SALES_DEBUG: Validation warning - totalAmount is zero or negative: ${shiftSales.totalAmount}');
       // Just a warning, not returning error
     }
     
     try {
       final url = '$baseUrl/api/ShiftSales';
-      print('SHIFT_SALES_DEBUG: API URL: $url');
+      debugPrint('SHIFT_SALES_DEBUG: API URL: $url');
       
       final headers = await _getHeaders();
-      print('SHIFT_SALES_DEBUG: Request headers: $headers');
+      debugPrint('SHIFT_SALES_DEBUG: Request headers: $headers');
       
       // Ensure petrolPumpId is correct
       if (shiftSales.petrolPumpId == null || shiftSales.petrolPumpId!.isEmpty) {
         final pumpId = await getPetrolPumpId();
         if (pumpId != null && pumpId.isNotEmpty) {
           shiftSales.petrolPumpId = pumpId;
-          print('SHIFT_SALES_DEBUG: Updated petrolPumpId from token: $pumpId');
+          debugPrint('SHIFT_SALES_DEBUG: Updated petrolPumpId from token: $pumpId');
         }
       }
       
       final body = json.encode(shiftSales.toJson());
-      print('SHIFT_SALES_DEBUG: Request body: $body');
+      debugPrint('SHIFT_SALES_DEBUG: Request body: $body');
       
-      print('SHIFT_SALES_DEBUG: Sending HTTP POST request...');
+      debugPrint('SHIFT_SALES_DEBUG: Sending HTTP POST request...');
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: body,
       );
 
-      print('SHIFT_SALES_DEBUG: Response status code: ${response.statusCode}');
-      print('SHIFT_SALES_DEBUG: Response headers: ${response.headers}');
-      print('SHIFT_SALES_DEBUG: Response body: ${response.body}');
+      debugPrint('SHIFT_SALES_DEBUG: Response status code: ${response.statusCode}');
+      debugPrint('SHIFT_SALES_DEBUG: Response headers: ${response.headers}');
+      debugPrint('SHIFT_SALES_DEBUG: Response body: ${response.body}');
 
       if (response.statusCode == ApiConstants.statusOk || 
           response.statusCode == ApiConstants.statusCreated) {
         final jsonData = json.decode(response.body);
-        print('SHIFT_SALES_DEBUG: Successfully submitted shift sales');
-        print('SHIFT_SALES_DEBUG: ----- END SHIFT SALES SUBMISSION (SUCCESS) -----');
+        debugPrint('SHIFT_SALES_DEBUG: Successfully submitted shift sales');
+        debugPrint('SHIFT_SALES_DEBUG: ----- END SHIFT SALES SUBMISSION (SUCCESS) -----');
         return ApiResponse<shift_model.ShiftSales>(
           success: true,
           data: shift_model.ShiftSales.fromJson(jsonData),
@@ -170,26 +171,26 @@ class ShiftSalesRepository {
         
         // Special handling for 500 errors (server errors)
         if (response.statusCode == 500) {
-          print('SHIFT_SALES_DEBUG: Server error detected (500)');
+          debugPrint('SHIFT_SALES_DEBUG: Server error detected (500)');
           errorDetail = 'Server error occurred. The server may be experiencing issues or the data may be invalid.';
           
           // Try to get additional context about what might have gone wrong
-          print('SHIFT_SALES_DEBUG: Data that caused server error:');
-          print('SHIFT_SALES_DEBUG: - Cash Amount: ${shiftSales.cashAmount}');
-          print('SHIFT_SALES_DEBUG: - Credit Card Amount: ${shiftSales.creditCardAmount}');
-          print('SHIFT_SALES_DEBUG: - UPI Amount: ${shiftSales.upiAmount}');
-          print('SHIFT_SALES_DEBUG: - Liters Sold: ${shiftSales.litersSold}');
-          print('SHIFT_SALES_DEBUG: - Total Amount: ${shiftSales.totalAmount}');
-          print('SHIFT_SALES_DEBUG: - Price Per Liter: ${shiftSales.pricePerLiter}');
+          debugPrint('SHIFT_SALES_DEBUG: Data that caused server error:');
+          debugPrint('SHIFT_SALES_DEBUG: - Cash Amount: ${shiftSales.cashAmount}');
+          debugPrint('SHIFT_SALES_DEBUG: - Credit Card Amount: ${shiftSales.creditCardAmount}');
+          debugPrint('SHIFT_SALES_DEBUG: - UPI Amount: ${shiftSales.upiAmount}');
+          debugPrint('SHIFT_SALES_DEBUG: - Liters Sold: ${shiftSales.litersSold}');
+          debugPrint('SHIFT_SALES_DEBUG: - Total Amount: ${shiftSales.totalAmount}');
+          debugPrint('SHIFT_SALES_DEBUG: - Price Per Liter: ${shiftSales.pricePerLiter}');
           
           // Verify that calculations are correct
           final double expectedTotal = shiftSales.litersSold * shiftSales.pricePerLiter;
           final double submittedTotal = shiftSales.totalAmount;
           final double paymentTotal = shiftSales.cashAmount + shiftSales.creditCardAmount + shiftSales.upiAmount;
           
-          print('SHIFT_SALES_DEBUG: - Expected Total: $expectedTotal');
-          print('SHIFT_SALES_DEBUG: - Submitted Total: $submittedTotal');
-          print('SHIFT_SALES_DEBUG: - Total Payments: $paymentTotal');
+          debugPrint('SHIFT_SALES_DEBUG: - Expected Total: $expectedTotal');
+          debugPrint('SHIFT_SALES_DEBUG: - Submitted Total: $submittedTotal');
+          debugPrint('SHIFT_SALES_DEBUG: - Total Payments: $paymentTotal');
           
           if (paymentTotal != submittedTotal) {
             errorDetail += ' Payment total (${paymentTotal.toStringAsFixed(2)}) does not match submitted total (${submittedTotal.toStringAsFixed(2)}).';
@@ -203,7 +204,7 @@ class ShiftSalesRepository {
           try {
             if (response.body.isNotEmpty) {
               Map<String, dynamic> errorData = json.decode(response.body);
-              print('SHIFT_SALES_DEBUG: Parsed error data: $errorData');
+              debugPrint('SHIFT_SALES_DEBUG: Parsed error data: $errorData');
               
               if (errorData.containsKey('message')) {
                 errorDetail = errorData['message'];
@@ -225,22 +226,22 @@ class ShiftSalesRepository {
               errorDetail = 'No response body provided';
             }
           } catch (e) {
-            print('SHIFT_SALES_DEBUG: Could not parse error response as JSON: $e');
+            debugPrint('SHIFT_SALES_DEBUG: Could not parse error response as JSON: $e');
             errorDetail = response.body.isNotEmpty ? response.body : 'Empty response body';
           }
         }
         
-        print('SHIFT_SALES_DEBUG: Error submitting shift sales: ${response.statusCode} - $errorDetail');
-        print('SHIFT_SALES_DEBUG: ----- END SHIFT SALES SUBMISSION (FAILURE) -----');
+        debugPrint('SHIFT_SALES_DEBUG: Error submitting shift sales: ${response.statusCode} - $errorDetail');
+        debugPrint('SHIFT_SALES_DEBUG: ----- END SHIFT SALES SUBMISSION (FAILURE) -----');
         return ApiResponse<shift_model.ShiftSales>(
           success: false,
           errorMessage: 'Failed to submit shift sales: ${response.statusCode} - $errorDetail',
         );
       }
     } catch (e) {
-      print('SHIFT_SALES_DEBUG: Exception when submitting shift sales: $e');
-      print('SHIFT_SALES_DEBUG: Stack trace: ${e is Error ? e.stackTrace : "Not available"}');
-      print('SHIFT_SALES_DEBUG: ----- END SHIFT SALES SUBMISSION (EXCEPTION) -----');
+      debugPrint('SHIFT_SALES_DEBUG: Exception when submitting shift sales: $e');
+      debugPrint('SHIFT_SALES_DEBUG: Stack trace: ${e is Error ? e.stackTrace : "Not available"}');
+      debugPrint('SHIFT_SALES_DEBUG: ----- END SHIFT SALES SUBMISSION (EXCEPTION) -----');
       return ApiResponse<shift_model.ShiftSales>(
         success: false,
         errorMessage: 'Connection error: $e',

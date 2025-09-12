@@ -5,6 +5,7 @@ import '../../models/employee_model.dart';
 import '../../theme.dart';
 import 'dart:developer' as developer;
 import 'edit_employee_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EmployeeDetailScreen extends StatefulWidget {
   final String employeeId;
@@ -121,27 +122,26 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
     
     // Check if employee is null or id is null
     if (_employee == null || _employee!.id == null) {
-      print('ERROR: Cannot delete employee - Invalid employee ID');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot delete employee: Invalid employee ID'),
-          backgroundColor: Colors.red,
-        ),
+      debugPrint('ERROR: Cannot delete employee - Invalid employee ID');
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Cannot delete employee: Invalid employee ID',
+        isError: true,
       );
       return;
     }
     
-    print('DELETING EMPLOYEE: ID=${_employee!.id!}, Name=${_employee!.firstName} ${_employee!.lastName}');
+    debugPrint('DELETING EMPLOYEE: ID=${_employee!.id!}, Name=${_employee!.firstName} ${_employee!.lastName}');
     
     setState(() {
       _isDeleting = true;
     });
 
     try {
-      print('Calling repository.deleteEmployee for ID: ${_employee!.id!}');
+      debugPrint('Calling repository.deleteEmployee for ID: ${_employee!.id!}');
       final response = await _repository.deleteEmployee(_employee!.id!);
       
-      print('DELETE RESPONSE: success=${response.success}, error=${response.errorMessage}');
+      debugPrint('DELETE RESPONSE: success=${response.success}, error=${response.errorMessage}');
       
       if (mounted) {
         setState(() {
@@ -150,30 +150,28 @@ class _EmployeeDetailScreenState extends State<EmployeeDetailScreen> {
         
         if (response.success) {
           // Show success message
-          print('DELETE SUCCESS: Employee has been deleted successfully');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Employee has been deleted successfully'),
-              backgroundColor: Colors.green,
-            ),
+          debugPrint('DELETE SUCCESS: Employee has been deleted successfully');
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Employee has been deleted successfully',
+            isError: false,
           );
           
           // Go back to employee list with delete flag
-          print('Navigating back to employee list with delete flag');
+          debugPrint('Navigating back to employee list with delete flag');
           Navigator.of(context).pop('deleted');
         } else {
           // Show error message
-          print('DELETE ERROR: ${response.errorMessage}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response.errorMessage ?? 'Failed to delete employee'),
-              backgroundColor: Colors.red,
-            ),
+          debugPrint('DELETE ERROR: ${response.errorMessage}');
+          showAnimatedSnackBar(
+            context: context,
+            message: response.errorMessage ?? 'Failed to delete employee',
+            isError: true,
           );
         }
       }
     } catch (e) {
-      print('DELETE EXCEPTION: $e');
+      debugPrint('DELETE EXCEPTION: $e');
       if (mounted) {
         setState(() {
           _isDeleting = false;

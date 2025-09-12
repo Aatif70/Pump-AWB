@@ -9,7 +9,7 @@ class InventoryStatus {
   final double capacityInLiters;
   final double stockPercentage;
   final DateTime lastUpdatedAt;
-  final DateTime lastDeliveryDate;
+  final DateTime? lastDeliveryDate;
   final double deadStock;
   final double availableStock;
 
@@ -22,7 +22,7 @@ class InventoryStatus {
     required this.capacityInLiters,
     required this.stockPercentage,
     required this.lastUpdatedAt,
-    required this.lastDeliveryDate,
+    this.lastDeliveryDate,
     required this.deadStock,
     required this.availableStock,
   });
@@ -37,7 +37,9 @@ class InventoryStatus {
       capacityInLiters: json['capacityInLiters']?.toDouble() ?? 0.0,
       stockPercentage: json['stockPercentage']?.toDouble() ?? 0.0,
       lastUpdatedAt: DateTime.parse(json['lastUpdatedAt']),
-      lastDeliveryDate: DateTime.parse(json['lastDeliveryDate']),
+      lastDeliveryDate: json['lastDeliveryDate'] != null && json['lastDeliveryDate'].toString().isNotEmpty
+          ? DateTime.parse(json['lastDeliveryDate'])
+          : null,
       deadStock: json['deadStock']?.toDouble() ?? 0.0,
       availableStock: json['availableStock']?.toDouble() ?? 0.0,
     );

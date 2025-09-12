@@ -238,6 +238,17 @@ class _FuelOptionsScreenState extends State<FuelOptionsScreen> {
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
                               children: [
+
+                                _buildGridActionCard(
+                                  'Add Tank',
+                                  Icons.add_circle,
+                                  Colors.green.shade600,
+                                      () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const AddFuelTankScreen()),
+                                  ),
+                                ),
+
                                 _buildGridActionCard(
                                   'View Tanks',
                                   Icons.inventory,
@@ -249,24 +260,17 @@ class _FuelOptionsScreenState extends State<FuelOptionsScreen> {
                                 ),
 
                                 _buildGridActionCard(
-                                  'Quality Check',
-                                  Icons.science,
-                                  Colors.deepPurple.shade600,
+                                  'Set Prices',
+                                  Icons.currency_rupee_rounded,
+                                  Colors.indigo.shade600,
                                       () => Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => const QualityCheckListScreen()),
+                                    MaterialPageRoute(builder: (context) => const SetFuelPriceScreen()),
                                   ),
                                 ),
 
-                                _buildGridActionCard(
-                                  'Add Tank',
-                                  Icons.add_circle,
-                                  Colors.green.shade600,
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const AddFuelTankScreen()),
-                                  ),
-                                ),
+
+
                                 _buildGridActionCard(
                                   'Dispensers',
                                   Icons.local_gas_station,
@@ -285,15 +289,17 @@ class _FuelOptionsScreenState extends State<FuelOptionsScreen> {
                                     MaterialPageRoute(builder: (context) => const NozzleManagementScreen()),
                                   ),
                                 ),
+
                                 _buildGridActionCard(
-                                  'Set Prices',
-                                  Icons.attach_money,
-                                  Colors.indigo.shade600,
-                                  () => Navigator.push(
+                                  'Quality Check (Dip)',
+                                  Icons.science,
+                                  Colors.deepPurple.shade600,
+                                      () => Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => const SetFuelPriceScreen()),
+                                    MaterialPageRoute(builder: (context) => const QualityCheckListScreen()),
                                   ),
                                 ),
+
 
                                                                 _buildGridActionCard(
                                   'Govt.Testing',
@@ -575,20 +581,14 @@ class _FuelOptionsScreenState extends State<FuelOptionsScreen> {
   
   // Helper method to get color for fuel type
   Color _getColorForFuelType(String fuelType) {
-    switch(fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.blue.shade700;
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.grey.shade700;
   }
 }
 

@@ -9,6 +9,7 @@ import '../fuel_delivery/add_fuel_delivery_screen.dart';
 import 'add_fuel_tank_screen.dart';
 import 'edit_fuel_tank_screen.dart';
 import 'refill_fuel_tank_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 
 class FuelTankListScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
   @override
   void initState() {
     super.initState();
-    print('FUEL_TANK_LIST: Initializing Fuel Tank List Screen');
+    debugPrint('FUEL_TANK_LIST: Initializing Fuel Tank List Screen');
     
     // Initialize animation controller
     _fillAnimationController = AnimationController(
@@ -77,7 +78,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
       _errorMessage = '';
     });
 
-    print('FUEL_TANK_LIST: Loading fuel tanks from repository');
+    debugPrint('FUEL_TANK_LIST: Loading fuel tanks from repository');
     try {
       final response = await _repository.getAllFuelTanks();
 
@@ -86,13 +87,13 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
           _isLoading = false;
           if (response.success && response.data != null) {
             _fuelTanks = response.data!;
-            print('FUEL_TANK_LIST: Successfully loaded ${_fuelTanks.length} fuel tanks');
+            debugPrint('FUEL_TANK_LIST: Successfully loaded ${_fuelTanks.length} fuel tanks');
             
             // Start fill animation when data is loaded
             _startFillAnimation();
           } else {
             _errorMessage = response.errorMessage ?? 'Failed to load fuel tanks';
-            print('FUEL_TANK_LIST: Error loading fuel tanks: $_errorMessage');
+            debugPrint('FUEL_TANK_LIST: Error loading fuel tanks: $_errorMessage');
           }
         });
       }
@@ -101,7 +102,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
         setState(() {
           _isLoading = false;
           _errorMessage = e.toString();
-          print('FUEL_TANK_LIST: Exception loading fuel tanks: $e');
+          debugPrint('FUEL_TANK_LIST: Exception loading fuel tanks: $e');
         });
       }
     }
@@ -124,7 +125,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
   }
 
   void _navigateToAddFuelTank() async {
-    print('FUEL_TANK_LIST: Navigating to Add Fuel Tank screen');
+    debugPrint('FUEL_TANK_LIST: Navigating to Add Fuel Tank screen');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AddFuelTankScreen()),
@@ -135,7 +136,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
   }
   
   void _navigateToEditFuelTank(FuelTank tank) async {
-    print('FUEL_TANK_LIST: Navigating to Edit Fuel Tank screen for ID=${tank.fuelTankId}');
+    debugPrint('FUEL_TANK_LIST: Navigating to Edit Fuel Tank screen for ID=${tank.fuelTankId}');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => EditFuelTankScreen(fuelTank: tank)),
@@ -148,7 +149,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
   }
 
   void _navigateToRefillFuelTank(FuelTank tank) async {
-    print('FUEL_TANK_LIST: Navigating to Refill Fuel Tank screen for ID=${tank.fuelTankId}');
+    debugPrint('FUEL_TANK_LIST: Navigating to Refill Fuel Tank screen for ID=${tank.fuelTankId}');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => RefillFuelTankScreen(fuelTank: tank)),
@@ -161,7 +162,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
   }
   
   void _navigateToAddFuelDelivery(FuelTank tank) async {
-    print('FUEL_TANK_LIST: Navigating to Add Fuel Delivery screen for ID=${tank.fuelTankId}');
+    debugPrint('FUEL_TANK_LIST: Navigating to Add Fuel Delivery screen for ID=${tank.fuelTankId}');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => AddFuelDeliveryScreen(fuelTank: tank)),
@@ -174,7 +175,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
   }
   
   void _navigateToQualityCheck(FuelTank tank) async {
-    print('FUEL_TANK_LIST: Navigating to Quality Check List screen');
+    debugPrint('FUEL_TANK_LIST: Navigating to Quality Check List screen');
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const QualityCheckListScreen()),
@@ -250,19 +251,17 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
         });
         
         if (response.success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Fuel tank deleted successfully'),
-              backgroundColor: Colors.green,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Fuel tank deleted successfully',
+            isError: false,
           );
           _loadFuelTanks();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to delete fuel tank: ${response.errorMessage}'),
-              backgroundColor: Colors.red,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Failed to delete fuel tank: ${response.errorMessage}',
+            isError: true,
           );
         }
       }
@@ -876,7 +875,9 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          tank.fuelType,
+                          (tank.fuelTankName != null && tank.fuelTankName!.isNotEmpty)
+                              ? tank.fuelTankName!
+                              : tank.fuelType,
                           style: TextStyle(
                             color: color,
                             fontWeight: FontWeight.bold,
@@ -1300,18 +1301,18 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
       if (response.success && response.data != null) {
         return response.data!;
       } else {
-        print('FUEL_TANK_LIST: Failed to load quality checks: ${response.errorMessage}');
+        debugPrint('FUEL_TANK_LIST: Failed to load quality checks: ${response.errorMessage}');
         return [];
       }
     } catch (e) {
-      print('FUEL_TANK_LIST: Error loading quality checks: $e');
+      debugPrint('FUEL_TANK_LIST: Error loading quality checks: $e');
       return [];
     }
   }
 
   // Completely redesign the tank details drawer for better UX
   void _showFuelTankDetails(FuelTank tank) async {
-    print('FUEL_TANK_LIST: Showing fuel tank details for ID=${tank.fuelTankId}');
+    debugPrint('FUEL_TANK_LIST: Showing fuel tank details for ID=${tank.fuelTankId}');
     final fuelColor = _getColorForFuelType(tank.fuelType);
     final levelColor = _getColorForPercentage(tank.stockPercentage);
     final statusColor = _getStatusColor(tank.status);
@@ -1378,7 +1379,7 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
-                                  '${tank.fuelType} Tank',
+                                  '${(tank.fuelTankName != null && tank.fuelTankName!.isNotEmpty) ? tank.fuelTankName! : tank.fuelType}',
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -2255,20 +2256,14 @@ class _FuelTankListScreenState extends State<FuelTankListScreen> with TickerProv
   }
 
   Color _getColorForFuelType(String fuelType) {
-    switch(fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.blue.shade700;
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.grey.shade700;
   }
   
   Color _getStatusColor(String status) {

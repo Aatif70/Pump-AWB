@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'api_constants.dart';
 import 'dart:developer' as developer;
@@ -33,11 +34,11 @@ class ApiService {
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
       developer.log('Added authorization token to request headers');
-      // print('AUTHORIZATION HEADER: Bearer $token');
+      // debugPrint('AUTHORIZATION HEADER: Bearer $token');
     }
 
     developer.log('Request headers: $headers');
-    // print('FULL HEADERS: $headers');
+    // debugPrint('FULL HEADERS: $headers');
     return headers;
   }
 
@@ -63,15 +64,15 @@ class ApiService {
         throw TimeoutException('The connection has timed out, please try again!');
       });
 
-      print('RESPONSE STATUS CODE: ${response.statusCode}');
-      print('RESPONSE URL: $uri');
-      print('RESPONSE METHOD: GET');
-      print('RESPONSE HEADERS: ${response.headers}');
+      debugPrint('RESPONSE STATUS CODE: ${response.statusCode}');
+      debugPrint('RESPONSE URL: $uri');
+      debugPrint('RESPONSE METHOD: GET');
+      debugPrint('RESPONSE HEADERS: ${response.headers}');
       
       // if (response.body.isNotEmpty) {
-      //   print('SUCCESS RESPONSE BODY: ${response.body}');
+      //   debugPrint('SUCCESS RESPONSE BODY: ${response.body}');
       // } else {
-      //   print('RESPONSE BODY IS EMPTY');
+      //   debugPrint('RESPONSE BODY IS EMPTY');
       // }
 
       developer.log('GET response received from: $uri, status code: ${response.statusCode}');
@@ -119,9 +120,9 @@ class ApiService {
         
         final encodedBody = json.encode(body);
         developer.log('POST request encoded body: $encodedBody');
-        print('API_SERVICE: POST request to: $uri');
-        print('API_SERVICE: Request body: $encodedBody');
-        print('API_SERVICE: Request headers: ${getHeaders(token: token)}');
+        debugPrint('API_SERVICE: POST request to: $uri');
+        debugPrint('API_SERVICE: Request body: $encodedBody');
+        debugPrint('API_SERVICE: Request headers: ${getHeaders(token: token)}');
         
         final response = await http.post(
           uri,
@@ -133,15 +134,15 @@ class ApiService {
         });
 
         developer.log('POST response received from: $uri, status: ${response.statusCode}, body length: ${response.body.length}');
-        print('API_SERVICE: POST response status: ${response.statusCode}');
-        print('API_SERVICE: POST response headers: ${response.headers}');
+        debugPrint('API_SERVICE: POST response status: ${response.statusCode}');
+        debugPrint('API_SERVICE: POST response headers: ${response.headers}');
         
         if (response.body.isNotEmpty) {
           developer.log('POST response body preview: ${response.body.substring(0, response.body.length > 100 ? 100 : response.body.length)}...');
-          print('API_SERVICE: POST response body: ${response.body}');
+          debugPrint('API_SERVICE: POST response body: ${response.body}');
         } else {
           developer.log('POST response body is empty');
-          print('API_SERVICE: POST response body is empty');
+          debugPrint('API_SERVICE: POST response body is empty');
         }
         
         // If server error (500) and not the last attempt, retry
@@ -241,35 +242,35 @@ class ApiService {
     String? token,
     required T Function(dynamic json) fromJson,
   }) async {
-    print('API_SERVICE: DELETE request to: $url');
+    debugPrint('API_SERVICE: DELETE request to: $url');
     try {
-      print('API_SERVICE: Preparing DELETE request with auth token: ${token != null ? 'present' : 'missing'}');
+      debugPrint('API_SERVICE: Preparing DELETE request with auth token: ${token != null ? 'present' : 'missing'}');
       final response = await http.delete(
         Uri.parse(url),
         headers: getHeaders(token: token),
       ).timeout(const Duration(seconds: 15), onTimeout: () {
-        print('API_SERVICE: DELETE request timed out: $url');
+        debugPrint('API_SERVICE: DELETE request timed out: $url');
         throw TimeoutException('The connection has timed out, please try again!');
       });
 
       // Check 
-      print('API_SERVICE: DELETE response received from: $url, status: ${response.statusCode}');
-      print('API_SERVICE: DELETE response headers: ${response.headers}');
+      debugPrint('API_SERVICE: DELETE response received from: $url, status: ${response.statusCode}');
+      debugPrint('API_SERVICE: DELETE response headers: ${response.headers}');
       if (response.body.isNotEmpty) {
-        print('API_SERVICE: DELETE response body: ${response.body}');
+        debugPrint('API_SERVICE: DELETE response body: ${response.body}');
       } else {
-        print('API_SERVICE: DELETE response body is empty (expected for 204)');
+        debugPrint('API_SERVICE: DELETE response body is empty (expected for 204)');
       }
       
       return _processResponse(response, fromJson);
     } on SocketException {
-      print('API_SERVICE: SocketException in DELETE request to: $url');
+      debugPrint('API_SERVICE: SocketException in DELETE request to: $url');
       return ApiResponse(
         success: false,
         errorMessage: ApiConstants.internetConnectionMsg,
       );
     } catch (e) {
-      print('API_SERVICE: Exception in DELETE request to: $url, error: $e');
+      debugPrint('API_SERVICE: Exception in DELETE request to: $url, error: $e');
       return ApiResponse(
         success: false,
         errorMessage: e.toString(),
@@ -293,21 +294,21 @@ class ApiService {
         
         // Check if the response has a data field (common pattern)
         if (jsonDecoded is Map && jsonDecoded.containsKey('data')) {
-          print('API_SERVICE: Found data field in response, extracting...');
+          debugPrint('API_SERVICE: Found data field in response, extracting...');
           jsonData = jsonDecoded['data'];
           if (jsonData == null) {
-            print('API_SERVICE: Warning - data field is null');
+            debugPrint('API_SERVICE: Warning - data field is null');
           }
         }
         
         // Check for direct list
         if (jsonData is List) {
           developer.log('Found direct list with ${jsonData.length} items');
-          print('FOUND ${jsonData.length} ITEMS IN DIRECT LIST');
+          debugPrint('FOUND ${jsonData.length} ITEMS IN DIRECT LIST');
         }
         
         try {
-          // print('API_SERVICE: Passing to fromJson for parsing: $jsonData');
+          // debugPrint('API_SERVICE: Passing to fromJson for parsing: $jsonData');
           final data = fromJson(jsonData);
           developer.log('Response transformed using fromJson function');
           
@@ -320,7 +321,7 @@ class ApiService {
           // return success with the original data
           if (e.toString().contains('type \'String\' is not a subtype of type \'Map<String, dynamic>\'') ||
               e.toString().contains('type cast')) {
-            print('API_SERVICE: Type casting issue in fromJson, using original success response');
+            debugPrint('API_SERVICE: Type casting issue in fromJson, using original success response');
             
             // For string data, try to adapt it to the expected type
             if (jsonData is String) {
@@ -341,7 +342,7 @@ class ApiService {
                 );
               } catch (castError) {
                 // If that fails too, return success with null data
-                print('API_SERVICE: Could not cast to expected type: $castError');
+                debugPrint('API_SERVICE: Could not cast to expected type: $castError');
                 return ApiResponse(
                   success: true,
                   // No data, but still successful
@@ -355,8 +356,8 @@ class ApiService {
         }
       } catch (e, stack) {
         developer.log('Error processing successful response: $e');
-        print('ERROR PROCESSING RESPONSE: $e');
-        print('STACK TRACE: $stack');
+        debugPrint('ERROR PROCESSING RESPONSE: $e');
+        debugPrint('STACK TRACE: $stack');
         return ApiResponse(
           success: false,
           errorMessage: 'Error processing response: $e',
@@ -364,22 +365,22 @@ class ApiService {
       }
     } else if (response.statusCode == ApiConstants.statusNoContent) {
       // 204 No Content - successful response with no body (common for DELETE)
-      print('API_SERVICE: No Content response (204) - Successful deletion');
-      print('API_SERVICE: Request URL: ${response.request?.url}');
-      print('API_SERVICE: Request method: ${response.request?.method}');
+      debugPrint('API_SERVICE: No Content response (204) - Successful deletion');
+      debugPrint('API_SERVICE: Request URL: ${response.request?.url}');
+      debugPrint('API_SERVICE: Request method: ${response.request?.method}');
       
       try {
         // Create a default successful response without attempting to parse JSON
         // Pass an empty object to the fromJson function
-        print('API_SERVICE: Creating success response for 204 No Content');
+        debugPrint('API_SERVICE: Creating success response for 204 No Content');
         T data;
         try {
           data = fromJson({});
-          print('API_SERVICE: Successfully created data object from empty JSON');
+          debugPrint('API_SERVICE: Successfully created data object from empty JSON');
         } catch (e) {
           // If fromJson can't handle empty object, try using null or dynamic workaround
           // This is a workaround for generic type constraints
-          print('API_SERVICE: Using fallback for 204 response data creation: $e');
+          debugPrint('API_SERVICE: Using fallback for 204 response data creation: $e');
           data = {} as T;
         }
         
@@ -388,7 +389,7 @@ class ApiService {
           data: data,
         );
       } catch (e) {
-        print('API_SERVICE: Error handling 204 response: $e');
+        debugPrint('API_SERVICE: Error handling 204 response: $e');
         // Still return success even if data mapping fails
         return ApiResponse(
           success: true,
@@ -397,17 +398,41 @@ class ApiService {
     } else if (response.statusCode == ApiConstants.statusUnauthorized) {
       // Unauthorized
       developer.log('Unauthorized response (401)');
-      print('UNAUTHORIZED (401) - RESPONSE BODY: ${response.body}');
+      debugPrint('UNAUTHORIZED (401) - RESPONSE BODY: ${response.body}');
+      
+      // Try to get the actual error message from the response body
+      String errorMessage = ApiConstants.unAuthorized;
+      try {
+        if (response.body.isNotEmpty) {
+          // For plain text responses like "Invalid email or password"
+          if (response.body.trim().isNotEmpty && !response.body.startsWith('{')) {
+            errorMessage = response.body.trim();
+          } else {
+            // For JSON responses
+            final errorData = json.decode(response.body);
+            if (errorData is Map && errorData.containsKey('message')) {
+              errorMessage = errorData['message'];
+            } else if (errorData is Map && errorData.containsKey('error')) {
+              errorMessage = errorData['error'];
+            }
+          }
+        }
+      } catch (e) {
+        developer.log('Error parsing unauthorized response body: $e');
+        // Fallback to default message
+        errorMessage = ApiConstants.unAuthorized;
+      }
+      
       return ApiResponse(
         success: false,
-        errorMessage: ApiConstants.unAuthorized,
+        errorMessage: errorMessage,
       );
     } else if (response.statusCode == 405) {
       // Method Not Allowed (405)
-      print('METHOD NOT ALLOWED (405) ERROR');
-      print('REQUESTED URL: ${response.request?.url}');
-      print('USED METHOD: ${response.request?.method}');
-      print('ALLOWED METHODS: ${response.headers['allow'] ?? 'Not specified'}');
+      debugPrint('METHOD NOT ALLOWED (405) ERROR');
+      debugPrint('REQUESTED URL: ${response.request?.url}');
+      debugPrint('USED METHOD: ${response.request?.method}');
+      debugPrint('ALLOWED METHODS: ${response.headers['allow'] ?? 'Not specified'}');
       
       // Detailed error message with suggestion
       return ApiResponse(
@@ -418,16 +443,16 @@ class ApiService {
       // Other errors
       try {
         developer.log('Error response with status: ${response.statusCode}, body: ${response.body}');
-        print('ERROR RESPONSE CODE: ${response.statusCode}');
-        print('ERROR RESPONSE BODY: ${response.body}');
-        print('ERROR REQUEST METHOD: ${response.request?.method}');
-        print('ERROR REQUEST URL: ${response.request?.url}');
+        debugPrint('ERROR RESPONSE CODE: ${response.statusCode}');
+        debugPrint('ERROR RESPONSE BODY: ${response.body}');
+        debugPrint('ERROR REQUEST METHOD: ${response.request?.method}');
+        debugPrint('ERROR REQUEST URL: ${response.request?.url}');
         
         if (response.statusCode == ApiConstants.statusServerError) {
           developer.log('SERVER ERROR 500 DETAILS: Body: ${response.body}, Headers: ${response.headers}');
-          print('SERVER ERROR 500 DETAILS: Request URL: ${response.request?.url}');
-          print('SERVER ERROR 500 DETAILS: Request method: ${response.request?.method}');
-          print('SERVER ERROR 500 DETAILS: Request headers: ${response.request?.headers}');
+          debugPrint('SERVER ERROR 500 DETAILS: Request URL: ${response.request?.url}');
+          debugPrint('SERVER ERROR 500 DETAILS: Request method: ${response.request?.method}');
+          debugPrint('SERVER ERROR 500 DETAILS: Request headers: ${response.request?.headers}');
           
           // Attempt to parse the error response if available
           String detailedError = 'Server error occurred.';
@@ -454,20 +479,49 @@ class ApiService {
         
         if (response.body.isEmpty) {
           developer.log('Error response body is empty');
-          print('ERROR RESPONSE BODY IS EMPTY');
+          debugPrint('ERROR RESPONSE BODY IS EMPTY');
           return ApiResponse(
             success: false,
             errorMessage: 'Server returned empty response with status code ${response.statusCode}',
           );
         }
         
+        // Check if response is plain text (not JSON)
+        String trimmedBody = response.body.trim();
+        if (!trimmedBody.startsWith('{') && !trimmedBody.startsWith('[')) {
+          developer.log('Error response is plain text: $trimmedBody');
+          debugPrint('ERROR RESPONSE IS PLAIN TEXT: $trimmedBody');
+          return ApiResponse(
+            success: false,
+            errorMessage: trimmedBody,
+          );
+        }
+        
         final jsonData = json.decode(response.body);
         developer.log('Error response decoded: $jsonData');
-        print('ERROR RESPONSE DECODED: $jsonData');
+        debugPrint('ERROR RESPONSE DECODED: $jsonData');
         
-        final errorMessage = jsonData[ApiConstants.errorMessageKey] ?? ApiConstants.someThingWentWrong;
+        // Try multiple possible error message keys
+        String errorMessage = ApiConstants.someThingWentWrong;
+        
+        if (jsonData is Map) {
+          // Try different possible error message keys
+          errorMessage = jsonData['message'] ?? 
+                        jsonData['error'] ?? 
+                        jsonData['errorMessage'] ?? 
+                        jsonData['Message'] ?? 
+                        jsonData['Error'] ?? 
+                        jsonData['ErrorMessage'] ??
+                        jsonData['detail'] ??
+                        jsonData['Detail'] ??
+                        ApiConstants.someThingWentWrong;
+        } else if (jsonData is String) {
+          // If response is a plain string, use it directly
+          errorMessage = jsonData;
+        }
+        
         developer.log('Error message from response: $errorMessage');
-        print('ERROR MESSAGE FROM RESPONSE: $errorMessage');
+        debugPrint('ERROR MESSAGE FROM RESPONSE: $errorMessage');
         
         return ApiResponse(
           success: false,
@@ -475,7 +529,7 @@ class ApiService {
         );
       } catch (e) {
         developer.log('Error processing error response: $e');
-        print('ERROR PROCESSING ERROR RESPONSE: $e');
+        debugPrint('ERROR PROCESSING ERROR RESPONSE: $e');
         return ApiResponse(
           success: false,
           errorMessage: 'Status code: ${response.statusCode}, Message: ${response.reasonPhrase}',

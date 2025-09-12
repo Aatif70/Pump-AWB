@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/nozzle_reading_model.dart';
@@ -99,12 +100,12 @@ class NozzleReadingRepository {
   // Get nozzle readings by employee from the dedicated endpoint
   Future<ApiResponse<List<NozzleReading>>> getNozzleReadingsForEmployee(String employeeId) async {
     developer.log('NozzleReadingRepository: Getting nozzle readings for employee ID: $employeeId');
-    print('NozzleReadingRepository: Getting nozzle readings for employee ID: $employeeId');
+    debugPrint('NozzleReadingRepository: Getting nozzle readings for employee ID: $employeeId');
     
     try {
       final url = ApiConstants.getNozzleReadingsByEmployeeUrl(employeeId);
       developer.log('NozzleReadingRepository: API URL: $url');
-      print('NozzleReadingRepository: API URL: $url');
+      debugPrint('NozzleReadingRepository: API URL: $url');
       
       final headers = await _getHeaders();
       developer.log('NozzleReadingRepository: Request headers: $headers');
@@ -116,20 +117,20 @@ class NozzleReadingRepository {
 
       developer.log('NozzleReadingRepository: Response status code: ${response.statusCode}');
       developer.log('NozzleReadingRepository: Response body: ${response.body}');
-      print('NozzleReadingRepository: Response status code: ${response.statusCode}');
-      print('NozzleReadingRepository: Response body length: ${response.body.length}');
+      debugPrint('NozzleReadingRepository: Response status code: ${response.statusCode}');
+      debugPrint('NozzleReadingRepository: Response body length: ${response.body.length}');
       
       if (response.statusCode == ApiConstants.statusOk) {
         final List<dynamic> jsonData = json.decode(response.body);
         developer.log('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
-        print('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
+        debugPrint('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
         
         final nozzleReadings = jsonData
             .map((data) => NozzleReading.fromJson(data))
             .toList();
         
         developer.log('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings');
-        print('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings');
+        debugPrint('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings');
         
         return ApiResponse<List<NozzleReading>>(
           success: true,
@@ -138,8 +139,8 @@ class NozzleReadingRepository {
       } else {
         developer.log('NozzleReadingRepository: Error fetching nozzle readings: ${response.statusCode}');
         developer.log('NozzleReadingRepository: Error response: ${response.body}');
-        print('NozzleReadingRepository: Error fetching nozzle readings: ${response.statusCode}');
-        print('NozzleReadingRepository: Error response: ${response.body}');
+        debugPrint('NozzleReadingRepository: Error fetching nozzle readings: ${response.statusCode}');
+        debugPrint('NozzleReadingRepository: Error response: ${response.body}');
         
         return ApiResponse<List<NozzleReading>>(
           success: false,
@@ -148,7 +149,7 @@ class NozzleReadingRepository {
       }
     } catch (e) {
       developer.log('NozzleReadingRepository: Exception when fetching nozzle readings: $e');
-      print('NozzleReadingRepository: Exception when fetching nozzle readings: $e');
+      debugPrint('NozzleReadingRepository: Exception when fetching nozzle readings: $e');
       
       return ApiResponse<List<NozzleReading>>(
         success: false,
@@ -189,7 +190,7 @@ class NozzleReadingRepository {
       // Get the auth token for the request
       final token = await _getAuthToken();
       if (token == null) {
-        print('DEBUG: Authentication token not found');
+        debugPrint('DEBUG: Authentication token not found');
         return ApiResponse<Map<String, dynamic>>(
           success: false,
           errorMessage: 'Authentication token not found',
@@ -198,15 +199,15 @@ class NozzleReadingRepository {
       
       // Create multipart request
       final url = ApiConstants.getNozzleReadingSubmitUrl();
-      print('DEBUG: Sending request to: $url');
-      print('DEBUG: Request parameters:');
-      print('DEBUG: nozzleId: $nozzleId');
-      print('DEBUG: shiftId: $shiftId');
-      print('DEBUG: readingType: $readingType');
-      print('DEBUG: meterReading: $meterReading');
-      print('DEBUG: recordedAt: ${recordedAt.toIso8601String()}');
-      print('DEBUG: petrolPumpId: $petrolPumpId');
-      print('DEBUG: imageFile: ${imageFile.path}');
+      debugPrint('DEBUG: Sending request to: $url');
+      debugPrint('DEBUG: Request parameters:');
+      debugPrint('DEBUG: nozzleId: $nozzleId');
+      debugPrint('DEBUG: shiftId: $shiftId');
+      debugPrint('DEBUG: readingType: $readingType');
+      debugPrint('DEBUG: meterReading: $meterReading');
+      debugPrint('DEBUG: recordedAt: ${recordedAt.toIso8601String()}');
+      debugPrint('DEBUG: petrolPumpId: $petrolPumpId');
+      debugPrint('DEBUG: imageFile: ${imageFile.path}');
       
       final request = http.MultipartRequest('POST', Uri.parse(url));
       
@@ -218,10 +219,10 @@ class NozzleReadingRepository {
       // Add content type to header (some servers require this explicitly)
       // For multipart requests, don't set Content-Type as it will be set automatically with boundary
       
-      // Print headers for debugging
-      print('DEBUG: Request headers:');
+      // debugPrint headers for debugging
+      debugPrint('DEBUG: Request headers:');
       request.headers.forEach((key, value) {
-        print('DEBUG: $key: ${key.toLowerCase() == 'authorization' ? 'Bearer [token hidden]' : value}');
+        debugPrint('DEBUG: $key: ${key.toLowerCase() == 'authorization' ? 'Bearer [token hidden]' : value}');
       });
       
       // Add text fields to the request
@@ -236,7 +237,7 @@ class NozzleReadingRepository {
       if (imageFile.existsSync()) {
         // Read file as bytes
         final bytes = await imageFile.readAsBytes();
-        print('DEBUG: Image size: ${bytes.length} bytes');
+        debugPrint('DEBUG: Image size: ${bytes.length} bytes');
         final filename = imageFile.path.split('/').last;
         
         // Create a multipart file with correct MIME type
@@ -249,9 +250,9 @@ class NozzleReadingRepository {
         
         // Add file to the request
         request.files.add(imageUpload);
-        print('DEBUG: Image added to request: ${imageFile.path}');
+        debugPrint('DEBUG: Image added to request: ${imageFile.path}');
       } else {
-        print('DEBUG: ERROR - Image file does not exist: ${imageFile.path}');
+        debugPrint('DEBUG: ERROR - Image file does not exist: ${imageFile.path}');
         return ApiResponse<Map<String, dynamic>>(
           success: false,
           errorMessage: 'Image file not found or inaccessible',
@@ -259,40 +260,40 @@ class NozzleReadingRepository {
       }
       
       // Send the request
-      print('DEBUG: Sending multipart request...');
+      debugPrint('DEBUG: Sending multipart request...');
       final streamedResponse = await request.send();
       
       // Get response
       final response = await http.Response.fromStream(streamedResponse);
-      print('DEBUG: Response status code: ${response.statusCode}');
-      // print('DEBUG: Response headers: ${response.headers}');
-      print('DEBUG: Response body: ${response.body}');
+      debugPrint('DEBUG: Response status code: ${response.statusCode}');
+      // debugPrint('DEBUG: Response headers: ${response.headers}');
+      debugPrint('DEBUG: Response body: ${response.body}');
       
       // Process response
       if (response.statusCode == ApiConstants.statusOk || 
           response.statusCode == ApiConstants.statusCreated) {
         final jsonData = json.decode(response.body);
-        print('DEBUG: Successfully submitted reading');
+        debugPrint('DEBUG: Successfully submitted reading');
         return ApiResponse<Map<String, dynamic>>(
           success: true,
           data: jsonData,
         );
       } else if (response.statusCode == ApiConstants.statusForbidden) {
-        print('DEBUG: ERROR - Access forbidden (403). This usually indicates an authentication or permission issue.');
-        print('DEBUG: Check if token is valid and has correct permissions.');
+        debugPrint('DEBUG: ERROR - Access forbidden (403). This usually indicates an authentication or permission issue.');
+        debugPrint('DEBUG: Check if token is valid and has correct permissions.');
         
         // Try to decode token to check expiration
         try {
           final decodedToken = JwtDecoder.decode(token);
           if (decodedToken != null) {
-            print('DEBUG: Token contains claims: ${decodedToken.keys.toList()}');
+            debugPrint('DEBUG: Token contains claims: ${decodedToken.keys.toList()}');
             if (decodedToken.containsKey('exp')) {
               final expTimestamp = decodedToken['exp'] as int;
               final expDate = DateTime.fromMillisecondsSinceEpoch(expTimestamp * 1000);
               final now = DateTime.now();
-              print('DEBUG: Token expires at: $expDate, Current time: $now');
+              debugPrint('DEBUG: Token expires at: $expDate, Current time: $now');
               if (expDate.isBefore(now)) {
-                print('DEBUG: Token is expired. Please login again.');
+                debugPrint('DEBUG: Token is expired. Please login again.');
                 return ApiResponse<Map<String, dynamic>>(
                   success: false,
                   errorMessage: 'Your session has expired. Please login again.',
@@ -301,7 +302,7 @@ class NozzleReadingRepository {
             }
           }
         } catch (e) {
-          print('DEBUG: Error examining token: $e');
+          debugPrint('DEBUG: Error examining token: $e');
         }
         
         return ApiResponse<Map<String, dynamic>>(
@@ -318,15 +319,15 @@ class NozzleReadingRepository {
           errorDetail = response.body;
         }
         
-        print('DEBUG: ERROR - Failed to submit reading: ${response.statusCode} - $errorDetail');
+        debugPrint('DEBUG: ERROR - Failed to submit reading: ${response.statusCode} - $errorDetail');
         return ApiResponse<Map<String, dynamic>>(
           success: false,
           errorMessage: 'Failed to submit reading: ${response.statusCode} - $errorDetail',
         );
       }
     } catch (e, stackTrace) {
-      print('DEBUG: EXCEPTION when submitting nozzle reading: $e');
-      print('DEBUG: Stack trace: $stackTrace');
+      debugPrint('DEBUG: EXCEPTION when submitting nozzle reading: $e');
+      debugPrint('DEBUG: Stack trace: $stackTrace');
       return ApiResponse<Map<String, dynamic>>(
         success: false,
         errorMessage: 'Error: $e',
@@ -340,7 +341,7 @@ class NozzleReadingRepository {
     try {
       final url = '$baseUrl/api/EmployeeNozzleAssignments/employee/$employeeId';
       developer.log('NozzleReadingRepository: API URL: $url');
-      print('NozzleReadingRepository: API URL: $url');
+      debugPrint('NozzleReadingRepository: API URL: $url');
       
       final headers = await _getHeaders();
       developer.log('NozzleReadingRepository: Request headers: $headers');
@@ -352,20 +353,20 @@ class NozzleReadingRepository {
 
       developer.log('NozzleReadingRepository: Response status code: ${response.statusCode}');
       developer.log('NozzleReadingRepository: Response body: ${response.body}');
-      print('NozzleReadingRepository: Response status code: ${response.statusCode}');
-      print('NozzleReadingRepository: Response body length: ${response.body.length}');
+      debugPrint('NozzleReadingRepository: Response status code: ${response.statusCode}');
+      debugPrint('NozzleReadingRepository: Response body length: ${response.body.length}');
       
       if (response.statusCode == ApiConstants.statusOk) {
         final List<dynamic> jsonData = json.decode(response.body);
         developer.log('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
-        print('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
+        debugPrint('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
         
         final assignments = jsonData
             .map((data) => EmployeeNozzleAssignment.fromJson(data))
             .toList();
         
         developer.log('NozzleReadingRepository: Returning ${assignments.length} employee nozzle assignments');
-        print('NozzleReadingRepository: Returning ${assignments.length} employee nozzle assignments');
+        debugPrint('NozzleReadingRepository: Returning ${assignments.length} employee nozzle assignments');
         
         return ApiResponse<List<EmployeeNozzleAssignment>>(
           success: true,
@@ -374,8 +375,8 @@ class NozzleReadingRepository {
       } else {
         developer.log('NozzleReadingRepository: Error fetching employee nozzle assignments: ${response.statusCode}');
         developer.log('NozzleReadingRepository: Error response: ${response.body}');
-        print('NozzleReadingRepository: Error fetching employee nozzle assignments: ${response.statusCode}');
-        print('NozzleReadingRepository: Error response: ${response.body}');
+        debugPrint('NozzleReadingRepository: Error fetching employee nozzle assignments: ${response.statusCode}');
+        debugPrint('NozzleReadingRepository: Error response: ${response.body}');
         
         return ApiResponse<List<EmployeeNozzleAssignment>>(
           success: false,
@@ -384,7 +385,7 @@ class NozzleReadingRepository {
       }
     } catch (e) {
       developer.log('NozzleReadingRepository: Exception when fetching employee nozzle assignments: $e');
-      print('NozzleReadingRepository: Exception when fetching employee nozzle assignments: $e');
+      debugPrint('NozzleReadingRepository: Exception when fetching employee nozzle assignments: $e');
       
       return ApiResponse<List<EmployeeNozzleAssignment>>(
         success: false,
@@ -396,12 +397,12 @@ class NozzleReadingRepository {
   // Get nozzle readings by nozzle ID
   Future<ApiResponse<List<NozzleReading>>> getNozzleReadingsByNozzleId(String nozzleId) async {
     developer.log('NozzleReadingRepository: Getting nozzle readings for nozzle ID: $nozzleId');
-    print('NozzleReadingRepository: Getting nozzle readings for nozzle ID: $nozzleId');
+    debugPrint('NozzleReadingRepository: Getting nozzle readings for nozzle ID: $nozzleId');
     
     try {
       final url = ApiConstants.getNozzleReadingsByNozzleIdUrl(nozzleId);
       developer.log('NozzleReadingRepository: API URL: $url');
-      print('NozzleReadingRepository: API URL: $url');
+      debugPrint('NozzleReadingRepository: API URL: $url');
       
       final headers = await _getHeaders();
       developer.log('NozzleReadingRepository: Request headers: $headers');
@@ -413,20 +414,20 @@ class NozzleReadingRepository {
 
       developer.log('NozzleReadingRepository: Response status code: ${response.statusCode}');
       developer.log('NozzleReadingRepository: Response body: ${response.body}');
-      print('NozzleReadingRepository: Response status code: ${response.statusCode}');
-      print('NozzleReadingRepository: Response body length: ${response.body.length}');
+      debugPrint('NozzleReadingRepository: Response status code: ${response.statusCode}');
+      debugPrint('NozzleReadingRepository: Response body length: ${response.body.length}');
       
       if (response.statusCode == ApiConstants.statusOk) {
         final List<dynamic> jsonData = json.decode(response.body);
         developer.log('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
-        print('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
+        debugPrint('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
         
         final nozzleReadings = jsonData
             .map((data) => NozzleReading.fromJson(data))
             .toList();
         
         developer.log('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings');
-        print('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings');
+        debugPrint('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings');
         
         return ApiResponse<List<NozzleReading>>(
           success: true,
@@ -435,8 +436,8 @@ class NozzleReadingRepository {
       } else {
         developer.log('NozzleReadingRepository: Error fetching nozzle readings: ${response.statusCode}');
         developer.log('NozzleReadingRepository: Error response: ${response.body}');
-        print('NozzleReadingRepository: Error fetching nozzle readings: ${response.statusCode}');
-        print('NozzleReadingRepository: Error response: ${response.body}');
+        debugPrint('NozzleReadingRepository: Error fetching nozzle readings: ${response.statusCode}');
+        debugPrint('NozzleReadingRepository: Error response: ${response.body}');
         
         return ApiResponse<List<NozzleReading>>(
           success: false,
@@ -445,7 +446,7 @@ class NozzleReadingRepository {
       }
     } catch (e) {
       developer.log('NozzleReadingRepository: Exception when fetching nozzle readings: $e');
-      print('NozzleReadingRepository: Exception when fetching nozzle readings: $e');
+      debugPrint('NozzleReadingRepository: Exception when fetching nozzle readings: $e');
       
       return ApiResponse<List<NozzleReading>>(
         success: false,
@@ -457,12 +458,12 @@ class NozzleReadingRepository {
   // Get nozzle readings by shift ID
   Future<ApiResponse<List<NozzleReading>>> getNozzleReadingsByShiftId(String shiftId) async {
     developer.log('NozzleReadingRepository: Getting nozzle readings for shift ID: $shiftId');
-    print('NozzleReadingRepository: Getting nozzle readings for shift ID: $shiftId');
+    debugPrint('NozzleReadingRepository: Getting nozzle readings for shift ID: $shiftId');
     
     try {
       final url = '${ApiConstants.baseUrl}/api/NozzleReadings/ByShift/$shiftId';
       developer.log('NozzleReadingRepository: API URL: $url');
-      print('NozzleReadingRepository: API URL: $url');
+      debugPrint('NozzleReadingRepository: API URL: $url');
       
       final headers = await _getHeaders();
       developer.log('NozzleReadingRepository: Request headers: $headers');
@@ -474,20 +475,20 @@ class NozzleReadingRepository {
 
       developer.log('NozzleReadingRepository: Response status code: ${response.statusCode}');
       developer.log('NozzleReadingRepository: Response body: ${response.body}');
-      print('NozzleReadingRepository: Response status code: ${response.statusCode}');
-      print('NozzleReadingRepository: Response body length: ${response.body.length}');
+      debugPrint('NozzleReadingRepository: Response status code: ${response.statusCode}');
+      debugPrint('NozzleReadingRepository: Response body length: ${response.body.length}');
       
       if (response.statusCode == ApiConstants.statusOk) {
         final List<dynamic> jsonData = json.decode(response.body);
         developer.log('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
-        print('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
+        debugPrint('NozzleReadingRepository: Successfully parsed JSON data, count: ${jsonData.length}');
         
         final nozzleReadings = jsonData
             .map((data) => NozzleReading.fromJson(data))
             .toList();
         
         developer.log('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings by shift');
-        print('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings by shift');
+        debugPrint('NozzleReadingRepository: Returning ${nozzleReadings.length} nozzle readings by shift');
         
         return ApiResponse<List<NozzleReading>>(
           success: true,
@@ -496,8 +497,8 @@ class NozzleReadingRepository {
       } else {
         developer.log('NozzleReadingRepository: Error fetching nozzle readings by shift: ${response.statusCode}');
         developer.log('NozzleReadingRepository: Error response: ${response.body}');
-        print('NozzleReadingRepository: Error fetching nozzle readings by shift: ${response.statusCode}');
-        print('NozzleReadingRepository: Error response: ${response.body}');
+        debugPrint('NozzleReadingRepository: Error fetching nozzle readings by shift: ${response.statusCode}');
+        debugPrint('NozzleReadingRepository: Error response: ${response.body}');
         
         return ApiResponse<List<NozzleReading>>(
           success: false,
@@ -506,7 +507,7 @@ class NozzleReadingRepository {
       }
     } catch (e) {
       developer.log('NozzleReadingRepository: Exception when fetching nozzle readings by shift: $e');
-      print('NozzleReadingRepository: Exception when fetching nozzle readings by shift: $e');
+      debugPrint('NozzleReadingRepository: Exception when fetching nozzle readings by shift: $e');
       
       return ApiResponse<List<NozzleReading>>(
         success: false,
@@ -560,7 +561,7 @@ class NozzleReadingRepository {
         );
       }
     } catch (e) {
-      print('Error submitting reading: $e');
+      debugPrint('Error submitting reading: $e');
       return ApiResponse(
         success: false,
         errorMessage: 'Error: $e',
@@ -681,12 +682,12 @@ class NozzleReadingRepository {
   // Get the latest reading for a specific nozzle and reading type
   Future<ApiResponse<NozzleReading>> getLatestReading(String nozzleId, String readingType) async {
     developer.log('NozzleReadingRepository: Getting latest $readingType reading for nozzle ID: $nozzleId');
-    print('DEBUG: Getting latest $readingType reading for nozzle ID: $nozzleId');
+    debugPrint('DEBUG: Getting latest $readingType reading for nozzle ID: $nozzleId');
     
     try {
       final url = '$baseUrl/api/NozzleReadings/Latest/$nozzleId/$readingType';
       developer.log('NozzleReadingRepository: API URL: $url');
-      print('DEBUG: API URL: $url');
+      debugPrint('DEBUG: API URL: $url');
       
       final headers = await _getHeaders();
       final response = await http.get(
@@ -696,8 +697,8 @@ class NozzleReadingRepository {
 
       developer.log('NozzleReadingRepository: Response status code: ${response.statusCode}');
       developer.log('NozzleReadingRepository: Response body: ${response.body}');
-      print('DEBUG: Response status code: ${response.statusCode}');
-      print('DEBUG: Response body: ${response.body}');
+      debugPrint('DEBUG: Response status code: ${response.statusCode}');
+      debugPrint('DEBUG: Response body: ${response.body}');
       
       if (response.statusCode == ApiConstants.statusOk) {
         final jsonData = json.decode(response.body);
@@ -713,7 +714,7 @@ class NozzleReadingRepository {
         
         final nozzleReading = NozzleReading.fromJson(jsonData);
         developer.log('NozzleReadingRepository: Returning latest reading with value: ${nozzleReading.startReading}');
-        print('DEBUG: Returning latest reading with value: ${nozzleReading.startReading}');
+        debugPrint('DEBUG: Returning latest reading with value: ${nozzleReading.startReading}');
         
         return ApiResponse<NozzleReading>(
           success: true,
@@ -722,7 +723,7 @@ class NozzleReadingRepository {
       } else if (response.statusCode == ApiConstants.statusNotFound) {
         // 404 means no reading found, which is a valid response
         developer.log('NozzleReadingRepository: No reading found (404)');
-        print('DEBUG: No reading found (404)');
+        debugPrint('DEBUG: No reading found (404)');
         
         return ApiResponse<NozzleReading>(
           success: false,
@@ -731,8 +732,8 @@ class NozzleReadingRepository {
       } else {
         developer.log('NozzleReadingRepository: Error fetching latest reading: ${response.statusCode}');
         developer.log('NozzleReadingRepository: Error response: ${response.body}');
-        print('DEBUG: Error fetching latest reading: ${response.statusCode}');
-        print('DEBUG: Error response: ${response.body}');
+        debugPrint('DEBUG: Error fetching latest reading: ${response.statusCode}');
+        debugPrint('DEBUG: Error response: ${response.body}');
         
         return ApiResponse<NozzleReading>(
           success: false,
@@ -741,7 +742,7 @@ class NozzleReadingRepository {
       }
     } catch (e) {
       developer.log('NozzleReadingRepository: Exception when fetching latest reading: $e');
-      print('DEBUG: Exception when fetching latest reading: $e');
+      debugPrint('DEBUG: Exception when fetching latest reading: $e');
       
       return ApiResponse<NozzleReading>(
         success: false,
@@ -753,7 +754,7 @@ class NozzleReadingRepository {
   // Add a new method to check if a reading of specific type exists for the current day
   Future<ApiResponse<bool>> checkReadingExistsForToday(String nozzleId, String readingType) async {
     developer.log('NozzleReadingRepository: Checking if $readingType reading exists for nozzle $nozzleId today');
-    print('DEBUG: Checking if $readingType reading exists for nozzle $nozzleId today');
+    debugPrint('DEBUG: Checking if $readingType reading exists for nozzle $nozzleId today');
     
     try {
       final url = '$baseUrl/api/NozzleReadings/ByNozzle/$nozzleId';
@@ -789,7 +790,7 @@ class NozzleReadingRepository {
         
         final exists = existingReadings.isNotEmpty;
         developer.log('NozzleReadingRepository: $readingType reading for today exists: $exists');
-        print('DEBUG: $readingType reading for today exists: $exists');
+        debugPrint('DEBUG: $readingType reading for today exists: $exists');
         
         return ApiResponse<bool>(
           success: true,
@@ -797,7 +798,7 @@ class NozzleReadingRepository {
         );
       } else {
         developer.log('NozzleReadingRepository: Error checking readings: ${response.statusCode}');
-        print('DEBUG: Error checking readings: ${response.statusCode}');
+        debugPrint('DEBUG: Error checking readings: ${response.statusCode}');
         
         return ApiResponse<bool>(
           success: false,
@@ -806,7 +807,7 @@ class NozzleReadingRepository {
       }
     } catch (e) {
       developer.log('NozzleReadingRepository: Exception when checking readings: $e');
-      print('DEBUG: Exception when checking readings: $e');
+      debugPrint('DEBUG: Exception when checking readings: $e');
       
       return ApiResponse<bool>(
         success: false,
@@ -825,7 +826,7 @@ class NozzleReadingRepository {
     required String fuelTankId,
     required File imageFile,
   }) async {
-    print('DEBUG: Submitting start reading directly - exact Postman implementation');
+    debugPrint('DEBUG: Submitting start reading directly - exact Postman implementation');
     
     final token = await _getAuthToken();
     if (token == null) {
@@ -837,7 +838,7 @@ class NozzleReadingRepository {
     
     // Use exactly the endpoint that works in Postman
     final url = '$baseUrl/api/NozzleReadings/start';
-    print('DEBUG: Sending request to: $url');
+    debugPrint('DEBUG: Sending request to: $url');
     
     try {
       final request = http.MultipartRequest('POST', Uri.parse(url));
@@ -856,18 +857,18 @@ class NozzleReadingRepository {
       request.fields['PetrolPumpId'] = petrolPumpId;
       
       // Debug information
-      print('DEBUG: Request headers:');
+      debugPrint('DEBUG: Request headers:');
       request.headers.forEach((key, value) {
         if (key.toLowerCase() == 'authorization') {
-          print('DEBUG: $key: Bearer [token hidden]');
+          debugPrint('DEBUG: $key: Bearer [token hidden]');
         } else {
-          print('DEBUG: $key: $value');
+          debugPrint('DEBUG: $key: $value');
         }
       });
       
-      print('DEBUG: Request fields:');
+      debugPrint('DEBUG: Request fields:');
       request.fields.forEach((key, value) {
-        print('DEBUG: $key: $value');
+        debugPrint('DEBUG: $key: $value');
       });
       
       // Add image exactly as Postman would
@@ -881,7 +882,7 @@ class NozzleReadingRepository {
           contentType: MediaType('image', 'jpeg'),
         );
         request.files.add(imageUpload);
-        print('DEBUG: Added image: ${imageFile.path}');
+        debugPrint('DEBUG: Added image: ${imageFile.path}');
       } else {
         return ApiResponse<Map<String, dynamic>>(
           success: false,
@@ -890,20 +891,20 @@ class NozzleReadingRepository {
       }
       
       // Send the request directly
-      print('DEBUG: Sending request...');
+      debugPrint('DEBUG: Sending request...');
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       
-      print('DEBUG: Response status: ${response.statusCode}');
-      print('DEBUG: Response body: ${response.body}');
+      debugPrint('DEBUG: Response status: ${response.statusCode}');
+      debugPrint('DEBUG: Response body: ${response.body}');
       
       if (response.statusCode == 200 || response.statusCode == 201) {
         Map<String, dynamic> jsonData = {};
         try {
           jsonData = json.decode(response.body);
-          print('DEBUG: Successfully parsed JSON response');
+          debugPrint('DEBUG: Successfully parsed JSON response');
         } catch (e) {
-          print('DEBUG: Error parsing JSON response: $e');
+          debugPrint('DEBUG: Error parsing JSON response: $e');
         }
         return ApiResponse<Map<String, dynamic>>(
           success: true,
@@ -924,8 +925,8 @@ class NozzleReadingRepository {
         );
       }
     } catch (e, stackTrace) {
-      print('DEBUG: Exception during request: $e');
-      print('DEBUG: Stack trace: $stackTrace');
+      debugPrint('DEBUG: Exception during request: $e');
+      debugPrint('DEBUG: Stack trace: $stackTrace');
       return ApiResponse<Map<String, dynamic>>(
         success: false,
         errorMessage: 'Network error: $e',
@@ -1094,7 +1095,7 @@ class NozzleReadingRepository {
     try {
       final url = '${ApiConstants.baseUrl}/api/Employee';
       developer.log('NozzleReadingRepository: Getting all employees');
-      print('NozzleReadingRepository: Getting all employees from URL: $url');
+      debugPrint('NozzleReadingRepository: Getting all employees from URL: $url');
       
       final headers = await _getHeaders();
       final response = await http.get(
@@ -1102,37 +1103,37 @@ class NozzleReadingRepository {
         headers: headers,
       );
 
-      print('NozzleReadingRepository: Employee response status: ${response.statusCode}');
-      print('NozzleReadingRepository: Employee response body length: ${response.body.length}');
+      debugPrint('NozzleReadingRepository: Employee response status: ${response.statusCode}');
+      debugPrint('NozzleReadingRepository: Employee response body length: ${response.body.length}');
       
       if (response.statusCode == ApiConstants.statusOk) {
         try {
           // First try to parse as a List
           final dynamic jsonData = json.decode(response.body);
-          print('NozzleReadingRepository: Employee response parsed type: ${jsonData.runtimeType}');
+          debugPrint('NozzleReadingRepository: Employee response parsed type: ${jsonData.runtimeType}');
           
           if (jsonData is List) {
-            print('NozzleReadingRepository: Loaded ${jsonData.length} employees as List');
+            debugPrint('NozzleReadingRepository: Loaded ${jsonData.length} employees as List');
             return ApiResponse<dynamic>(
               success: true,
               data: jsonData,
             );
           } else if (jsonData is Map<String, dynamic>) {
-            print('NozzleReadingRepository: Loaded employees as Map with keys: ${jsonData.keys.join(", ")}');
+            debugPrint('NozzleReadingRepository: Loaded employees as Map with keys: ${jsonData.keys.join(", ")}');
             // Return the Map directly - we'll handle extraction in the UI
             return ApiResponse<dynamic>(
               success: true,
               data: jsonData,
             );
           } else {
-            print('NozzleReadingRepository: Unexpected employee data type: ${jsonData.runtimeType}');
+            debugPrint('NozzleReadingRepository: Unexpected employee data type: ${jsonData.runtimeType}');
             return ApiResponse<dynamic>(
               success: false,
               errorMessage: 'Unexpected response format',
             );
           }
         } catch (e) {
-          print('NozzleReadingRepository: Error parsing employee response: $e');
+          debugPrint('NozzleReadingRepository: Error parsing employee response: $e');
           developer.log('NozzleReadingRepository: Error parsing employee response: $e');
           return ApiResponse<dynamic>(
             success: false,
@@ -1141,7 +1142,7 @@ class NozzleReadingRepository {
         }
       } else {
         developer.log('NozzleReadingRepository: Error fetching employees: ${response.statusCode}');
-        print('NozzleReadingRepository: Error fetching employees: ${response.statusCode}');
+        debugPrint('NozzleReadingRepository: Error fetching employees: ${response.statusCode}');
         return ApiResponse<dynamic>(
           success: false,
           errorMessage: 'Failed to fetch employees: ${response.statusCode}',
@@ -1149,7 +1150,7 @@ class NozzleReadingRepository {
       }
     } catch (e) {
       developer.log('NozzleReadingRepository: Exception when fetching all employees: $e');
-      print('NozzleReadingRepository: Exception when fetching all employees: $e');
+      debugPrint('NozzleReadingRepository: Exception when fetching all employees: $e');
       return ApiResponse<dynamic>(
         success: false,
         errorMessage: 'Error: $e',

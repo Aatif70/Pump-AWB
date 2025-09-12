@@ -19,6 +19,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class DailySalesReportScreen extends StatefulWidget {
   const DailySalesReportScreen({super.key});
@@ -1320,8 +1321,10 @@ class _DailySalesReportScreenState extends State<DailySalesReportScreen> {
   // Generate and preview PDF report
   Future<void> _generatePdfReport() async {
     if (_report == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No report data available for PDF export')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No report data available for PDF export',
+        isError: true,
       );
       return;
     }
@@ -1339,8 +1342,10 @@ class _DailySalesReportScreenState extends State<DailySalesReportScreen> {
         name: 'Daily_Sales_Report_${DateFormat('yyyy-MM-dd').format(_selectedDate)}',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate PDF: ${e.toString()}')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Failed to generate PDF: ${e.toString()}',
+        isError: true,
       );
     } finally {
       setState(() {
@@ -1352,8 +1357,10 @@ class _DailySalesReportScreenState extends State<DailySalesReportScreen> {
   // Share PDF report
   Future<void> _sharePdfReport() async {
     if (_report == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No report data available to share')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No report data available to share',
+        isError: true,
       );
       return;
     }
@@ -1376,8 +1383,10 @@ class _DailySalesReportScreenState extends State<DailySalesReportScreen> {
         text: 'Daily Sales Report - ${DateFormat('dd MMM yyyy').format(_selectedDate)}',
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share PDF: ${e.toString()}')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Failed to share PDF: ${e.toString()}',
+        isError: true,
       );
     } finally {
       setState(() {

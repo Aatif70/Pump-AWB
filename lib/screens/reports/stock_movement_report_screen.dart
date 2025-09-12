@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'dart:typed_data';
@@ -14,6 +15,7 @@ import '../../api/api_constants.dart';
 import '../../theme.dart';
 import '../../api/api_service.dart';
 import '../../models/api_response.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class StockMovementReportScreen extends StatefulWidget {
   const StockMovementReportScreen({super.key});
@@ -156,50 +158,110 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
               bottom: 25,
               top: 5,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () => _selectDate(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.primaryBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: Row(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final bool isNarrow = constraints.maxWidth < 360;
+                if (isNarrow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(Icons.calendar_today, size: 16),
-                      SizedBox(width: 8),
-                      Text(
-                        DateFormat('dd MMM yyyy').format(selectedDate),
-                        style: TextStyle(fontSize: 16),
+                      ElevatedButton(
+                        onPressed: () => _selectDate(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.primaryBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today, size: 16),
+                            SizedBox(width: 8),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(selectedDate),
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _fetchReportData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.primaryBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.refresh, size: 16),
+                            SizedBox(width: 8),
+                            Text('Refresh', style: TextStyle(fontSize: 16)),
+                          ],
+                        ),
                       ),
                     ],
-                  ),
-                ),
-                SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: _fetchReportData,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.primaryBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                  );
+                }
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => _selectDate(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.primaryBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today, size: 16),
+                            SizedBox(width: 8),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(selectedDate),
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.refresh, size: 16),
-                      SizedBox(width: 8),
-                      Text('Refresh', style: TextStyle(fontSize: 16)),
-                    ],
-                  ),
-                ),
-              ],
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _fetchReportData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppTheme.primaryBlue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.refresh, size: 16),
+                            SizedBox(width: 8),
+                            Text('Refresh', style: TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           Expanded(
@@ -293,13 +355,13 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
                   ),
                 ),
                 Divider(height: 24),
-                _buildSummaryItem('Total Capacity', '${summary['totalCapacity']} L'),
-                _buildSummaryItem('Opening Stock', '${summary['totalOpeningStock']} L'),
-                _buildSummaryItem('Closing Stock', '${summary['totalClosingStock']} L'),
-                _buildSummaryItem('Total Received', '${summary['totalReceived']} L'),
-                _buildSummaryItem('Total Dispensed', '${summary['totalDispensed']} L'),
-                _buildSummaryItem('Total Adjustments', '${summary['totalAdjustments']} L'),
-                _buildSummaryItem('Overall Stock %', '${summary['overallStockPercentage']}%'),
+                _buildSummaryItem('Total Capacity', '${(summary['totalCapacity'] as num).toDouble()} L'),
+                _buildSummaryItem('Opening Stock', '${(summary['totalOpeningStock'] as num).toDouble()} L'),
+                _buildSummaryItem('Closing Stock', '${(summary['totalClosingStock'] as num).toDouble()} L'),
+                _buildSummaryItem('Total Received', '${(summary['totalReceived'] as num).toDouble()} L'),
+                _buildSummaryItem('Total Dispensed', '${(summary['totalDispensed'] as num).toDouble()} L'),
+                _buildSummaryItem('Total Adjustments', '${(summary['totalAdjustments'] as num).toDouble()} L'),
+                _buildSummaryItem('Overall Stock %', '${(summary['overallStockPercentage'] as num).toDouble()}%'),
                 _buildSummaryItem('Tanks Requiring Attention', '${summary['tanksRequiringAttention']}'),
               ],
             ),
@@ -318,7 +380,7 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
         
         // Tank Movements List
         ...tankMovements.map<Widget>((tank) {
-          final stockPercentage = tank['stockPercentage'] as double;
+          final stockPercentage = (tank['stockPercentage'] as num).toDouble();
           Color stockColor;
           
           if (stockPercentage < 20) {
@@ -381,18 +443,18 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildTankDetail('Opening', '${tank['openingStock']} L'),
-                      _buildTankDetail('Received', '${tank['totalReceived']} L'),
-                      _buildTankDetail('Dispensed', '${tank['totalDispensed']} L'),
+                      _buildTankDetail('Opening', '${(tank['openingStock'] as num).toDouble()} L'),
+                      _buildTankDetail('Received', '${(tank['totalReceived'] as num).toDouble()} L'),
+                      _buildTankDetail('Dispensed', '${(tank['totalDispensed'] as num).toDouble()} L'),
                     ],
                   ),
                   SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildTankDetail('Adjustments', '${tank['adjustments']} L'),
-                      _buildTankDetail('Variance', '${tank['stockVariance']} L'),
-                      _buildTankDetail('Closing', '${tank['closingStock']} L'),
+                      _buildTankDetail('Adjustments', '${(tank['adjustments'] as num).toDouble()} L'),
+                      _buildTankDetail('Variance', '${(tank['stockVariance'] as num).toDouble()} L'),
+                      _buildTankDetail('Closing', '${(tank['closingStock'] as num).toDouble()} L'),
                     ],
                   ),
                   if (tank['alertLevel'] != 'Normal') ...[
@@ -540,8 +602,10 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
   // PDF Export functionality
   Future<void> _exportToPdf(BuildContext context) async {
     if (reportData == null || reportData!['data'] == null || reportData!['data'].isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No report data available for PDF export')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No report data available for PDF export',
+        isError: true,
       );
       return;
     }
@@ -552,11 +616,11 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
     
     // Show a notification that PDF generation has started
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Generating PDF report...'),
-          duration: Duration(seconds: 1),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Generating PDF report...',
+        isError: false,
+        duration: const Duration(seconds: 1),
       );
     }
     
@@ -600,8 +664,10 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to generate PDF: $e')),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Failed to generate PDF: $e',
+          isError: true,
         );
       }
     } finally {
@@ -752,7 +818,7 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
           
           ...List<pw.Widget>.generate(tankMovements.length, (index) {
             final tank = tankMovements[index];
-            final stockPercentage = tank['stockPercentage'] as double;
+            final stockPercentage = (tank['stockPercentage'] as num).toDouble();
             final PdfColor stockColor = stockPercentage < 20 
                 ? PdfColors.red 
                 : stockPercentage < 40 
@@ -812,18 +878,18 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildPdfTankDetail('Opening', '${tank['openingStock']} L'),
-                      _buildPdfTankDetail('Received', '${tank['totalReceived']} L'),
-                      _buildPdfTankDetail('Dispensed', '${tank['totalDispensed']} L'),
+                      _buildPdfTankDetail('Opening', '${(tank['openingStock'] as num).toDouble()} L'),
+                      _buildPdfTankDetail('Received', '${(tank['totalReceived'] as num).toDouble()} L'),
+                      _buildPdfTankDetail('Dispensed', '${(tank['totalDispensed'] as num).toDouble()} L'),
                     ],
                   ),
                   pw.SizedBox(height: 8),
                   pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildPdfTankDetail('Adjustments', '${tank['adjustments']} L'),
-                      _buildPdfTankDetail('Variance', '${tank['stockVariance']} L'),
-                      _buildPdfTankDetail('Closing', '${tank['closingStock']} L'),
+                      _buildPdfTankDetail('Adjustments', '${(tank['adjustments'] as num).toDouble()} L'),
+                      _buildPdfTankDetail('Variance', '${(tank['stockVariance'] as num).toDouble()} L'),
+                      _buildPdfTankDetail('Closing', '${(tank['closingStock'] as num).toDouble()} L'),
                     ],
                   ),
                   if (tank['alertLevel'] != 'Normal') ...[
@@ -947,8 +1013,10 @@ class _StockMovementReportScreenState extends State<StockMovementReportScreen> {
     
     if (result.status != ShareResultStatus.success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to share the PDF file')),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Failed to share the PDF file',
+          isError: true,
         );
       }
     }

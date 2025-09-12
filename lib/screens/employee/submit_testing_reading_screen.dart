@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../utils/shared_prefs.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class SubmitTestingReadingScreen extends StatefulWidget {
   final String? nozzleId;
@@ -74,11 +75,11 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
     _petrolPumpId = widget.petrolPumpId;
     _fuelTankId = widget.fuelTankId;
     
-    print('INIT_DEBUG: Initial values from widget:');
-    print('INIT_DEBUG: nozzleId: $_nozzleId');
-    print('INIT_DEBUG: shiftId: $_shiftId');
-    print('INIT_DEBUG: petrolPumpId: $_petrolPumpId');
-    print('INIT_DEBUG: fuelTankId: $_fuelTankId');
+    debugPrint('INIT_DEBUG: Initial values from widget:');
+    debugPrint('INIT_DEBUG: nozzleId: $_nozzleId');
+    debugPrint('INIT_DEBUG: shiftId: $_shiftId');
+    debugPrint('INIT_DEBUG: petrolPumpId: $_petrolPumpId');
+    debugPrint('INIT_DEBUG: fuelTankId: $_fuelTankId');
     
     // Get current employee ID
     await _getCurrentEmployeeId();
@@ -99,26 +100,26 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
 
   Future<void> _getCurrentEmployeeId() async {
     try {
-      print('DEBUG_EMPLOYEE: Getting current employee ID');
+      debugPrint('DEBUG_EMPLOYEE: Getting current employee ID');
       final prefs = await SharedPreferences.getInstance();
       _employeeId = prefs.getString('employeeId');
       
-      print('DEBUG_EMPLOYEE: From SharedPreferences: $_employeeId');
+      debugPrint('DEBUG_EMPLOYEE: From SharedPreferences: $_employeeId');
       
       // If not found in SharedPreferences, try to fetch from API
       if (_employeeId == null) {
-        print('DEBUG_EMPLOYEE: Not found in SharedPreferences, fetching from API');
+        debugPrint('DEBUG_EMPLOYEE: Not found in SharedPreferences, fetching from API');
         final empRepo = EmployeeRepository();
         final empResp = await empRepo.getCurrentEmployee();
         
         if (empResp.success && empResp.data != null) {
           _employeeId = empResp.data!.id;
-          print('DEBUG_EMPLOYEE: Successfully retrieved from API: $_employeeId');
+          debugPrint('DEBUG_EMPLOYEE: Successfully retrieved from API: $_employeeId');
           
           // Also get the petrol pump ID from the employee data
           if (_petrolPumpId == null && empResp.data!.petrolPumpId != null) {
             _petrolPumpId = empResp.data!.petrolPumpId;
-            print('DEBUG_EMPLOYEE: Got petrolPumpId from employee data: $_petrolPumpId');
+            debugPrint('DEBUG_EMPLOYEE: Got petrolPumpId from employee data: $_petrolPumpId');
           }
           
           // Save for future use
@@ -127,11 +128,11 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
             await prefs.setString('employee_petrol_pump_id', _petrolPumpId!);
           }
         } else {
-          print('DEBUG_EMPLOYEE: Failed to get from API: ${empResp.errorMessage}');
+          debugPrint('DEBUG_EMPLOYEE: Failed to get from API: ${empResp.errorMessage}');
         }
       }
     } catch (e) {
-      print('DEBUG_EMPLOYEE: Error getting current employee ID: $e');
+      debugPrint('DEBUG_EMPLOYEE: Error getting current employee ID: $e');
       setState(() { _error = 'Failed to get employee data'; });
     }
   }
@@ -143,17 +144,17 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
       // Try multiple possible keys for petrol pump ID
       if (_petrolPumpId == null || _petrolPumpId!.isEmpty) {
         _petrolPumpId = prefs.getString('employee_petrol_pump_id');
-        print('DEBUG_PREFS: petrolPumpId from employee_petrol_pump_id: $_petrolPumpId');
+        debugPrint('DEBUG_PREFS: petrolPumpId from employee_petrol_pump_id: $_petrolPumpId');
       }
       
       if (_petrolPumpId == null || _petrolPumpId!.isEmpty) {
         _petrolPumpId = prefs.getString('petrol_pump_id');
-        print('DEBUG_PREFS: petrolPumpId from petrol_pump_id: $_petrolPumpId');
+        debugPrint('DEBUG_PREFS: petrolPumpId from petrol_pump_id: $_petrolPumpId');
       }
       
       if (_petrolPumpId == null || _petrolPumpId!.isEmpty) {
         _petrolPumpId = await SharedPrefs.getPumpId();
-        print('DEBUG_PREFS: petrolPumpId from SharedPrefs.getPumpId(): $_petrolPumpId');
+        debugPrint('DEBUG_PREFS: petrolPumpId from SharedPrefs.getPumpId(): $_petrolPumpId');
       }
       
       // Load other values if not already set
@@ -161,20 +162,20 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
       _shiftId = _shiftId ?? prefs.getString('employee_shift_id');
       _fuelTankId = _fuelTankId ?? prefs.getString('employee_fuel_tank_id');
       
-      print('DEBUG_PREFS: Loaded from preferences:');
-      print('DEBUG_PREFS: nozzleId: $_nozzleId');
-      print('DEBUG_PREFS: shiftId: $_shiftId');
-      print('DEBUG_PREFS: fuelTankId: $_fuelTankId');
-      print('DEBUG_PREFS: petrolPumpId: $_petrolPumpId');
+      debugPrint('DEBUG_PREFS: Loaded from preferences:');
+      debugPrint('DEBUG_PREFS: nozzleId: $_nozzleId');
+      debugPrint('DEBUG_PREFS: shiftId: $_shiftId');
+      debugPrint('DEBUG_PREFS: fuelTankId: $_fuelTankId');
+      debugPrint('DEBUG_PREFS: petrolPumpId: $_petrolPumpId');
     } catch (e) {
-      print('Error loading from preferences: $e');
+      debugPrint('Error loading from preferences: $e');
     }
   }
   
   // Fetch petrol pump ID from API if not found in SharedPreferences
   Future<void> _fetchPetrolPumpId() async {
     try {
-      print('DEBUG_PUMP: Fetching petrol pump ID from API');
+      debugPrint('DEBUG_PUMP: Fetching petrol pump ID from API');
       
       if (_employeeId != null) {
         final empRepo = EmployeeRepository();
@@ -184,19 +185,19 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
           setState(() {
             _petrolPumpId = empResp.data!.petrolPumpId;
           });
-          print('DEBUG_PUMP: Got petrolPumpId from API: $_petrolPumpId');
+          debugPrint('DEBUG_PUMP: Got petrolPumpId from API: $_petrolPumpId');
           
           // Save for future use
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('employee_petrol_pump_id', _petrolPumpId!);
         } else {
-          print('DEBUG_PUMP: Failed to get petrolPumpId from API');
+          debugPrint('DEBUG_PUMP: Failed to get petrolPumpId from API');
         }
       } else {
-        print('DEBUG_PUMP: Cannot fetch petrolPumpId, employeeId is null');
+        debugPrint('DEBUG_PUMP: Cannot fetch petrolPumpId, employeeId is null');
       }
     } catch (e) {
-      print('DEBUG_PUMP: Error fetching petrol pump ID: $e');
+      debugPrint('DEBUG_PUMP: Error fetching petrol pump ID: $e');
     }
   }
   
@@ -209,23 +210,23 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
         await prefs.setString('employee_shift_id', _shiftId!);
         await prefs.setString('employee_fuel_tank_id', _fuelTankId!);
         await prefs.setString('employee_petrol_pump_id', _petrolPumpId!);
-        print('DEBUG_SAVE: Saved all IDs to preferences');
+        debugPrint('DEBUG_SAVE: Saved all IDs to preferences');
       } else {
-        print('DEBUG_SAVE: Not saving to preferences, some IDs are null:');
-        print('DEBUG_SAVE: nozzleId: $_nozzleId');
-        print('DEBUG_SAVE: shiftId: $_shiftId');
-        print('DEBUG_SAVE: fuelTankId: $_fuelTankId');
-        print('DEBUG_SAVE: petrolPumpId: $_petrolPumpId');
+        debugPrint('DEBUG_SAVE: Not saving to preferences, some IDs are null:');
+        debugPrint('DEBUG_SAVE: nozzleId: $_nozzleId');
+        debugPrint('DEBUG_SAVE: shiftId: $_shiftId');
+        debugPrint('DEBUG_SAVE: fuelTankId: $_fuelTankId');
+        debugPrint('DEBUG_SAVE: petrolPumpId: $_petrolPumpId');
       }
     } catch (e) {
-      print('Error saving to preferences: $e');
+      debugPrint('Error saving to preferences: $e');
     }
   }
 
   // Fetch employee nozzle assignments for dropdown
   Future<void> _fetchNozzleAssignments() async {
     if (_employeeId == null) {
-      print('DEBUG_NOZZLE: employeeId is null, skipping nozzle assignment fetch');
+      debugPrint('DEBUG_NOZZLE: employeeId is null, skipping nozzle assignment fetch');
       return;
     }
     
@@ -234,7 +235,7 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
     });
     
     try {
-      print('DEBUG_NOZZLE: Fetching nozzle assignments for employeeId: $_employeeId');
+      debugPrint('DEBUG_NOZZLE: Fetching nozzle assignments for employeeId: $_employeeId');
       final response = await NozzleAssignmentRepository()
           .getEmployeeNozzleAssignments(_employeeId!);
       
@@ -243,25 +244,25 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
         
         if (response.success && response.data != null) {
           _nozzleAssignments = response.data!;
-          print('DEBUG_NOZZLE: Loaded ${_nozzleAssignments.length} nozzle assignments');
+          debugPrint('DEBUG_NOZZLE: Loaded ${_nozzleAssignments.length} nozzle assignments');
           
           if (_nozzleAssignments.isEmpty) {
-            print('DEBUG_NOZZLE: No nozzle assignments found');
+            debugPrint('DEBUG_NOZZLE: No nozzle assignments found');
           } else {
-            // Print some info about each assignment
+            // debugPrint some info about each assignment
             for (int i = 0; i < _nozzleAssignments.length; i++) {
               final assignment = _nozzleAssignments[i];
-              print('DEBUG_NOZZLE: Assignment $i:');
-              print('DEBUG_NOZZLE:   nozzleId: ${assignment.nozzleId}');
-              print('DEBUG_NOZZLE:   shiftId: ${assignment.shiftId}');
-              print('DEBUG_NOZZLE:   fuelTankId: ${assignment.fuelTankId}');
-              print('DEBUG_NOZZLE:   petrolPumpId: ${assignment.petrolPumpId}');
+              debugPrint('DEBUG_NOZZLE: Assignment $i:');
+              debugPrint('DEBUG_NOZZLE:   nozzleId: ${assignment.nozzleId}');
+              debugPrint('DEBUG_NOZZLE:   shiftId: ${assignment.shiftId}');
+              debugPrint('DEBUG_NOZZLE:   fuelTankId: ${assignment.fuelTankId}');
+              debugPrint('DEBUG_NOZZLE:   petrolPumpId: ${assignment.petrolPumpId}');
               
               // If we find a valid petrolPumpId and we don't have one yet, use it
               if (_petrolPumpId == null || _petrolPumpId!.isEmpty) {
                 if (assignment.petrolPumpId != null && assignment.petrolPumpId!.isNotEmpty) {
                   _petrolPumpId = assignment.petrolPumpId;
-                  print('DEBUG_NOZZLE: Using petrolPumpId from assignment: $_petrolPumpId');
+                  debugPrint('DEBUG_NOZZLE: Using petrolPumpId from assignment: $_petrolPumpId');
                 }
               }
             }
@@ -269,30 +270,30 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
           
           // If we already have a nozzle ID, select the matching assignment
           if (_nozzleId != null && _nozzleAssignments.isNotEmpty) {
-            print('DEBUG_NOZZLE: Looking for assignment with nozzleId: $_nozzleId');
+            debugPrint('DEBUG_NOZZLE: Looking for assignment with nozzleId: $_nozzleId');
             _selectedNozzleAssignment = _nozzleAssignments.firstWhere(
               (assignment) => assignment.nozzleId == _nozzleId,
               orElse: () => _nozzleAssignments.first,
             );
-            print('DEBUG_NOZZLE: Selected assignment with nozzleId: ${_selectedNozzleAssignment!.nozzleId}');
+            debugPrint('DEBUG_NOZZLE: Selected assignment with nozzleId: ${_selectedNozzleAssignment!.nozzleId}');
             _updateSelectedNozzleData();
           } 
           // Otherwise select the first assignment by default
           else if (_nozzleAssignments.isNotEmpty) {
-            print('DEBUG_NOZZLE: No nozzleId provided, selecting first assignment');
+            debugPrint('DEBUG_NOZZLE: No nozzleId provided, selecting first assignment');
             _selectedNozzleAssignment = _nozzleAssignments.first;
-            print('DEBUG_NOZZLE: Selected first assignment with nozzleId: ${_selectedNozzleAssignment!.nozzleId}');
+            debugPrint('DEBUG_NOZZLE: Selected first assignment with nozzleId: ${_selectedNozzleAssignment!.nozzleId}');
             _updateSelectedNozzleData();
           }
         } else {
-          print('DEBUG_NOZZLE: Error loading nozzle assignments: ${response.errorMessage}');
+          debugPrint('DEBUG_NOZZLE: Error loading nozzle assignments: ${response.errorMessage}');
         }
       });
     } catch (e) {
       setState(() {
         _loadingNozzleAssignments = false;
       });
-      print('DEBUG_NOZZLE: Exception in _fetchNozzleAssignments: $e');
+      debugPrint('DEBUG_NOZZLE: Exception in _fetchNozzleAssignments: $e');
     }
   }
   
@@ -311,12 +312,12 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
         }
       });
       
-      // Debug prints
-      print('DEBUG_SELECTION: Updated nozzle data:');
-      print('DEBUG_SELECTION: nozzleId: $_nozzleId');
-      print('DEBUG_SELECTION: shiftId: $_shiftId');
-      print('DEBUG_SELECTION: fuelTankId: $_fuelTankId');
-      print('DEBUG_SELECTION: petrolPumpId: $_petrolPumpId');
+      // Debug debugPrints
+      debugPrint('DEBUG_SELECTION: Updated nozzle data:');
+      debugPrint('DEBUG_SELECTION: nozzleId: $_nozzleId');
+      debugPrint('DEBUG_SELECTION: shiftId: $_shiftId');
+      debugPrint('DEBUG_SELECTION: fuelTankId: $_fuelTankId');
+      debugPrint('DEBUG_SELECTION: petrolPumpId: $_petrolPumpId');
       
       // Save to preferences
       _saveToPreferences();
@@ -332,13 +333,13 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
     bool hasMissingFields = false;
     
     if (_employeeId == null || _employeeId!.isEmpty) {
-      print('DEBUG_SUBMIT: employeeId is missing, trying to fetch it again');
+      debugPrint('DEBUG_SUBMIT: employeeId is missing, trying to fetch it again');
       await _getCurrentEmployeeId();
       hasMissingFields = _employeeId == null || _employeeId!.isEmpty;
     }
     
     if (_petrolPumpId == null || _petrolPumpId!.isEmpty) {
-      print('DEBUG_SUBMIT: petrolPumpId is missing, trying to fetch it again');
+      debugPrint('DEBUG_SUBMIT: petrolPumpId is missing, trying to fetch it again');
       await _fetchPetrolPumpId();
       hasMissingFields = _petrolPumpId == null || _petrolPumpId!.isEmpty;
     }
@@ -347,11 +348,11 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
         _shiftId == null || _shiftId!.isEmpty || 
         _petrolPumpId == null || _petrolPumpId!.isEmpty) {
       
-      print('DEBUG_SUBMIT: Missing required fields:');
-      print('DEBUG_SUBMIT: employeeId: $_employeeId');
-      print('DEBUG_SUBMIT: nozzleId: $_nozzleId');
-      print('DEBUG_SUBMIT: shiftId: $_shiftId');
-      print('DEBUG_SUBMIT: petrolPumpId: $_petrolPumpId');
+      debugPrint('DEBUG_SUBMIT: Missing required fields:');
+      debugPrint('DEBUG_SUBMIT: employeeId: $_employeeId');
+      debugPrint('DEBUG_SUBMIT: nozzleId: $_nozzleId');
+      debugPrint('DEBUG_SUBMIT: shiftId: $_shiftId');
+      debugPrint('DEBUG_SUBMIT: petrolPumpId: $_petrolPumpId');
       
       if (hasMissingFields) {
         setState(() { 
@@ -367,12 +368,12 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
     });
 
     try {
-      print('DEBUG_SUBMIT: Creating GovernmentTesting object with:');
-      print('DEBUG_SUBMIT: employeeId: $_employeeId');
-      print('DEBUG_SUBMIT: nozzleId: $_nozzleId');
-      print('DEBUG_SUBMIT: petrolPumpId: $_petrolPumpId');
-      print('DEBUG_SUBMIT: shiftId: $_shiftId');
-      print('DEBUG_SUBMIT: testingLiters: ${_testingLitersController.text}');
+      debugPrint('DEBUG_SUBMIT: Creating GovernmentTesting object with:');
+      debugPrint('DEBUG_SUBMIT: employeeId: $_employeeId');
+      debugPrint('DEBUG_SUBMIT: nozzleId: $_nozzleId');
+      debugPrint('DEBUG_SUBMIT: petrolPumpId: $_petrolPumpId');
+      debugPrint('DEBUG_SUBMIT: shiftId: $_shiftId');
+      debugPrint('DEBUG_SUBMIT: testingLiters: ${_testingLitersController.text}');
       
       final testing = GovernmentTesting(
         employeeId: _employeeId!,
@@ -392,24 +393,22 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
         _notesController.clear();
         
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Testing data submitted successfully'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Testing data submitted successfully',
+            isError: false,
           );
           Navigator.pop(context);
         }
       } else {
-        print('DEBUG_SUBMIT: API response error: ${response.errorMessage}');
+        debugPrint('DEBUG_SUBMIT: API response error: ${response.errorMessage}');
         setState(() { 
           _error = response.errorMessage ?? 'Failed to submit testing data'; 
           _loading = false;
         });
       }
     } catch (e) {
-      print('DEBUG_SUBMIT: Exception: $e');
+      debugPrint('DEBUG_SUBMIT: Exception: $e');
       setState(() { 
         _error = e.toString(); 
         _loading = false;
@@ -454,13 +453,11 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
                     
                     // Show success message
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Data refreshed'),
-                        backgroundColor: Colors.green,
-                        behavior: SnackBarBehavior.floating,
-                        duration: Duration(seconds: 2),
-                      ),
+                    showAnimatedSnackBar(
+                      context: context,
+                      message: 'Data refreshed',
+                      isError: false,
+                      duration: const Duration(seconds: 2),
                     );
                   },
             ),
@@ -1227,26 +1224,15 @@ class _SubmitTestingReadingScreenState extends State<SubmitTestingReadingScreen>
   
   // Helper function to get color for fuel type
   Color _getFuelTypeColor(String fuelType) {
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.orange.shade800;
-      case 'premium':
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'premium diesel':
-        return Colors.deepPurple.shade800;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.indigo.shade700;
-      case 'bio-diesel':
-        return Colors.amber.shade800;
-      case 'electric':
-        return Colors.cyan.shade700;
-      default:
-        return Colors.blueGrey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    if (name == 'bio-diesel') return Colors.amber.shade800;
+    if (name == 'electric') return Colors.cyan.shade700;
+    return Colors.blueGrey.shade700;
   }
 } 

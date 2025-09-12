@@ -12,6 +12,7 @@ import '../../theme.dart';
 import '../../utils/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../screens/employee/shift_sales_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 
 class NozzleReadingScreen extends StatefulWidget {
@@ -145,7 +146,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
     });
     
     try {
-      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump(_petrolPumpId ?? '');
+      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump();
       
       if (response.success && response.data != null) {
         setState(() {
@@ -207,15 +208,17 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       
       // Show a helpful error message
       if (e.toString().contains('MissingPluginException')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Camera plugin not available. Try restarting the app or using a physical device.'),
-            duration: Duration(seconds: 5),
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Camera plugin not available. Try restarting the app or using a physical device.',
+          isError: true,
+          duration: const Duration(seconds: 5),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error capturing image: $e')),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Error capturing image: $e',
+          isError: true,
         );
       }
     }

@@ -19,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../api/nozzle_reading_repository.dart';
 import '../../models/nozzle_reading_model.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class SubmitSalesScreen extends StatefulWidget {
   final String? nozzleId;
@@ -142,7 +143,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       
       // If nozzle ID was passed directly but price is 0, fetch the price explicitly
       if (widget.nozzleId != null && _fuelPrice <= 0) {
-        print('DEBUG: Direct nozzle passed, fetching fuel price explicitly');
+        debugPrint('DEBUG: Direct nozzle passed, fetching fuel price explicitly');
         await _fetchCurrentFuelPrice();
       }
     }
@@ -161,7 +162,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       _nozzleId = _nozzleId ?? prefs.getString('employee_nozzle_id');
       _shiftId = _shiftId ?? prefs.getString('employee_shift_id');
     } catch (e) {
-      print('Error loading from preferences: $e');
+      debugPrint('Error loading from preferences: $e');
     }
   }
   
@@ -173,7 +174,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         await prefs.setString('employee_shift_id', _shiftId!);
       }
     } catch (e) {
-      print('Error saving to preferences: $e');
+      debugPrint('Error saving to preferences: $e');
     }
   }
 
@@ -197,15 +198,15 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         throw Exception('Invalid nozzle ID from assignment');
       }
       
-      print('Fetching details for nozzle ID: $_nozzleId');
+      debugPrint('Fetching details for nozzle ID: $_nozzleId');
       final nozzleResp = await NozzleRepository().getNozzleById(_nozzleId!);
       
       if (nozzleResp.data != null) {
-        print('Got nozzle data: ${nozzleResp.data!.toString()}');
+        debugPrint('Got nozzle data: ${nozzleResp.data!.toString()}');
         _fuelDispenserId = nozzleResp.data!.fuelDispenserUnitId;
-        print('Set fuel dispenser ID: $_fuelDispenserId');
+        debugPrint('Set fuel dispenser ID: $_fuelDispenserId');
       } else {
-        print('Failed to get nozzle data, trying alternate method');
+        debugPrint('Failed to get nozzle data, trying alternate method');
         // Fallback to getting all nozzles and finding the matching one
         final allNozzlesResp = await NozzleRepository().getAllNozzles();
         if (allNozzlesResp.data != null && allNozzlesResp.data!.isNotEmpty) {
@@ -221,7 +222,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
           
           if (matchingNozzle.id!.isNotEmpty) {
             _fuelDispenserId = matchingNozzle.fuelDispenserUnitId;
-            print('Found matching nozzle, fuel dispenser ID: $_fuelDispenserId');
+            debugPrint('Found matching nozzle, fuel dispenser ID: $_fuelDispenserId');
           } else {
             throw Exception('Could not find matching nozzle');
           }
@@ -237,7 +238,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       // Save to preferences for future use
       await _saveToPreferences();
     } catch (e) {
-      print('Error in _fetchAssignmentAndNozzle: $e');
+      debugPrint('Error in _fetchAssignmentAndNozzle: $e');
       // Set default values to prevent further errors
       _fuelDispenserId = '00000000-0000-0000-0000-000000000000';
       setState(() { _error = e.toString(); });
@@ -247,22 +248,22 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
 
   Future<void> _fetchMeterReadingsAndPrice() async {
     try {
-      print("DEBUG: Starting _fetchMeterReadingsAndPrice");
+      debugPrint("DEBUG: Starting _fetchMeterReadingsAndPrice");
       
       // First, check if we have the employee ID
       if (_employeeId == null) {
-        print("DEBUG: No employee ID available, can't fetch readings");
+        debugPrint("DEBUG: No employee ID available, can't fetch readings");
         return;
       }
       
-      print("DEBUG: Fetching nozzle readings for employee ID: $_employeeId");
+      debugPrint("DEBUG: Fetching nozzle readings for employee ID: $_employeeId");
       
       // Fetch readings from the new API endpoint
       final nozzleReadingRepo = NozzleReadingRepository();
       final readingsResp = await nozzleReadingRepo.getNozzleReadingsForEmployee(_employeeId!);
       
       if (readingsResp.success && readingsResp.data != null && readingsResp.data!.isNotEmpty) {
-        print("DEBUG: Received ${readingsResp.data!.length} nozzle readings");
+        debugPrint("DEBUG: Received ${readingsResp.data!.length} nozzle readings");
         
         final readings = readingsResp.data!;
         
@@ -271,14 +272,14 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         final todayStart = DateTime(today.year, today.month, today.day);
         final todayEnd = todayStart.add(Duration(days: 1));
         
-        print("DEBUG: Filtering for today's readings between $todayStart and $todayEnd");
-        print("DEBUG: Current nozzle ID: $_nozzleId");
+        debugPrint("DEBUG: Filtering for today's readings between $todayStart and $todayEnd");
+        debugPrint("DEBUG: Current nozzle ID: $_nozzleId");
         
-        // Print all readings for debugging
-        print("DEBUG: All readings received:");
+        // debugPrint all readings for debugging
+        debugPrint("DEBUG: All readings received:");
         for (int i = 0; i < readings.length; i++) {
           final reading = readings[i];
-          print("DEBUG: Reading #$i: " +
+          debugPrint("DEBUG: Reading #$i: " +
                 "ID: ${reading.nozzleReadingId}, " +
                 "NozzleID: ${reading.nozzleId}, " +
                 "Type: ${reading.readingType}, " +
@@ -291,24 +292,24 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
           final recordedDate = reading.recordedAt;
           final isToday = recordedDate.isAfter(todayStart) && recordedDate.isBefore(todayEnd);
           
-          print("DEBUG: Reading date: ${reading.recordedAt}, isToday: $isToday");
+          debugPrint("DEBUG: Reading date: ${reading.recordedAt}, isToday: $isToday");
           
           // Also check if this reading is for the selected nozzle
           final isMatchingNozzle = reading.nozzleId == _nozzleId;
           
-          print("DEBUG: Reading nozzleId: ${reading.nozzleId}, expected: $_nozzleId, isMatchingNozzle: $isMatchingNozzle");
+          debugPrint("DEBUG: Reading nozzleId: ${reading.nozzleId}, expected: $_nozzleId, isMatchingNozzle: $isMatchingNozzle");
           
           return isToday && isMatchingNozzle;
         }).toList();
         
-        print("DEBUG: Found ${todayReadings.length} readings for today and the selected nozzle");
+        debugPrint("DEBUG: Found ${todayReadings.length} readings for today and the selected nozzle");
         
-        // Print today's filtered readings for debugging
+        // debugPrint today's filtered readings for debugging
         if (todayReadings.isNotEmpty) {
-          print("DEBUG: Today's filtered readings:");
+          debugPrint("DEBUG: Today's filtered readings:");
           for (int i = 0; i < todayReadings.length; i++) {
             final reading = todayReadings[i];
-            print("DEBUG: Today's Reading #$i: " +
+            debugPrint("DEBUG: Today's Reading #$i: " +
                   "Type: ${reading.readingType}, " +
                   "Value: ${reading.meterReading}, " +
                   "Time: ${reading.recordedAt.hour}:${reading.recordedAt.minute}");
@@ -317,11 +318,11 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         
         if (todayReadings.isNotEmpty) {
           // Find start reading - handle potential case differences and variations
-          print("DEBUG: Looking for START reading among ${todayReadings.length} readings");
+          debugPrint("DEBUG: Looking for START reading among ${todayReadings.length} readings");
           
-          // Print all reading types for debugging
+          // debugPrint all reading types for debugging
           for (int i = 0; i < todayReadings.length; i++) {
-            print("DEBUG: Reading #$i type: '${todayReadings[i].readingType}' (lowercase: '${todayReadings[i].readingType.toLowerCase()}')");
+            debugPrint("DEBUG: Reading #$i type: '${todayReadings[i].readingType}' (lowercase: '${todayReadings[i].readingType.toLowerCase()}')");
           }
           
           // Try to find start reading with flexible matching
@@ -331,7 +332,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
                         reading.readingType.toLowerCase() == 'begin'
           ).toList();
           
-          print("DEBUG: Found ${startReadingCandidates.length} potential start readings");
+          debugPrint("DEBUG: Found ${startReadingCandidates.length} potential start readings");
           
           final startReading = startReadingCandidates.isNotEmpty
             ? startReadingCandidates.first
@@ -353,7 +354,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
               );
           
           // Find end reading with flexible matching
-          print("DEBUG: Looking for END reading");
+          debugPrint("DEBUG: Looking for END reading");
           final endReadingCandidates = todayReadings.where(
             (reading) => reading.readingType.toLowerCase().contains('end') ||
                         reading.readingType.toLowerCase() == 'end' ||
@@ -361,7 +362,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
                         reading.readingType.toLowerCase() == 'finish'
           ).toList();
           
-          print("DEBUG: Found ${endReadingCandidates.length} potential end readings");
+          debugPrint("DEBUG: Found ${endReadingCandidates.length} potential end readings");
           
           final endReading = endReadingCandidates.isNotEmpty
             ? endReadingCandidates.first
@@ -382,8 +383,8 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
                 dispenserNumber: '',
               );
           
-          print("DEBUG: Selected Start reading: ID=${startReading.nozzleReadingId}, Type=${startReading.readingType}, Value=${startReading.meterReading}");
-          print("DEBUG: Selected End reading: ID=${endReading.nozzleReadingId}, Type=${endReading.readingType}, Value=${endReading.meterReading}");
+          debugPrint("DEBUG: Selected Start reading: ID=${startReading.nozzleReadingId}, Type=${startReading.readingType}, Value=${startReading.meterReading}");
+          debugPrint("DEBUG: Selected End reading: ID=${endReading.nozzleReadingId}, Type=${endReading.readingType}, Value=${endReading.meterReading}");
           
           setState(() {
             _startReading = startReading.meterReading;
@@ -391,46 +392,42 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
             
             // Calculate liters sold and update the controller
             double litersSold = _endReading - _startReading;
-            print("DEBUG: Calculated liters sold: $litersSold from $_endReading - $_startReading");
+            debugPrint("DEBUG: Calculated liters sold: $litersSold from $_endReading - $_startReading");
             
             if (litersSold > 0) {
               // Update the controller - this will automatically trigger the listener
               // which will calculate the expected amount in real-time
               _litersSoldController.text = litersSold.toStringAsFixed(2);
-              print("DEBUG: Updated liters sold text field to: ${_litersSoldController.text}");
+              debugPrint("DEBUG: Updated liters sold text field to: ${_litersSoldController.text}");
             } else {
-              print("DEBUG: Liters sold is not positive, not updating field: $litersSold");
+              debugPrint("DEBUG: Liters sold is not positive, not updating field: $litersSold");
             }
           });
           
           // Show a snackbar indicating meter readings loaded successfully
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Meter readings loaded: Start ${_startReading.toStringAsFixed(2)} - End ${_endReading.toStringAsFixed(2)}'),
-                backgroundColor: Colors.blue.shade700,
-                behavior: SnackBarBehavior.floating,
-                duration: Duration(seconds: 2),
-              ),
+            showAnimatedSnackBar(
+              context: context,
+              message: 'Meter readings loaded: Start ${_startReading.toStringAsFixed(2)} - End ${_endReading.toStringAsFixed(2)}',
+              isError: false,
+              duration: const Duration(seconds: 2),
             );
           }
         } else {
-          print("DEBUG: No readings found for today and the selected nozzle");
+          debugPrint("DEBUG: No readings found for today and the selected nozzle");
           
           // No readings found for today
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('No meter readings found for today. Please enter values manually.'),
-                backgroundColor: Colors.orange.shade700,
-                behavior: SnackBarBehavior.floating,
-                duration: Duration(seconds: 3),
-              ),
+            showAnimatedSnackBar(
+              context: context,
+              message: 'No meter readings found for today. Please enter values manually.',
+              isError: true,
+              duration: const Duration(seconds: 3),
             );
           }
         }
       } else {
-        print("DEBUG: No readings found or API error: ${readingsResp.errorMessage}");
+        debugPrint("DEBUG: No readings found or API error: ${readingsResp.errorMessage}");
         
         // No readings found
         if (mounted) {
@@ -459,7 +456,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         }
       }
     } catch (e) {
-      print('Error fetching readings or price: $e');
+      debugPrint('Error fetching readings or price: $e');
       
       // Show error message
       if (mounted) {
@@ -481,7 +478,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       if (_fuelPrice > 0 && liters > 0) {
         setState(() {
           _expectedAmount = liters * _fuelPrice;
-          print('DEBUG: Real-time calculation - Liters: $liters × Price: ₹${_fuelPrice.toStringAsFixed(2)} = Expected: ₹${_expectedAmount.toStringAsFixed(2)}');
+          debugPrint('DEBUG: Real-time calculation - Liters: $liters × Price: ₹${_fuelPrice.toStringAsFixed(2)} = Expected: ₹${_expectedAmount.toStringAsFixed(2)}');
           
           // If total amount field is empty or zero, auto-populate with expected amount
           if (_totalAmountController.text.isEmpty || (double.tryParse(_totalAmountController.text) ?? 0) == 0) {
@@ -493,7 +490,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         _calculateVariance();
       }
     } catch (e) {
-      print('Error calculating expected amount: $e');
+      debugPrint('Error calculating expected amount: $e');
     }
   }
 
@@ -504,7 +501,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         _variance = enteredTotal - _expectedAmount;
         double variancePercentage = _expectedAmount > 0 ? (_variance / _expectedAmount) * 100 : 0;
         
-        print('DEBUG: Expected: $_expectedAmount, Entered: $enteredTotal, Variance: $_variance, Percentage: ${variancePercentage.toStringAsFixed(2)}%');
+        debugPrint('DEBUG: Expected: $_expectedAmount, Entered: $enteredTotal, Variance: $_variance, Percentage: ${variancePercentage.toStringAsFixed(2)}%');
         
         setState(() {
           // Consider very small differences (less than ₹1) as not having variance
@@ -518,7 +515,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         });
       }
     } catch (e) {
-      print('Error calculating variance: $e');
+      debugPrint('Error calculating variance: $e');
     }
   }
 
@@ -541,7 +538,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
     final repo = ShiftSalesRepository();
     
     try {
-      print("SUBMIT_DEBUG: Starting submission process");
+      debugPrint("SUBMIT_DEBUG: Starting submission process");
       
       // Get petrol pump ID and fuel type ID from selected nozzle assignment
       String? petrolPumpId;
@@ -549,42 +546,42 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       String? fuelTankId;
       
       if (_selectedNozzleAssignment != null) {
-        print("SUBMIT_DEBUG: Using selected nozzle assignment");
+        debugPrint("SUBMIT_DEBUG: Using selected nozzle assignment");
         fuelTypeId = _selectedNozzleAssignment!.fuelTypeId;
         petrolPumpId = _selectedNozzleAssignment!.petrolPumpId;
         fuelTankId = _selectedNozzleAssignment!.fuelTankId;
-        print("SUBMIT_DEBUG: Fuel Type ID from nozzle assignment: $fuelTypeId");
-        print("SUBMIT_DEBUG: Petrol Pump ID from nozzle assignment: $petrolPumpId");
-        print("SUBMIT_DEBUG: Fuel Tank ID from nozzle assignment: $fuelTankId");
+        debugPrint("SUBMIT_DEBUG: Fuel Type ID from nozzle assignment: $fuelTypeId");
+        debugPrint("SUBMIT_DEBUG: Petrol Pump ID from nozzle assignment: $petrolPumpId");
+        debugPrint("SUBMIT_DEBUG: Fuel Tank ID from nozzle assignment: $fuelTankId");
       }
       
       // Try to get petrol pump ID from repository if still null
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
         try {
-          print("SUBMIT_DEBUG: Attempting to get Petrol Pump ID from repository");
+          debugPrint("SUBMIT_DEBUG: Attempting to get Petrol Pump ID from repository");
           petrolPumpId = await repo.getPetrolPumpId();
-          print("SUBMIT_DEBUG: Petrol Pump ID from repository: $petrolPumpId");
+          debugPrint("SUBMIT_DEBUG: Petrol Pump ID from repository: $petrolPumpId");
         } catch (e) {
-          print("SUBMIT_DEBUG: Error getting Petrol Pump ID from repository: $e");
+          debugPrint("SUBMIT_DEBUG: Error getting Petrol Pump ID from repository: $e");
         }
       }
       
       // Fallback to preferences if still null
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
-        print("SUBMIT_DEBUG: Petrol Pump ID not found in repository, checking SharedPreferences");
+        debugPrint("SUBMIT_DEBUG: Petrol Pump ID not found in repository, checking SharedPreferences");
         final prefs = await SharedPreferences.getInstance();
         petrolPumpId = prefs.getString('petrol_pump_id') ?? prefs.getString('petrolPumpId');
-        print("SUBMIT_DEBUG: Petrol Pump ID from SharedPreferences: $petrolPumpId");
+        debugPrint("SUBMIT_DEBUG: Petrol Pump ID from SharedPreferences: $petrolPumpId");
       }
       
       // Hardcoded fallback if still null
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
-        print("SUBMIT_DEBUG: Using hardcoded Petrol Pump ID");
+        debugPrint("SUBMIT_DEBUG: Using hardcoded Petrol Pump ID");
         petrolPumpId = "c185d2dc-adfe-202b-5246-d1103ce7af4f";
       }
       
-      print("SUBMIT_DEBUG: Final Petrol Pump ID: $petrolPumpId");
-      print("SUBMIT_DEBUG: Final Fuel Type ID: $fuelTypeId");
+      debugPrint("SUBMIT_DEBUG: Final Petrol Pump ID: $petrolPumpId");
+      debugPrint("SUBMIT_DEBUG: Final Fuel Type ID: $fuelTypeId");
       
       // Get all the payment values as doubles
       final double cashAmount = double.tryParse(_cashAmountController.text) ?? 0;
@@ -598,17 +595,17 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       
       // Check if there's a mismatch between payment methods total and the total amount entered
       if ((calculatedTotal - submittedTotal).abs() > 0.01) {
-        print("SUBMIT_DEBUG: WARNING - Total amount (${submittedTotal.toStringAsFixed(2)}) does not match" +
+        debugPrint("SUBMIT_DEBUG: WARNING - Total amount (${submittedTotal.toStringAsFixed(2)}) does not match" +
               " sum of payment methods (${calculatedTotal.toStringAsFixed(2)})");
         
         // In case of mismatch, use the sum of payment methods as the total
-        print("SUBMIT_DEBUG: Adjusting total amount to match payment methods total");
+        debugPrint("SUBMIT_DEBUG: Adjusting total amount to match payment methods total");
         _totalAmountController.text = calculatedTotal.toStringAsFixed(2);
       }
       
       // Ensure fuel price is set
       if (_fuelPrice <= 0) {
-        print("SUBMIT_DEBUG: Warning - Fuel price is not set, using default value");
+        debugPrint("SUBMIT_DEBUG: Warning - Fuel price is not set, using default value");
         _fuelPrice = 1.0; // Fallback to prevent division by zero
       }
       
@@ -629,18 +626,18 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       );
       
       // Log the JSON that will be sent
-      print('SUBMIT_DEBUG: JSON payload: ${jsonEncode(sales.toJson())}');
+      debugPrint('SUBMIT_DEBUG: JSON payload: ${jsonEncode(sales.toJson())}');
       
       final res = await repo.submitShiftSales(sales);
       
-      print('SUBMIT_DEBUG: Response success: ${res.success}');
-      print('SUBMIT_DEBUG: Response error message: ${res.errorMessage}');
+      debugPrint('SUBMIT_DEBUG: Response success: ${res.success}');
+      debugPrint('SUBMIT_DEBUG: Response error message: ${res.errorMessage}');
       
       // If sales submission was successful and testing is enabled, submit testing data
       bool testingSubmissionSuccess = true;
       if (res.success && _isTestingEnabled) {
         try {
-          print('SUBMIT_DEBUG: Submitting government testing data');
+          debugPrint('SUBMIT_DEBUG: Submitting government testing data');
           
           // Make sure we have a valid testing volume
           final testingLiters = double.tryParse(_testingLitersController.text);
@@ -652,17 +649,17 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
           String? finalFuelTypeId = fuelTypeId;
           if ((finalFuelTypeId == null || finalFuelTypeId.isEmpty) && _selectedNozzleAssignment != null) {
             finalFuelTypeId = _selectedNozzleAssignment!.fuelTypeId;
-            print('SUBMIT_DEBUG: Using fuelTypeId from nozzle assignment: $finalFuelTypeId');
+            debugPrint('SUBMIT_DEBUG: Using fuelTypeId from nozzle assignment: $finalFuelTypeId');
           }
           
           // Ensure fuelTankId is properly formatted - null instead of empty string
           String? finalFuelTankId = null;
           if (fuelTankId != null && fuelTankId.isNotEmpty) {
             finalFuelTankId = fuelTankId;
-            print('SUBMIT_DEBUG: Using fuelTankId: $finalFuelTankId');
+            debugPrint('SUBMIT_DEBUG: Using fuelTankId: $finalFuelTankId');
           } else if (_selectedNozzleAssignment != null && _selectedNozzleAssignment!.fuelTankId != null) {
             finalFuelTankId = _selectedNozzleAssignment!.fuelTankId;
-            print('SUBMIT_DEBUG: Using fuelTankId from nozzle assignment: $finalFuelTankId');
+            debugPrint('SUBMIT_DEBUG: Using fuelTankId from nozzle assignment: $finalFuelTankId');
           }
           
           final testing = GovernmentTesting(
@@ -679,9 +676,9 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
           final testingRepo = GovernmentTestingRepository();
           final testingResponse = await testingRepo.submitGovernmentTesting(testing);
           
-          print('SUBMIT_DEBUG: Testing submission result: ${testingResponse.success}');
+          debugPrint('SUBMIT_DEBUG: Testing submission result: ${testingResponse.success}');
           if (!testingResponse.success) {
-            print('SUBMIT_DEBUG: Testing submission error: ${testingResponse.errorMessage}');
+            debugPrint('SUBMIT_DEBUG: Testing submission error: ${testingResponse.errorMessage}');
             testingSubmissionSuccess = false;
             
             // Show more specific error message for testing failure
@@ -697,7 +694,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
             }
           }
         } catch (e) {
-          print('SUBMIT_DEBUG: Error submitting testing data: $e');
+          debugPrint('SUBMIT_DEBUG: Error submitting testing data: $e');
           testingSubmissionSuccess = false;
           
           // Show error for exception during testing submission
@@ -718,7 +715,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       
       if (res.success) {
         // Show success snackbar before popping
-        print('SUBMIT_DEBUG: Submission successful');
+        debugPrint('SUBMIT_DEBUG: Submission successful');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -734,7 +731,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         );
         Navigator.pop(context, true);
       } else {
-        print('SUBMIT_DEBUG: Submission failed: ${res.errorMessage}');
+        debugPrint('SUBMIT_DEBUG: Submission failed: ${res.errorMessage}');
         setState(() { 
           _error = res.errorMessage ?? 'Unknown error occurred';
         });
@@ -747,9 +744,9 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         }
       }
     } catch (e) {
-      print('SUBMIT_DEBUG: Exception: $e');
+      debugPrint('SUBMIT_DEBUG: Exception: $e');
       if (e is Error) {
-        print('SUBMIT_DEBUG: Stack trace: ${e.stackTrace}');
+        debugPrint('SUBMIT_DEBUG: Stack trace: ${e.stackTrace}');
       }
       setState(() { 
         _loading = false;
@@ -776,7 +773,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       setState(() {});
     } catch (e) {
       // Just ignore calculation errors
-      print('Error calculating total: $e');
+      debugPrint('Error calculating total: $e');
     }
   }
   
@@ -1073,12 +1070,12 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         setState(() {
           _employeeId = empResp.data!.id;
         });
-        print('Current employee ID: $_employeeId');
+        debugPrint('Current employee ID: $_employeeId');
       } else {
-        print('Failed to get current employee: ${empResp.errorMessage}');
+        debugPrint('Failed to get current employee: ${empResp.errorMessage}');
       }
     } catch (e) {
-      print('Error getting current employee: $e');
+      debugPrint('Error getting current employee: $e');
     }
   }
   
@@ -1099,7 +1096,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
         
         if (response.success && response.data != null) {
           _nozzleAssignments = response.data!;
-          print('Loaded ${_nozzleAssignments.length} nozzle assignments');
+          debugPrint('Loaded ${_nozzleAssignments.length} nozzle assignments');
           
           // If we already have a nozzle ID, select the matching assignment
           if (_nozzleId != null && _nozzleAssignments.isNotEmpty) {
@@ -1114,14 +1111,14 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
             _updateSelectedNozzleData();
           }
         } else {
-          print('Error loading nozzle assignments: ${response.errorMessage}');
+          debugPrint('Error loading nozzle assignments: ${response.errorMessage}');
         }
       });
     } catch (e) {
       setState(() {
         _loadingNozzleAssignments = false;
       });
-      print('Exception in _fetchNozzleAssignments: $e');
+      debugPrint('Exception in _fetchNozzleAssignments: $e');
     }
   }
   
@@ -1146,7 +1143,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
           });
         }
       } catch (e) {
-        print('Error getting nozzle details: $e');
+        debugPrint('Error getting nozzle details: $e');
       }
       
       // Fetch meter readings and price for the selected nozzle
@@ -1172,13 +1169,13 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
     if (_nozzleId == null) return;
     
     try {
-      print('DEBUG: Fetching current fuel price for nozzle ID: $_nozzleId');
+      debugPrint('DEBUG: Fetching current fuel price for nozzle ID: $_nozzleId');
       
       // Add this section to directly get fuel type info from selectedNozzleAssignment
       if (_selectedNozzleAssignment != null) {
         // Override the FuelPriceRepository method to use fuel type from assignment
-        print('DEBUG: Using fuel type from selected nozzle assignment: ${_selectedNozzleAssignment!.fuelType}');
-        print('DEBUG: Using fuel type ID from selected nozzle assignment: ${_selectedNozzleAssignment!.fuelTypeId}');
+        debugPrint('DEBUG: Using fuel type from selected nozzle assignment: ${_selectedNozzleAssignment!.fuelType}');
+        debugPrint('DEBUG: Using fuel type ID from selected nozzle assignment: ${_selectedNozzleAssignment!.fuelTypeId}');
         
         // Modified approach: Get all fuel prices and find the matching one
         final allPricesResp = await FuelPriceRepository().getAllFuelPrices();
@@ -1191,20 +1188,20 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
           FuelPrice? matchingPriceByName;
           
           // Log all available prices for debugging
-          print('DEBUG: All available fuel prices:');
+          debugPrint('DEBUG: All available fuel prices:');
           for (var price in allPrices) {
-            print('DEBUG: Fuel Type: ${price.fuelType}, ID: ${price.fuelTypeId}, Price: ${price.price}');
+            debugPrint('DEBUG: Fuel Type: ${price.fuelType}, ID: ${price.fuelTypeId}, Price: ${price.price}');
             
             // Try to match by fuelTypeId
             if (price.fuelTypeId == _selectedNozzleAssignment!.fuelTypeId) {
               matchingPriceById = price;
-              print('DEBUG: Found matching price by ID: ${price.price} for ${price.fuelType}');
+              debugPrint('DEBUG: Found matching price by ID: ${price.price} for ${price.fuelType}');
             }
             
             // Also check for name match in the same loop
             if (price.fuelType?.toLowerCase() == _selectedNozzleAssignment!.fuelType.toLowerCase()) {
               matchingPriceByName = price;
-              print('DEBUG: Found matching price by name: ${price.price} for ${price.fuelType}');
+              debugPrint('DEBUG: Found matching price by name: ${price.price} for ${price.fuelType}');
             }
           }
           
@@ -1218,7 +1215,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
             if (matchingPriceById.fuelType?.toLowerCase() != _selectedNozzleAssignment!.fuelType.toLowerCase() &&
                 matchingPriceByName.fuelType?.toLowerCase() == _selectedNozzleAssignment!.fuelType.toLowerCase()) {
               matchingPrice = matchingPriceByName;
-              print('DEBUG: Overriding ID match with name match because fuel types match better.');
+              debugPrint('DEBUG: Overriding ID match with name match because fuel types match better.');
             }
           }
           
@@ -1226,7 +1223,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
           if (matchingPrice != null) {
             setState(() {
               _fuelPrice = matchingPrice!.price;
-              print('DEBUG: Using matched fuel price: ₹${_fuelPrice.toStringAsFixed(2)}');
+              debugPrint('DEBUG: Using matched fuel price: ₹${_fuelPrice.toStringAsFixed(2)}');
               
               // If liters already entered, calculate expected amount
               if (_litersSoldController.text.isNotEmpty) {
@@ -1259,7 +1256,7 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
       if (priceResp.success && priceResp.data != null) {
         setState(() {
           _fuelPrice = priceResp.data!.price;
-          print('DEBUG: Fetched current fuel price: ₹${_fuelPrice.toStringAsFixed(2)} for nozzle ID: $_nozzleId');
+          debugPrint('DEBUG: Fetched current fuel price: ₹${_fuelPrice.toStringAsFixed(2)} for nozzle ID: $_nozzleId');
           
           // If liters already entered, calculate expected amount
           if (_litersSoldController.text.isNotEmpty) {
@@ -1281,10 +1278,10 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
           );
         }
       } else {
-        print('DEBUG: Failed to get fuel price. Response status: ${priceResp.success}, Error: ${priceResp.errorMessage}');
+        debugPrint('DEBUG: Failed to get fuel price. Response status: ${priceResp.success}, Error: ${priceResp.errorMessage}');
       }
     } catch (e) {
-      print('Error fetching fuel price: $e');
+      debugPrint('Error fetching fuel price: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1605,27 +1602,16 @@ class _SubmitSalesScreenState extends State<SubmitSalesScreen> {
   
   // Helper function to get color for fuel type
   Color _getFuelTypeColor(String fuelType) {
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.orange.shade800;
-      case 'premium':
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'premium diesel':
-        return Colors.deepPurple.shade800;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.indigo.shade700;
-      case 'bio-diesel':
-        return Colors.amber.shade800;
-      case 'electric':
-        return Colors.cyan.shade700;
-      default:
-        return Colors.blueGrey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    if (name == 'bio-diesel') return Colors.amber.shade800;
+    if (name == 'electric') return Colors.cyan.shade700;
+    return Colors.blueGrey.shade700;
   }
 
   // Meter readings card

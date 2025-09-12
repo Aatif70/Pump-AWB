@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import '../models/daily_sales_report_model.dart';
 import '../utils/shared_prefs.dart';
@@ -93,12 +94,12 @@ class ReportingRepository {
   Future<ApiResponse<List<dynamic>>> getShiftsByPetrolPumpId(String petrolPumpId) async {
     try {
       developer.log('ReportingRepository: Fetching shifts for petrol pump: $petrolPumpId');
-      print('DEBUG: ReportingRepository - Fetching shifts for petrol pump ID: $petrolPumpId');
+      debugPrint('DEBUG: ReportingRepository - Fetching shifts for petrol pump ID: $petrolPumpId');
       
       // Get auth token
       final token = await SharedPrefs.getAuthToken();
       if (token == null) {
-        print('DEBUG: ReportingRepository - Authentication token is null');
+        debugPrint('DEBUG: ReportingRepository - Authentication token is null');
         return ApiResponse<List<dynamic>>(
           success: false,
           errorMessage: 'Authentication required',
@@ -122,7 +123,7 @@ class ReportingRepository {
       // Try each URL format
       for (int i = 0; i < urlFormats.length; i++) {
         final url = urlFormats[i];
-        print('DEBUG: ReportingRepository - Trying URL format ${i+1}: $url');
+        debugPrint('DEBUG: ReportingRepository - Trying URL format ${i+1}: $url');
         
         try {
           final response = await http.get(
@@ -130,40 +131,40 @@ class ReportingRepository {
             headers: headers,
           );
           
-          print('DEBUG: ReportingRepository - Format ${i+1} response status: ${response.statusCode}');
+          debugPrint('DEBUG: ReportingRepository - Format ${i+1} response status: ${response.statusCode}');
           
           if (response.statusCode == ApiConstants.statusOk) {
             try {
               final Map<String, dynamic> responseData = json.decode(response.body);
-              print('DEBUG: ReportingRepository - Format ${i+1} response body: ${response.body}');
+              debugPrint('DEBUG: ReportingRepository - Format ${i+1} response body: ${response.body}');
               
               if (responseData['success'] == true && responseData['data'] != null) {
-                print('DEBUG: ReportingRepository - Format ${i+1} SUCCESS! Shifts count: ${responseData['data'].length}');
+                debugPrint('DEBUG: ReportingRepository - Format ${i+1} SUCCESS! Shifts count: ${responseData['data'].length}');
                 return ApiResponse<List<dynamic>>(
                   success: true,
                   data: responseData['data'],
                 );
               } else {
-                print('DEBUG: ReportingRepository - Format ${i+1} had success=false or null data');
+                debugPrint('DEBUG: ReportingRepository - Format ${i+1} had success=false or null data');
               }
             } catch (e) {
-              print('DEBUG: ReportingRepository - Format ${i+1} JSON parsing error: $e');
+              debugPrint('DEBUG: ReportingRepository - Format ${i+1} JSON parsing error: $e');
             }
           }
         } catch (e) {
-          print('DEBUG: ReportingRepository - Format ${i+1} request error: $e');
+          debugPrint('DEBUG: ReportingRepository - Format ${i+1} request error: $e');
         }
       }
       
       // If we reach here, all URL formats failed
-      print('DEBUG: ReportingRepository - All URL formats failed');
+      debugPrint('DEBUG: ReportingRepository - All URL formats failed');
       return ApiResponse<List<dynamic>>(
         success: false,
         errorMessage: 'Failed to get shifts with all URL formats',
       );
     } catch (e) {
       developer.log('ReportingRepository: Exception getting shifts: $e');
-      print('DEBUG: ReportingRepository - Exception getting shifts: $e');
+      debugPrint('DEBUG: ReportingRepository - Exception getting shifts: $e');
       return ApiResponse<List<dynamic>>(
         success: false,
         errorMessage: 'Exception: $e',

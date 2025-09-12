@@ -40,9 +40,9 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
       final response = await _nozzleReadingRepository.getAllEmployees();
       
       // Add detailed debugging
-      print('Employee response success: ${response.success}');
-      print('Employee response data type: ${response.data.runtimeType}');
-      print('Employee response data: ${jsonEncode(response.data)}');
+      debugPrint('Employee response success: ${response.success}');
+      debugPrint('Employee response data type: ${response.data.runtimeType}');
+      debugPrint('Employee response data: ${jsonEncode(response.data)}');
       
       setState(() {
         _isLoadingEmployees = false;
@@ -50,13 +50,13 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
         if (response.success && response.data != null) {
           // Handle both cases: when data is a Map or a List
           if (response.data is List) {
-            print('Processing employees as List');
+            debugPrint('Processing employees as List');
             _employees = response.data!;
           } else if (response.data is Map<String, dynamic>) {
-            print('Processing employees as Map');
+            debugPrint('Processing employees as Map');
             // Try to extract employees list from the Map
             final map = response.data as Map<String, dynamic>;
-            print('Employees data is a Map. Keys: ${map.keys.join(", ")}');
+            debugPrint('Employees data is a Map. Keys: ${map.keys.join(", ")}');
             
             if (map.containsKey('employees')) {
               _employees = map['employees'] as List;
@@ -71,21 +71,21 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
                 );
                 
                 if (listEntry.value is List) {
-                  print('Using employees list found with key: ${listEntry.key}');
+                  debugPrint('Using employees list found with key: ${listEntry.key}');
                   _employees = listEntry.value as List;
                 } else {
-                  print('Could not find employees list in response');
+                  debugPrint('Could not find employees list in response');
                   // Use a mock employee as a fallback
                   _useMockEmployee();
                 }
               } catch (e) {
-                print('Error finding list in map: $e');
+                debugPrint('Error finding list in map: $e');
                 // Use a mock employee as a fallback
                 _useMockEmployee();
               }
             }
           } else {
-            print('Unexpected employees data type: ${response.data.runtimeType}');
+            debugPrint('Unexpected employees data type: ${response.data.runtimeType}');
             // Use a mock employee as a fallback
             _useMockEmployee();
           }
@@ -95,7 +95,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
             _useMockEmployee();
           } else {
             developer.log('AllReadingsByEmployeeScreen: Loaded ${_employees.length} employees');
-            print('Employees data: ${jsonEncode(_employees)}');
+            debugPrint('Employees data: ${jsonEncode(_employees)}');
             
             // Select the first employee by default if available
             _selectedEmployee = _employees.first;
@@ -104,7 +104,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
         } else {
           _errorMessage = response.errorMessage ?? 'Failed to load employees';
           developer.log('AllReadingsByEmployeeScreen: Error loading employees: $_errorMessage');
-          print('Error loading employees: $_errorMessage');
+          debugPrint('Error loading employees: $_errorMessage');
           
           // Use a mock employee as a fallback
           _useMockEmployee();
@@ -112,7 +112,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
       });
     } catch (e) {
       developer.log('AllReadingsByEmployeeScreen: Exception in _loadEmployees: $e');
-      print('Exception in _loadEmployees: $e');
+      debugPrint('Exception in _loadEmployees: $e');
       setState(() {
         _isLoadingEmployees = false;
         _errorMessage = 'Error: $e';
@@ -132,11 +132,11 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
     try {
       final response = await _nozzleReadingRepository.getNozzleReadingsForEmployee(employeeId);
       
-      // Fix the print statement to avoid encoding the entire ApiResponse object
-      print('API Response success for employee $employeeId: ${response.success}');
-      print('Response data available: ${response.data != null}');
+      // Fix the debugPrint statement to avoid encoding the entire ApiResponse object
+      debugPrint('API Response success for employee $employeeId: ${response.success}');
+      debugPrint('Response data available: ${response.data != null}');
       if (response.data != null) {
-        print('Response data count: ${response.data!.length}');
+        debugPrint('Response data count: ${response.data!.length}');
       }
       
       setState(() {
@@ -145,7 +145,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
         if (response.success && response.data != null) {
           // Handle both cases: when data is a Map or a List
           if (response.data is List) {
-            print('Parsing response data as List');
+            debugPrint('Parsing response data as List');
             final dataList = response.data as List;
             _readings = dataList.map((item) {
               // Check if item is already a NozzleReading or needs to be converted
@@ -158,7 +158,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
               }
             }).toList();
           } else if (response.data is Map) {
-            print('Parsing response data as Map');
+            debugPrint('Parsing response data as Map');
             // Check if the map contains a 'readings' key or similar that holds the actual list
             final map = response.data as Map<String, dynamic>;
             
@@ -192,7 +192,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
               );
               
               if (listEntry.value is List) {
-                print('Using list found with key: ${listEntry.key}');
+                debugPrint('Using list found with key: ${listEntry.key}');
                 final readingsList = listEntry.value as List;
                 _readings = readingsList.map((item) {
                   if (item is NozzleReading) {
@@ -208,21 +208,21 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
               }
             }
             
-            print('Successfully parsed ${_readings.length} readings');
+            debugPrint('Successfully parsed ${_readings.length} readings');
             developer.log('AllReadingsByEmployeeScreen: Loaded ${_readings.length} readings for employee $employeeId');
           } else {
             _errorMessage = response.errorMessage ?? 'Failed to load readings';
-            print('Error loading readings: $_errorMessage');
+            debugPrint('Error loading readings: $_errorMessage');
             developer.log('AllReadingsByEmployeeScreen: Error loading readings: $_errorMessage');
           }
         } else {
           _errorMessage = response.errorMessage ?? 'Failed to load readings';
-          print('Error loading readings: $_errorMessage');
+          debugPrint('Error loading readings: $_errorMessage');
           developer.log('AllReadingsByEmployeeScreen: Error loading readings: $_errorMessage');
         }
       });
     } catch (e) {
-      print('Exception in _loadReadingsByEmployee: $e');
+      debugPrint('Exception in _loadReadingsByEmployee: $e');
       developer.log('AllReadingsByEmployeeScreen: Exception in _loadReadingsByEmployee: $e');
       setState(() {
         _isLoadingReadings = false;
@@ -233,7 +233,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
 
   // Helper method to use a mock employee when API fails
   void _useMockEmployee() {
-    print('Using mock employee as fallback');
+    debugPrint('Using mock employee as fallback');
     _employees = [
       {
         'employeeId': 'mock-employee-1',
@@ -418,29 +418,18 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
     );
   }
 
-  // Helper method to get color based on fuel type
+  // Helper method to get color based on fuel type (standardized)
   Color _getFuelTypeColor(String fuelType) {
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.orange.shade800;
-      case 'premium':
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'premium diesel':
-        return Colors.deepPurple.shade800;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.indigo.shade700;
-      case 'bio-diesel':
-        return Colors.amber.shade800;
-      case 'electric':
-        return Colors.cyan.shade700;
-      default:
-        return Colors.blueGrey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    if (name == 'bio-diesel') return Colors.amber.shade800;
+    if (name == 'electric') return Colors.cyan.shade700;
+    return Colors.blueGrey.shade700;
   }
 
   // Helper method to get icon based on reading type
@@ -501,7 +490,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -715,10 +704,10 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      color: AppTheme.primaryBlue.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppTheme.primaryBlue.withOpacity(0.3),
+                        color: AppTheme.primaryBlue.withValues(alpha:0.3),
                       ),
                     ),
                     child: Row(
@@ -771,7 +760,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
     
     return Card(
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withValues(alpha:0.1),
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -787,14 +776,14 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: typeColor.withOpacity(0.08),
+              color: typeColor.withValues(alpha:0.08),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
               border: Border(
                 bottom: BorderSide(
-                  color: typeColor.withOpacity(0.15),
+                  color: typeColor.withValues(alpha:0.15),
                   width: 1,
                 ),
               ),
@@ -804,7 +793,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: typeColor.withOpacity(0.15),
+                    color: typeColor.withValues(alpha:0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -945,7 +934,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha:0.05),
                               offset: const Offset(0, 2),
                               blurRadius: 4,
                             ),
@@ -979,7 +968,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: lightBg ? color.withOpacity(0.08) : color.withOpacity(0.15),
+        color: lightBg ? color.withValues(alpha:0.08) : color.withValues(alpha:0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -1035,7 +1024,7 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha:0.03),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1079,16 +1068,16 @@ class _AllReadingsByEmployeeScreenState extends State<AllReadingsByEmployeeScree
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha:0.2)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha:0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(

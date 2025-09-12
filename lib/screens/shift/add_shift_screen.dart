@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../api/shift_repository.dart';
 import '../../models/shift_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 
 import 'dart:developer' as developer;
 
@@ -114,11 +115,11 @@ class _AddShiftScreenState extends State<AddShiftScreen> {
     });
     
     try {
-      print('ADD_SHIFT: Form validated, preparing to submit');
+      debugPrint('ADD_SHIFT: Form validated, preparing to submit');
       
       // Run diagnostic check if we had previous errors
       if (_errorMessage.contains('Method Not Allowed') || _errorMessage.contains('error occurred')) {
-        print('ADD_SHIFT: Previous errors detected, running diagnostic check...');
+        debugPrint('ADD_SHIFT: Previous errors detected, running diagnostic check...');
         final repository = ShiftRepository();
         // await repository.checkAllowedMethods();
       }
@@ -132,29 +133,24 @@ class _AddShiftScreenState extends State<AddShiftScreen> {
       );
       
       developer.log('Submitting shift: ${shift.toJson()}');
-      print('ADD_SHIFT: Submitting shift with data: ${shift.toJson()}');
+      debugPrint('ADD_SHIFT: Submitting shift with data: ${shift.toJson()}');
       
       // Call repository to add shift
       final repository = ShiftRepository();
-      print('ADD_SHIFT: Calling repository.addShift()');
+      debugPrint('ADD_SHIFT: Calling repository.addShift()');
       final response = await repository.addShift(shift);
-      print('ADD_SHIFT: Repository call completed, success=${response.success}');
+      debugPrint('ADD_SHIFT: Repository call completed, success=${response.success}');
       
       if (!mounted) return;
       
       if (response.success) {
         developer.log('Shift added successfully: ${response.data}');
-        print('ADD_SHIFT: SUCCESS! Shift added successfully');
+        debugPrint('ADD_SHIFT: SUCCESS! Shift added successfully');
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Shift added successfully'),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Shift added successfully',
+          isError: false,
         );
         
         // Return true to refresh the shifts list screen if navigating back
@@ -165,28 +161,23 @@ class _AddShiftScreenState extends State<AddShiftScreen> {
         });
         
         developer.log('Failed to add shift: $_errorMessage');
-        print('ADD_SHIFT: ERROR: $_errorMessage');
+        debugPrint('ADD_SHIFT: ERROR: $_errorMessage');
         
         // Show a more detailed error dialog
         _showErrorDialog(_errorMessage);
       }
     } catch (e) {
       developer.log('Exception submitting form: $e');
-      print('ADD_SHIFT: EXCEPTION: $e');
+      debugPrint('ADD_SHIFT: EXCEPTION: $e');
       
       setState(() {
         _errorMessage = 'Error: $e';
       });
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An unexpected error occurred: $e'),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'An unexpected error occurred: $e',
+        isError: true,
       );
     } finally {
       setState(() {

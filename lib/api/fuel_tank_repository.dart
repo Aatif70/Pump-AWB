@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
 
@@ -14,7 +15,7 @@ class FuelTankRepository {
   // Add a new fuel tank
   Future<ApiResponse<Map<String, dynamic>>> addFuelTank(FuelTank fuelTank) async {
     developer.log('Adding fuel tank with details: ${fuelTank.toJson()}');
-    print('FUEL_TANK_REPO: Adding fuel tank: ${fuelTank.toJson()}');
+    debugPrint('FUEL_TANK_REPO: Adding fuel tank: ${fuelTank.toJson()}');
     
     try {
       // Get the authentication token
@@ -23,7 +24,7 @@ class FuelTankRepository {
       
       if (token == null) {
         developer.log('No auth token found for adding fuel tank');
-        print('FUEL_TANK_REPO: No auth token found.');
+        debugPrint('FUEL_TANK_REPO: No auth token found.');
         return ApiResponse(
           success: false,
           errorMessage: 'You are not logged in. Please login to continue.',
@@ -31,7 +32,7 @@ class FuelTankRepository {
       }
       
       final url = ApiConstants.getFuelTankUrl();
-      print('FUEL_TANK_REPO: POST URL: $url');
+      debugPrint('FUEL_TANK_REPO: POST URL: $url');
       
       // Make the API call
       final response = await _apiService.post<Map<String, dynamic>>(
@@ -43,16 +44,16 @@ class FuelTankRepository {
       
       if (response.success) {
         developer.log('Fuel tank added successfully');
-        print('FUEL_TANK_REPO: Fuel tank added successfully. Response: ${response.data}');
+        debugPrint('FUEL_TANK_REPO: Fuel tank added successfully. Response: ${response.data}');
       } else {
         developer.log('Failed to add fuel tank: ${response.errorMessage}');
-        print('FUEL_TANK_REPO: Failed to add fuel tank: ${response.errorMessage}');
+        debugPrint('FUEL_TANK_REPO: Failed to add fuel tank: ${response.errorMessage}');
       }
       
       return response;
     } catch (e) {
       developer.log('Exception in addFuelTank: $e');
-      print('FUEL_TANK_REPO: Exception in addFuelTank: $e');
+      debugPrint('FUEL_TANK_REPO: Exception in addFuelTank: $e');
       return ApiResponse(
         success: false,
         errorMessage: e.toString(),
@@ -63,7 +64,7 @@ class FuelTankRepository {
   // Get all fuel tanks for the logged-in petrol pump
   Future<ApiResponse<List<FuelTank>>> getAllFuelTanks() async {
     developer.log('Getting all fuel tanks');
-    print('FUEL_TANK_REPO: Fetching all fuel tanks.');
+    debugPrint('FUEL_TANK_REPO: Fetching all fuel tanks.');
 
     try {
       // Get the authentication token
@@ -72,7 +73,7 @@ class FuelTankRepository {
       
       if (token == null) {
         developer.log('No auth token found for getting fuel tanks');
-        print('FUEL_TANK_REPO: No auth token found.');
+        debugPrint('FUEL_TANK_REPO: No auth token found.');
         return ApiResponse(
           success: false,
           errorMessage: 'You are not logged in. Please login to continue.',
@@ -83,70 +84,70 @@ class FuelTankRepository {
       // This assumes your ApiConstants.getFuelTankUrl() returns "{{baseUrl}}/api/FuelTank"
       final url = ApiConstants.getFuelTankUrl();
       developer.log('Fuel Tanks GET URL: $url');
-      print('FUEL_TANK_REPO: GET URL: $url');
+      debugPrint('FUEL_TANK_REPO: GET URL: $url');
       
       // Make the API call using the generic GET method
       final response = await _apiService.get<List<FuelTank>>(
         url,
         token: token,
         fromJson: (json) {
-          // print('FUEL_TANK_REPO: Parsing response data: $json');
+          // debugPrint('FUEL_TANK_REPO: Parsing response data: $json');
           // Expecting the structure: {"data": [...], "success": true, ...}
           if (json is Map && json.containsKey('data') && json['data'] is List) {
             final dataList = json['data'] as List;
-            print('FUEL_TANK_REPO: Found ${dataList.length} fuel tanks in response data.');
+            debugPrint('FUEL_TANK_REPO: Found ${dataList.length} fuel tanks in response data.');
             return dataList.map((item) {
               try {
                 // Ensure item is a Map before passing to fromJson
                 if (item is Map<String, dynamic>) {
                   return FuelTank.fromJson(item);
                 } else {
-                  print('FUEL_TANK_REPO: Skipping item because it is not a Map: $item');
+                  debugPrint('FUEL_TANK_REPO: Skipping item because it is not a Map: $item');
                   return null; // Skip non-map items
                 }
               } catch (e, stacktrace) {
-                 print('FUEL_TANK_REPO: Error parsing individual tank: $item, Error: $e');
-                 print('FUEL_TANK_REPO: Stacktrace: $stacktrace');
+                 debugPrint('FUEL_TANK_REPO: Error parsing individual tank: $item, Error: $e');
+                 debugPrint('FUEL_TANK_REPO: Stacktrace: $stacktrace');
                  return null; // Indicate parsing failure
               }
             }).whereType<FuelTank>().toList(); // Filter out nulls from parsing errors or non-maps
           } else if (json is List) {
              // Handle cases where the API might *just* return a list (less common for wrapped responses)
-             print('FUEL_TANK_REPO: Response data is a direct list. Found ${json.length} items.');
+             debugPrint('FUEL_TANK_REPO: Response data is a direct list. Found ${json.length} items.');
              return json.map((item) {
                try {
                  if (item is Map<String, dynamic>) {
                     return FuelTank.fromJson(item);
                  } else {
-                   print('FUEL_TANK_REPO: Skipping item from list because it is not a Map: $item');
+                   debugPrint('FUEL_TANK_REPO: Skipping item from list because it is not a Map: $item');
                    return null;
                  }
                } catch (e, stacktrace) {
-                 print('FUEL_TANK_REPO: Error parsing individual tank from list: $item, Error: $e');
-                 print('FUEL_TANK_REPO: Stacktrace: $stacktrace');
+                 debugPrint('FUEL_TANK_REPO: Error parsing individual tank from list: $item, Error: $e');
+                 debugPrint('FUEL_TANK_REPO: Stacktrace: $stacktrace');
                  return null;
                }
              }).whereType<FuelTank>().toList();
           }
           // If response format is unexpected
-          print('FUEL_TANK_REPO: Unexpected response format, returning empty list. Format was: ${json.runtimeType}');
+          debugPrint('FUEL_TANK_REPO: Unexpected response format, returning empty list. Format was: ${json.runtimeType}');
           return <FuelTank>[];
         },
       );
       
       if (response.success) {
         developer.log('Fuel tanks retrieved successfully. Count: ${response.data?.length ?? 0}');
-        print('FUEL_TANK_REPO: Successfully retrieved ${response.data?.length ?? 0} fuel tanks.');
+        debugPrint('FUEL_TANK_REPO: Successfully retrieved ${response.data?.length ?? 0} fuel tanks.');
       } else {
         developer.log('Failed to retrieve fuel tanks: ${response.errorMessage}');
-        print('FUEL_TANK_REPO: Failed to retrieve fuel tanks: ${response.errorMessage}');
+        debugPrint('FUEL_TANK_REPO: Failed to retrieve fuel tanks: ${response.errorMessage}');
       }
       
       return response;
     } catch (e, stacktrace) {
       developer.log('Exception in getAllFuelTanks: $e');
-      print('FUEL_TANK_REPO: Exception in getAllFuelTanks: $e');
-      print('FUEL_TANK_REPO: Stacktrace: $stacktrace');
+      debugPrint('FUEL_TANK_REPO: Exception in getAllFuelTanks: $e');
+      debugPrint('FUEL_TANK_REPO: Stacktrace: $stacktrace');
       return ApiResponse(
         success: false,
         errorMessage: 'An error occurred while fetching fuel tanks: $e', // More user-friendly message potentially
@@ -156,7 +157,7 @@ class FuelTankRepository {
 
   // Get the petrol pump ID from the JWT token
   Future<String?> getPetrolPumpId() async {
-    print('FUEL_TANK_REPO: Attempting to get Petrol Pump ID.');
+    debugPrint('FUEL_TANK_REPO: Attempting to get Petrol Pump ID.');
     try {
       // Get the authentication token
       final prefs = await SharedPreferences.getInstance();
@@ -164,7 +165,7 @@ class FuelTankRepository {
       
       if (token == null) {
         developer.log('No auth token found for getting petrol pump ID');
-        print('FUEL_TANK_REPO: No auth token found for getPetrolPumpId.');
+        debugPrint('FUEL_TANK_REPO: No auth token found for getPetrolPumpId.');
         return null;
       }
       
@@ -173,25 +174,25 @@ class FuelTankRepository {
       
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
         developer.log('PetrolPumpId not found in JWT token');
-        print('FUEL_TANK_REPO: PetrolPumpId not found in JWT. Checking prefs...');
+        debugPrint('FUEL_TANK_REPO: PetrolPumpId not found in JWT. Checking prefs...');
         // Fallback to a stored ID if available
         final storedId = prefs.getString('petrolPumpId');
-        print('FUEL_TANK_REPO: Found stored PetrolPumpId: $storedId');
+        debugPrint('FUEL_TANK_REPO: Found stored PetrolPumpId: $storedId');
         return storedId;
       }
       
       developer.log('PetrolPumpId extracted from JWT token: $petrolPumpId');
-      print('FUEL_TANK_REPO: PetrolPumpId from JWT: $petrolPumpId');
+      debugPrint('FUEL_TANK_REPO: PetrolPumpId from JWT: $petrolPumpId');
       
       // Store for later use if extracted from JWT
       await prefs.setString('petrolPumpId', petrolPumpId);
-      print('FUEL_TANK_REPO: Stored PetrolPumpId in prefs.');
+      debugPrint('FUEL_TANK_REPO: Stored PetrolPumpId in prefs.');
       
       return petrolPumpId;
     } catch (e, stacktrace) {
       developer.log('Error getting petrol pump ID: $e');
-      print('FUEL_TANK_REPO: Error in getPetrolPumpId: $e');
-      print('FUEL_TANK_REPO: Stacktrace: $stacktrace');
+      debugPrint('FUEL_TANK_REPO: Error in getPetrolPumpId: $e');
+      debugPrint('FUEL_TANK_REPO: Stacktrace: $stacktrace');
       return null;
     }
   }
@@ -368,7 +369,7 @@ class FuelTankRepository {
   // Get all fuel types
   Future<ApiResponse<List<FuelType>>> getFuelTypes() async {
     developer.log('Getting fuel types');
-    print('FUEL_TANK_REPO: Fetching fuel types.');
+    debugPrint('FUEL_TANK_REPO: Fetching fuel types.');
 
     try {
       // Get the authentication token
@@ -377,7 +378,7 @@ class FuelTankRepository {
       
       if (token == null) {
         developer.log('No auth token found for getting fuel types');
-        print('FUEL_TANK_REPO: No auth token found.');
+        debugPrint('FUEL_TANK_REPO: No auth token found.');
         return ApiResponse(
           success: false,
           errorMessage: 'You are not logged in. Please login to continue.',
@@ -389,7 +390,7 @@ class FuelTankRepository {
       
       if (petrolPumpId == null) {
         developer.log('PetrolPumpId not found for getting fuel types');
-        print('FUEL_TANK_REPO: PetrolPumpId not found.');
+        debugPrint('FUEL_TANK_REPO: PetrolPumpId not found.');
         return ApiResponse(
           success: false,
           errorMessage: 'Petrol pump ID not found. Please login again.',
@@ -399,21 +400,21 @@ class FuelTankRepository {
       // Use the specific API endpoint for petrol pump fuel types
       final url = ApiConstants.getPumpFuelTypesUrl(petrolPumpId);
       developer.log('Fuel Types GET URL: $url');
-      print('FUEL_TANK_REPO: GET URL for fuel types: $url');
+      debugPrint('FUEL_TANK_REPO: GET URL for fuel types: $url');
       
       // Make the API call
       final response = await _apiService.get<List<FuelType>>(
         url,
         token: token,
         fromJson: (dynamic json) {
-          print('FUEL_TANK_REPO: Raw fuel types data: $json');
+          debugPrint('FUEL_TANK_REPO: Raw fuel types data: $json');
           
           List<FuelType> fuelTypes = [];
           
           // Check if we have a data field containing a list
           if (json is Map && json.containsKey('data') && json['data'] is List) {
             final dataList = json['data'] as List;
-            print('FUEL_TANK_REPO: Found ${dataList.length} fuel types in data list');
+            debugPrint('FUEL_TANK_REPO: Found ${dataList.length} fuel types in data list');
             
             fuelTypes = dataList
               .map((item) => item is Map<String, dynamic> ? FuelType.fromJson(item) : null)
@@ -423,7 +424,7 @@ class FuelTankRepository {
           }
           // If the response is directly a list
           else if (json is List) {
-            print('FUEL_TANK_REPO: Found ${json.length} fuel types in direct list');
+            debugPrint('FUEL_TANK_REPO: Found ${json.length} fuel types in direct list');
             
             fuelTypes = json
               .map((item) => item is Map<String, dynamic> ? FuelType.fromJson(item) : null)
@@ -432,23 +433,23 @@ class FuelTankRepository {
               .toList();
           }
           
-          print('FUEL_TANK_REPO: Parsed ${fuelTypes.length} fuel types');
+          debugPrint('FUEL_TANK_REPO: Parsed ${fuelTypes.length} fuel types');
           return fuelTypes;
         },
       );
       
       if (response.success) {
         developer.log('Fuel types retrieved successfully');
-        print('FUEL_TANK_REPO: Successfully retrieved ${response.data?.length ?? 0} fuel types');
+        debugPrint('FUEL_TANK_REPO: Successfully retrieved ${response.data?.length ?? 0} fuel types');
       } else {
         developer.log('Failed to retrieve fuel types: ${response.errorMessage}');
-        print('FUEL_TANK_REPO: Failed to retrieve fuel types: ${response.errorMessage}');
+        debugPrint('FUEL_TANK_REPO: Failed to retrieve fuel types: ${response.errorMessage}');
       }
       
       return response;
     } catch (e) {
       developer.log('Exception in getFuelTypes: $e');
-      print('FUEL_TANK_REPO: Exception in getFuelTypes: $e');
+      debugPrint('FUEL_TANK_REPO: Exception in getFuelTypes: $e');
       return ApiResponse(
         success: false,
         errorMessage: 'An error occurred while fetching fuel types: $e',
@@ -555,18 +556,18 @@ class FuelTankRepository {
         url,
         token: token,
         fromJson: (json) {
-          print('FUEL_TANK_REPO: Parsing quality check response data: $json');
+          debugPrint('FUEL_TANK_REPO: Parsing quality check response data: $json');
           
           // Handle response based on format (direct list or wrapped in data field)
           if (json is Map && json.containsKey('data') && json['data'] is List) {
             final dataList = json['data'] as List;
-            print('FUEL_TANK_REPO: Found ${dataList.length} quality checks in response data.');
+            debugPrint('FUEL_TANK_REPO: Found ${dataList.length} quality checks in response data.');
             return dataList
                 .map((item) => item is Map<String, dynamic> ? FuelQualityCheck.fromJson(item) : null)
                 .whereType<FuelQualityCheck>()
                 .toList();
           } else if (json is List) {
-            print('FUEL_TANK_REPO: Response is direct list with ${json.length} items.');
+            debugPrint('FUEL_TANK_REPO: Response is direct list with ${json.length} items.');
             return json
                 .map((item) => item is Map<String, dynamic> ? FuelQualityCheck.fromJson(item) : null)
                 .whereType<FuelQualityCheck>()
@@ -574,7 +575,7 @@ class FuelTankRepository {
           }
           
           // Default empty list if format unexpected
-          print('FUEL_TANK_REPO: Unexpected response format, returning empty list.');
+          debugPrint('FUEL_TANK_REPO: Unexpected response format, returning empty list.');
           return <FuelQualityCheck>[];
         },
       );

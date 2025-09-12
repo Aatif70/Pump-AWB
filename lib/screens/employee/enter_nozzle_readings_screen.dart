@@ -130,7 +130,7 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
                             end: Alignment.bottomRight,
                             colors: [
                               AppTheme.primaryBlue,
-                              AppTheme.primaryBlue.withOpacity(0.8),
+                              AppTheme.primaryBlue.withValues(alpha:0.8),
                               const Color(0xFF6366F1),
                             ],
                           ),
@@ -146,7 +146,7 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
                                 height: 200,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.1),
+                                  color: Colors.white.withValues(alpha:0.1),
                                 ),
                               ),
                             ),
@@ -158,7 +158,7 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
                                 height: 150,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.05),
+                                  color: Colors.white.withValues(alpha:0.05),
                                 ),
                               ),
                             ),
@@ -176,7 +176,7 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
+                                      color: Colors.white.withValues(alpha:0.2),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
@@ -204,7 +204,7 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
                                     'Select an option below to submit your shift data',
                                     style: GoogleFonts.poppins(
                                       fontSize: 14,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(alpha:0.9),
                                       height: 1.4,
                                     ),
                                   ),
@@ -354,12 +354,12 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha:0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -377,7 +377,7 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha:0.1),
                 width: 1,
               ),
             ),
@@ -398,7 +398,7 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: color.withOpacity(0.3),
+                          color: color.withValues(alpha:0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -452,7 +452,7 @@ class _EnterNozzleReadingsScreenState extends State<EnterNozzleReadingsScreen>
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.08),
+                            color: color.withValues(alpha:0.08),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Center(

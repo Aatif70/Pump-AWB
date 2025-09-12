@@ -360,10 +360,10 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: AppTheme.primaryBlue.withOpacity(0.1),
+          color: AppTheme.primaryBlue.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.primaryBlue.withOpacity(0.3),
+            color: AppTheme.primaryBlue.withValues(alpha:0.3),
           ),
         ),
         child: Text(
@@ -410,7 +410,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha:0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -432,7 +432,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -486,7 +486,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha:0.1),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -500,7 +500,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Row(
               children: [
-                Icon(Icons.insights, color: Colors.white.withOpacity(0.9), size: 20),
+                Icon(Icons.insights, color: Colors.white.withValues(alpha:0.9), size: 20),
                 const SizedBox(width: 8),
                 const Text(
                   'Sales Summary',
@@ -525,7 +525,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha:0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -533,7 +533,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                           Icon(
                             Icons.calendar_today, 
                             size: 14, 
-                            color: Colors.white.withOpacity(0.9)
+                            color: Colors.white.withValues(alpha:0.9)
                           ),
                           const SizedBox(width: 6),
                           Column(
@@ -544,7 +544,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                                 'From',
                                 style: TextStyle(
                                   fontSize: 9,
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha:0.8),
                                 ),
                               ),
                               Text(
@@ -569,7 +569,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha:0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -577,7 +577,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                           Icon(
                             Icons.calendar_today, 
                             size: 14, 
-                            color: Colors.white.withOpacity(0.9)
+                            color: Colors.white.withValues(alpha:0.9)
                           ),
                           const SizedBox(width: 6),
                           Column(
@@ -588,7 +588,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                                 'To',
                                 style: TextStyle(
                                   fontSize: 9,
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha:0.8),
                                 ),
                               ),
                               Text(
@@ -623,7 +623,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha:0.05),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         ),
@@ -679,7 +679,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha:0.05),
                           blurRadius: 5,
                           offset: const Offset(0, 2),
                         ),
@@ -762,7 +762,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
           elevation: 2,
-          shadowColor: Colors.black.withOpacity(0.1),
+          shadowColor: Colors.black.withValues(alpha:0.1),
           surfaceTintColor: Colors.white,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -772,7 +772,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withOpacity(0.06),
+                    color: AppTheme.primaryBlue.withValues(alpha:0.06),
                     border: Border(
                       bottom: BorderSide(
                         color: Colors.grey.shade200,
@@ -800,7 +800,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _getFuelTypeColor(sale.fuelType).withOpacity(0.1),
+                          color: _getFuelTypeColor(sale.fuelType).withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -948,9 +948,9 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.shade50.withOpacity(0.5),
+          color: color.shade50.withValues(alpha:0.5),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.shade100.withOpacity(0.5)),
+          border: Border.all(color: color.shade100.withValues(alpha:0.5)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1007,7 +1007,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
         border: Border.all(color: color.shade100),
         boxShadow: [
           BoxShadow(
-            color: color.shade100.withOpacity(0.5),
+            color: color.shade100.withValues(alpha:0.5),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1066,7 +1066,7 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
         border: Border.all(color: color.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha:0.03),
             blurRadius: 3,
             offset: const Offset(0, 1),
           ),
@@ -1235,19 +1235,13 @@ class _ShiftSalesHistoryScreenState extends State<ShiftSalesHistoryScreen> {
   }
   
   Color _getFuelTypeColor(String fuelType) {
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-      case 'premium petrol':
-        return Colors.green.shade600;
-      case 'diesel':
-      case 'premium diesel':
-        return Colors.blue.shade600;
-      case 'cng':
-        return Colors.teal.shade600;
-      case 'lpg':
-        return Colors.purple.shade600;
-      default:
-        return Colors.orange.shade600;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade600;
+    if (name == 'lpg') return Colors.purple.shade600;
+    return Colors.orange.shade600;
   }
 } 

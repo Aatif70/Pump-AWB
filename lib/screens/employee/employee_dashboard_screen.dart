@@ -12,6 +12,7 @@ import '../../models/price_model.dart';
 import '../../models/shift_model.dart';
 import '../../theme.dart';
 import '../../utils/jwt_decoder.dart';
+import '../../widgets/custom_snackbar.dart';
 import '../login/login_screen.dart';
 import 'employee_profile_screen.dart';
 import 'nozzle_readings_detail_screen.dart';
@@ -216,7 +217,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     
     try {
       developer.log('Fetching fuel types for petrol pump');
-      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump(_petrolPumpId);
+      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump();
       
       if (response.success && response.data != null) {
         setState(() {
@@ -345,12 +346,12 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       }
       
       developer.log('Fetching shifts for employee ID: $_employeeId using the getShiftsByEmployeeId endpoint');
-      print('DEBUG: Fetching shifts for employee ID: $_employeeId');
+      debugPrint('DEBUG: Fetching shifts for employee ID: $_employeeId');
       final response = await _employeeShiftRepository.getShiftsByEmployeeId(_employeeId);
       
       if (response.success && response.data != null && response.data!.isNotEmpty) {
         developer.log('Found ${response.data!.length} shifts for employeeId: $_employeeId');
-        print('DEBUG: Found ${response.data!.length} shifts');
+        debugPrint('DEBUG: Found ${response.data!.length} shifts');
         
         // Find the current active shift
         final now = DateTime.now();
@@ -373,17 +374,17 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               }
               
               final isWithinShift = now.isAfter(startDateTime) && now.isBefore(endDateTime);
-              print('DEBUG: Checking shift ${shift.shiftNumber}: start=$startDateTime, end=$endDateTime, isWithinShift=$isWithinShift');
+              debugPrint('DEBUG: Checking shift ${shift.shiftNumber}: start=$startDateTime, end=$endDateTime, isWithinShift=$isWithinShift');
               return isWithinShift;
             },
             orElse: () => shifts.first, // Default to first shift if no active shift found
           );
           
           developer.log('Selected shift: ${_currentShift!.shiftNumber} with ID: ${_currentShift!.id}');
-          print('DEBUG: Selected shift: ${_currentShift!.shiftNumber}');
+          debugPrint('DEBUG: Selected shift: ${_currentShift!.shiftNumber}');
         } catch (e) {
           developer.log('Error finding current shift: $e');
-          print('DEBUG: Error finding current shift: $e');
+          debugPrint('DEBUG: Error finding current shift: $e');
           // If there's an error finding the current shift, just use the first one
           if (shifts.isNotEmpty) {
             _currentShift = shifts.first;
@@ -394,11 +395,11 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         setState(() {
           _errorMessage = response.errorMessage ?? 'No shifts assigned to you';
         });
-        print('DEBUG: No shifts found or error: ${response.errorMessage}');
+        debugPrint('DEBUG: No shifts found or error: ${response.errorMessage}');
       }
     } catch (e) {
       developer.log('Exception in _fetchCurrentShift: $e');
-      print('DEBUG: Exception in _fetchCurrentShift: $e');
+      debugPrint('DEBUG: Exception in _fetchCurrentShift: $e');
       setState(() {
         _errorMessage = 'Error fetching shifts: $e';
       });
@@ -467,7 +468,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   // Helper method for debug logging
   void _addDebugLog(String message) {
     developer.log('DEBUG: $message');
-    print('DEBUG: $message');
+    debugPrint('DEBUG: $message');
   }
 
   // Map fuel types to their colors
@@ -486,29 +487,18 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
 
   get initialReadingType => null;
 
-  // Get color for fuel type
+  // Get color for fuel type (standardized)
   Color _getFuelTypeColor(String fuelType) {
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.orange.shade800;
-      case 'premium':
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'premium diesel':
-        return Colors.deepPurple.shade800;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.indigo.shade700;
-      case 'bio-diesel':
-        return Colors.amber.shade800;
-      case 'electric':
-        return Colors.cyan.shade700;
-      default:
-        return Colors.blueGrey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    if (name == 'bio-diesel') return Colors.amber.shade800;
+    if (name == 'electric') return Colors.cyan.shade700;
+    return Colors.blueGrey.shade700;
   }
 
   @override
@@ -1114,11 +1104,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                                   if (_nozzleAssignments.isNotEmpty) {
                                     _showHistorySelectionDialog();
                                   } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('No nozzle assignment found'),
-                                        backgroundColor: Colors.red,
-                                      ),
+                                    showAnimatedSnackBar(
+                                      context: context,
+                                      message: 'No nozzle assignment found',
+                                      isError: true,
                                     );
                                   }
                                 },
@@ -1409,12 +1398,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       
       if (mounted) {
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Data refreshed successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Data refreshed successfully',
+          isError: false,
         );
       }
     } catch (e) {
@@ -1422,12 +1409,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       
       if (mounted) {
         // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error refreshing data: $e'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Error refreshing data: $e',
+          isError: true,
         );
       }
     } finally {
@@ -2520,7 +2505,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         await prefs.setString('employee_petrol_pump_id', nozzle.petrolPumpId ?? '');
       }
     } catch (e) {
-      print('Error saving nozzle data to preferences: $e');
+      debugPrint('Error saving nozzle data to preferences: $e');
     }
   }
 
@@ -2533,7 +2518,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       await prefs.remove('employee_fuel_tank_id');
       await prefs.remove('employee_petrol_pump_id');
     } catch (e) {
-      print('Error clearing nozzle data from preferences: $e');
+      debugPrint('Error clearing nozzle data from preferences: $e');
     }
   }
 
@@ -2660,11 +2645,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         }
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No active shift found. Please contact your manager.'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No active shift found. Please contact your manager.',
+        isError: true,
       );
     }
   }
@@ -2689,11 +2673,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         }
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('No active shift found. Please contact your manager.'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No active shift found. Please contact your manager.',
+        isError: true,
       );
     }
   }

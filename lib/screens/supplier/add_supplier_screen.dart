@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../api/supplier_repository.dart';
 import '../../models/supplier_model.dart';
 import '../../theme.dart';
-
+import '../../widgets/custom_snackbar.dart';
 
 class AddSupplierScreen extends StatefulWidget {
   const AddSupplierScreen({super.key});
@@ -93,15 +93,10 @@ class _AddSupplierScreenState extends State<AddSupplierScreen> {
       if (mounted) {
         if (response.success) {
           // Show success message and pop back
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Supplier added successfully'),
-              backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Supplier added successfully',
+            isError: false,
           );
           Navigator.pop(context);
         } else {
@@ -203,407 +198,516 @@ class _AddSupplierScreenState extends State<AddSupplierScreen> {
       onTap: _dismissKeyboard,
       child: Scaffold(
         backgroundColor: Colors.grey[50],
-        appBar: AppBar(
-          title: const Text('Add Supplier'),
-          backgroundColor: AppTheme.primaryBlue,
-          elevation: 0,
-          foregroundColor: Colors.white,
-          centerTitle: true,
-        ),
+        appBar: null,
+        resizeToAvoidBottomInset: false,
         body: SafeArea(
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'New Supplier Registration',
-                    style: AppTheme.headingStyle,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add a new fuel supplier to your network',
-                    style: AppTheme.subheadingStyle.copyWith(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Error message
-                  if (_errorMessage.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline, color: Colors.red.shade700),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMessage,
-                              style: TextStyle(color: Colors.red.shade700),
-                            ),
-                          ),
-                        ],
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(50),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha:0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: const Icon(Icons.arrow_back, size: 22),
                       ),
                     ),
-                  
-                  // Basic Information
-                  _buildSectionHeader('Business Information'),
-                  Card(
-                    elevation: 2,
-                    shadowColor: Colors.black.withValues(alpha:0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildStyledFormField(
-                            controller: _supplierNameController,
-                            label: 'Company Name',
-                            icon: Icons.business,
-                            hintText: 'Enter the supplier\'s company name',
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter supplier name';
-                              }
-                              return null;
-                            },
-                          ),
-                          _buildStyledFormField(
-                            controller: _contactPersonController,
-                            label: 'Contact Person',
-                            icon: Icons.person,
-                            hintText: 'Enter the name of your primary contact',
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter contact person name';
-                              }
-                              return null;
-                            },
-                          ),
-                          _buildStyledFormField(
-                            controller: _phoneController,
-                            label: 'Phone Number',
-                            icon: Icons.phone,
-                            hintText: 'Enter contact phone number',
-                            keyboardType: TextInputType.phone,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter phone number';
-                              }
-                              return null;
-                            },
-                          ),
-                          _buildStyledFormField(
-                            controller: _emailController,
-                            label: 'Email Address',
-                            icon: Icons.email,
-                            hintText: 'Enter business email address',
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter email';
-                              }
-                              // Basic email validation
-                              final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                              if (!emailRegExp.hasMatch(value.trim())) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
-                            helperText: 'Business communications will be sent to this email',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Address Information
-                  _buildSectionHeader('Location Details'),
-                  Card(
-                    elevation: 2,
-                    shadowColor: Colors.black.withValues(alpha:0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildStyledFormField(
-                            controller: _addressController,
-                            label: 'Street Address',
-                            icon: Icons.location_on,
-                            hintText: 'Enter complete street address',
-                            maxLines: 2,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter address';
-                              }
-                              return null;
-                            },
-                          ),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'City',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _cityController,
-                                      decoration: InputDecoration(
-                                        hintText: 'City',
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.grey.shade300),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
-                                        ),
-                                        prefixIcon: Icon(Icons.location_city, color: AppTheme.primaryBlue),
-                                        filled: true,
-                                        fillColor: Colors.grey.shade50,
-                                      ),
-                                      validator: (value) {
-                                        if (value == null || value.trim().isEmpty) {
-                                          return 'Required';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'State',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _stateController,
-                                      decoration: InputDecoration(
-                                        hintText: 'State',
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: Colors.grey.shade300),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
-                                        ),
-                                        prefixIcon: Icon(Icons.map, color: AppTheme.primaryBlue),
-                                        filled: true,
-                                        fillColor: Colors.grey.shade50,
-                                      ),
-                                      validator: (value) {
-                                        if (value == null || value.trim().isEmpty) {
-                                          return 'Required';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _buildStyledFormField(
-                            controller: _zipCodeController,
-                            label: 'ZIP Code',
-                            icon: Icons.pin,
-                            hintText: 'Enter postal code',
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter ZIP code';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Tax Information
-                  _buildSectionHeader('Tax Information'),
-                  Card(
-                    elevation: 2,
-                    shadowColor: Colors.black.withValues(alpha:0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildStyledFormField(
-                        controller: _gstNumberController,
-                        label: 'GST Number',
-                        icon: Icons.receipt_long,
-                        hintText: 'Enter company GST registration number',
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter GST number';
-                          }
-                          return null;
-                        },
-                        helperText: 'Required for tax documentation and invoicing',
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Status
-                  _buildSectionHeader('Supplier Status'),
-                  Card(
-                    elevation: 2,
-                    shadowColor: Colors.black.withValues(alpha:0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              'Supplier Status',
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Add Supplier',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            subtitle: Text(
-                              'Set to active if this supplier is currently available for deliveries',
+                            Text(
+                              'Register a new supplier to your network',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: Colors.grey.shade600,
                               ),
                             ),
-                            trailing: Switch(
-                              value: _isActive,
-                              onChanged: (bool value) {
-                                setState(() {
-                                  _isActive = value;
-                                });
-                              },
-                              activeColor: Colors.white,
-                              activeTrackColor: AppTheme.primaryBlue,
-                              inactiveThumbColor: Colors.white,
-                              inactiveTrackColor: Colors.grey.shade400,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Text(
-                              _isActive ? 'Active - Ready for business' : 'Inactive - Not available for orders',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                                color: _isActive ? Colors.green.shade600 : Colors.orange.shade700,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Submit Button
-                  SizedBox(
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryBlue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          ],
                         ),
-                        elevation: 0,
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.business_center),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Register Supplier',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
                     ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _buildForm(),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(26.0),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
                   ),
-                  const SizedBox(height: 24),
+                  onPressed: _isLoading ? null : _submitForm,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.business_center, size: 20),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Register Supplier',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_errorMessage.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red.shade700, size: 18),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _errorMessage,
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha:0.05),
+                    blurRadius: 10,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withValues(alpha:0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.business,
+                          color: AppTheme.primaryBlue,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Business Information',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  _buildStyledFormField(
+                    controller: _supplierNameController,
+                    label: 'Company Name',
+                    icon: Icons.business,
+                    hintText: 'Enter the supplier\'s company name',
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter supplier name';
+                      }
+                      return null;
+                    },
+                  ),
+                  _buildStyledFormField(
+                    controller: _contactPersonController,
+                    label: 'Contact Person',
+                    icon: Icons.person,
+                    hintText: 'Enter the name of your primary contact',
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter contact person name';
+                      }
+                      return null;
+                    },
+                  ),
+                  _buildStyledFormField(
+                    controller: _phoneController,
+                    label: 'Phone Number',
+                    icon: Icons.phone,
+                    hintText: 'Enter contact phone number',
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter phone number';
+                      }
+                      return null;
+                    },
+                  ),
+                  _buildStyledFormField(
+                    controller: _emailController,
+                    label: 'Email Address',
+                    icon: Icons.email,
+                    hintText: 'Enter business email address',
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter email';
+                      }
+                      final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                      if (!emailRegExp.hasMatch(value.trim())) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                    helperText: 'Business communications will be sent to this email',
+                  ),
                 ],
               ),
             ),
-          ),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha:0.05),
+                    blurRadius: 10,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withValues(alpha:0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.location_on,
+                          color: AppTheme.primaryBlue,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Location Details',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  _buildStyledFormField(
+                    controller: _addressController,
+                    label: 'Street Address',
+                    icon: Icons.location_on,
+                    hintText: 'Enter complete street address',
+                    maxLines: 2,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter address';
+                      }
+                      return null;
+                    },
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'City',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _cityController,
+                              decoration: InputDecoration(
+                                hintText: 'City',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+                                ),
+                                prefixIcon: Icon(Icons.location_city, color: AppTheme.primaryBlue),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'State',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _stateController,
+                              decoration: InputDecoration(
+                                hintText: 'State',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+                                ),
+                                prefixIcon: Icon(Icons.map, color: AppTheme.primaryBlue),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildStyledFormField(
+                    controller: _zipCodeController,
+                    label: 'ZIP Code',
+                    icon: Icons.pin,
+                    hintText: 'Enter postal code',
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter ZIP code';
+                      }
+                      return null;
+                    },
+                  ),
+                  _buildStyledFormField(
+                    controller: _gstNumberController,
+                    label: 'GST Number',
+                    icon: Icons.receipt_long,
+                    hintText: 'Enter GST registration number',
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter GST number';
+                      }
+                      return null;
+                    },
+                    helperText: 'Required for tax compliance and billing',
+                  ),
+                ],
+              ),
+            ),
+
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha:0.05),
+                    blurRadius: 10,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withValues(alpha:0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.verified_user_outlined,
+                          color: AppTheme.primaryBlue,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Supplier Status',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Supplier Status',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Set to active if this supplier is currently available for deliveries',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    trailing: Switch(
+                      value: _isActive,
+                      onChanged: (bool value) {
+                        setState(() {
+                          _isActive = value;
+                        });
+                      },
+                      activeColor: Colors.white,
+                      activeTrackColor: AppTheme.primaryBlue,
+                      inactiveThumbColor: Colors.white,
+                      inactiveTrackColor: Colors.grey.shade400,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      _isActive ? 'Active - Ready for business' : 'Inactive - Not available for orders',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: _isActive ? Colors.green.shade600 : Colors.orange.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );

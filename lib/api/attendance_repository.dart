@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:math' as math;
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/attendance_model.dart';
@@ -581,22 +582,22 @@ class AttendanceRepository {
         '&endDate=${endDate.toIso8601String()}'
       );
       
-      print('🔍 GET request to: $uri');
+      debugPrint('🔍 GET request to: $uri');
       
       // Get auth token directly to debug
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(ApiConstants.authTokenKey);
       
       if (token == null) {
-        print('❌ Authentication token is null');
+        debugPrint('❌ Authentication token is null');
         return ApiResponse<AttendanceSummary>(
           success: false,
           errorMessage: 'No authentication token found',
         );
       }
       
-      print('🔑 Token found, length: ${token.length}');
-      print('🔑 Token first 20 chars: ${token.substring(0, math.min(20, token.length))}...');
+      debugPrint('🔑 Token found, length: ${token.length}');
+      debugPrint('🔑 Token first 20 chars: ${token.substring(0, math.min(20, token.length))}...');
       
       // Make request with explicit headers instead of using the helper method
       final response = await http.get(
@@ -607,13 +608,13 @@ class AttendanceRepository {
         },
       );
       
-      print('📊 Response status code: ${response.statusCode}');
-      print('📊 Response body length: ${response.body.length}');
-      print('📊 Raw response body: ${response.body}');
+      debugPrint('📊 Response status code: ${response.statusCode}');
+      debugPrint('📊 Response body length: ${response.body.length}');
+      debugPrint('📊 Raw response body: ${response.body}');
       
       // Handle authentication error specifically
       if (response.statusCode == 401) {
-        print('🔒 Authentication error (401 Unauthorized)');
+        debugPrint('🔒 Authentication error (401 Unauthorized)');
         return ApiResponse<AttendanceSummary>(
           success: false,
           errorMessage: 'Authentication failed. Please log in again.',
@@ -622,7 +623,7 @@ class AttendanceRepository {
       
       // Handle empty response
       if (response.body.isEmpty) {
-        print('⚠️ Empty response body received');
+        debugPrint('⚠️ Empty response body received');
         return ApiResponse<AttendanceSummary>(
           success: false,
           errorMessage: 'Server returned an empty response',
@@ -631,42 +632,42 @@ class AttendanceRepository {
       
       try {
         final responseJson = json.decode(response.body);
-        print('📊 Decoded JSON: $responseJson');
+        debugPrint('📊 Decoded JSON: $responseJson');
         
         if (response.statusCode == 200 && responseJson['success'] == true) {
           final dynamic data = responseJson['data'];
           if (data == null) {
-            print('⚠️ Response success is true but data is null');
+            debugPrint('⚠️ Response success is true but data is null');
             return ApiResponse<AttendanceSummary>(
               success: false,
               errorMessage: 'No attendance data available',
             );
           }
           
-          print('📊 Attendance data received, parsing...');
+          debugPrint('📊 Attendance data received, parsing...');
           final attendanceSummary = AttendanceSummary.fromJson(data);
           return ApiResponse<AttendanceSummary>(
             success: true,
             data: attendanceSummary,
           );
         } else {
-          print('⚠️ API returned error: ${responseJson['message']}');
+          debugPrint('⚠️ API returned error: ${responseJson['message']}');
           return ApiResponse<AttendanceSummary>(
             success: false,
             errorMessage: responseJson['message'] ?? 'Failed to get attendance summary',
           );
         }
       } catch (jsonError) {
-        print('❌ JSON parse error: $jsonError');
-        print('❌ Response that caused error: ${response.body}');
+        debugPrint('❌ JSON parse error: $jsonError');
+        debugPrint('❌ Response that caused error: ${response.body}');
         return ApiResponse<AttendanceSummary>(
           success: false,
           errorMessage: 'Error parsing server response: $jsonError',
         );
       }
     } catch (e) {
-      print('❌ Exception in getEmployeeAttendanceSummary: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
+      debugPrint('❌ Exception in getEmployeeAttendanceSummary: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
       return ApiResponse<AttendanceSummary>(
         success: false,
         errorMessage: 'Error getting attendance summary: $e',
@@ -683,14 +684,14 @@ class AttendanceRepository {
         '${ApiConstants.baseUrl}/api/Attendance/employee/$employeeId/active'
       );
 
-      print('🔍 GET active attendance request to: $uri');
+      debugPrint('🔍 GET active attendance request to: $uri');
       
       // Get auth token directly to debug
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(ApiConstants.authTokenKey);
       
       if (token == null) {
-        print('❌ Authentication token is null');
+        debugPrint('❌ Authentication token is null');
         return ApiResponse<AttendanceDetail>(
           success: false,
           errorMessage: 'No authentication token found',
@@ -706,12 +707,12 @@ class AttendanceRepository {
         },
       );
       
-      print('📊 Active attendance response status code: ${response.statusCode}');
-      print('📊 Active attendance response body length: ${response.body.length}');
+      debugPrint('📊 Active attendance response status code: ${response.statusCode}');
+      debugPrint('📊 Active attendance response body length: ${response.body.length}');
       
       // Handle authentication error
       if (response.statusCode == 401) {
-        print('🔒 Authentication error (401 Unauthorized)');
+        debugPrint('🔒 Authentication error (401 Unauthorized)');
         return ApiResponse<AttendanceDetail>(
           success: false,
           errorMessage: 'Authentication failed. Please log in again.',
@@ -720,7 +721,7 @@ class AttendanceRepository {
       
       // Handle empty response
       if (response.body.isEmpty) {
-        print('⚠️ Empty response body received');
+        debugPrint('⚠️ Empty response body received');
         return ApiResponse<AttendanceDetail>(
           success: false,
           errorMessage: 'Server returned an empty response',
@@ -751,14 +752,14 @@ class AttendanceRepository {
           );
         }
       } catch (jsonError) {
-        print('❌ JSON parse error: $jsonError');
+        debugPrint('❌ JSON parse error: $jsonError');
         return ApiResponse<AttendanceDetail>(
           success: false,
           errorMessage: 'Error parsing server response: $jsonError',
         );
       }
     } catch (e) {
-      print('❌ Exception in getEmployeeActiveAttendance: $e');
+      debugPrint('❌ Exception in getEmployeeActiveAttendance: $e');
       return ApiResponse<AttendanceDetail>(
         success: false,
         errorMessage: 'Error getting active attendance: $e',

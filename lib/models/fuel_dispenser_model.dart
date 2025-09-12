@@ -5,6 +5,7 @@ class FuelDispenser {
   final String status;
   final int numberOfNozzles;
   final String? fuelType;
+  final String? dispenserName;
   
   FuelDispenser({
     required this.id,
@@ -13,6 +14,7 @@ class FuelDispenser {
     required this.status,
     int? numberOfNozzles,
     this.fuelType,
+    this.dispenserName,
   }) : this.numberOfNozzles = _validateNozzleCount(numberOfNozzles ?? 1);
   
   static int _validateNozzleCount(int count) {
@@ -29,6 +31,7 @@ class FuelDispenser {
       status: json['status'],
       numberOfNozzles: _validateNozzleCount(json['numberOfNozzles'] ?? 1),
       fuelType: json['fuelType'],
+      dispenserName: json['dispenserName'] as String?,
     );
   }
   
@@ -41,6 +44,9 @@ class FuelDispenser {
       'numberOfNozzles': numberOfNozzles,
       'fuelType': fuelType ?? "<string>",
     };
+    if (dispenserName != null && dispenserName!.isNotEmpty) {
+      data['dispenserName'] = dispenserName;
+    }
     
     return data;
   }

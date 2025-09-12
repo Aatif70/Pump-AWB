@@ -12,6 +12,7 @@ import '../../theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class SubmitStartReadingScreen extends StatefulWidget {
   final String? nozzleId;
@@ -107,7 +108,7 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
       _fuelTankId = _fuelTankId ?? prefs.getString('employee_fuel_tank_id');
       _petrolPumpId = _petrolPumpId ?? prefs.getString('employee_petrol_pump_id');
     } catch (e) {
-      print('Error loading from preferences: $e');
+      debugPrint('Error loading from preferences: $e');
     }
   }
   
@@ -121,7 +122,7 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
         await prefs.setString('employee_petrol_pump_id', _petrolPumpId!);
       }
     } catch (e) {
-      print('Error saving to preferences: $e');
+      debugPrint('Error saving to preferences: $e');
     }
   }
 
@@ -146,7 +147,7 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
       // Check if we have nozzle data
       if (nozzleResp.data == null || nozzleResp.data!.isEmpty) {
         // No nozzles returned - handle this gracefully
-        print('No nozzles returned from API');
+        debugPrint('No nozzles returned from API');
         
         // Use default values as a fallback
         _fuelTankId = 'default_fuel_tank_id';
@@ -168,7 +169,7 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
             ),
           );
         } catch (e) {
-          print('Error finding nozzle: $e');
+          debugPrint('Error finding nozzle: $e');
           matchingNozzle = null;
         }
         
@@ -178,7 +179,7 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
           _petrolPumpId = matchingNozzle.petrolPumpId ?? 'default_petrol_pump_id';
         } else {
           // Use the first nozzle as fallback
-          print('Using first available nozzle as fallback');
+          debugPrint('Using first available nozzle as fallback');
           _fuelTankId = nozzleResp.data!.first.fuelTankId ?? 'default_fuel_tank_id';
           _petrolPumpId = nozzleResp.data!.first.petrolPumpId ?? 'default_petrol_pump_id';
         }
@@ -187,7 +188,7 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
       // Save to preferences for future use
       await _saveToPreferences();
     } catch (e) {
-      print('Error in _fetchAssignmentAndNozzle: $e');
+      debugPrint('Error in _fetchAssignmentAndNozzle: $e');
       // Set default values to prevent further errors
       _fuelTankId = _fuelTankId ?? 'default_fuel_tank_id';
       _petrolPumpId = _petrolPumpId ?? 'default_petrol_pump_id';
@@ -210,9 +211,9 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
         setState(() { 
           _previousEndReading = endResponse.data;
         });
-        print('Previous end reading: ${_previousEndReading?.meterReading}');
+        debugPrint('Previous end reading: ${_previousEndReading?.meterReading}');
       } else {
-        print('No previous end reading found: ${endResponse.errorMessage}');
+        debugPrint('No previous end reading found: ${endResponse.errorMessage}');
       }
       
       // Fetch last start reading
@@ -221,15 +222,15 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
         setState(() { 
           _previousStartReading = startResponse.data;
         });
-        print('Previous start reading: ${_previousStartReading?.meterReading}');
+        debugPrint('Previous start reading: ${_previousStartReading?.meterReading}');
       } else {
-        print('No previous start reading found: ${startResponse.errorMessage}');
+        debugPrint('No previous start reading found: ${startResponse.errorMessage}');
       }
       
       setState(() { _fetchingPreviousReadings = false; });
     } catch (e) {
       setState(() { _fetchingPreviousReadings = false; });
-      print('Error fetching previous readings: $e');
+      debugPrint('Error fetching previous readings: $e');
     }
   }
 
@@ -278,29 +279,25 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
       
       if (res.success) {
         // Show success snackbar before popping
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Start reading submitted successfully'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Start reading submitted successfully',
+          isError: false,
         );
         Navigator.pop(context, true);
       } else {
-        print('DEBUG: Error submitting reading: ${res.errorMessage}');
+        debugPrint('DEBUG: Error submitting reading: ${res.errorMessage}');
         setState(() { _error = res.errorMessage; });
         
         // Show error snackbar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to submit: ${res.errorMessage}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Failed to submit: ${res.errorMessage}',
+          isError: true,
         );
       }
     } catch (e) {
-      print('DEBUG: Exception in _submit: $e');
+      debugPrint('DEBUG: Exception in _submit: $e');
       setState(() { 
         _loading = false;
         _error = 'An unexpected error occurred. Please try again.';
@@ -675,12 +672,12 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
         setState(() {
           _employeeId = empResp.data!.id;
         });
-        print('Current employee ID: $_employeeId');
+        debugPrint('Current employee ID: $_employeeId');
       } else {
-        print('Failed to get current employee: ${empResp.errorMessage}');
+        debugPrint('Failed to get current employee: ${empResp.errorMessage}');
       }
     } catch (e) {
-      print('Error getting current employee: $e');
+      debugPrint('Error getting current employee: $e');
     }
   }
   
@@ -701,7 +698,7 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
         
         if (response.success && response.data != null) {
           _nozzleAssignments = response.data!;
-          print('Loaded ${_nozzleAssignments.length} nozzle assignments');
+          debugPrint('Loaded ${_nozzleAssignments.length} nozzle assignments');
           
           // If we already have a nozzle ID, select the matching assignment
           if (_nozzleId != null && _nozzleAssignments.isNotEmpty) {
@@ -716,14 +713,14 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
             _updateSelectedNozzleData();
           }
         } else {
-          print('Error loading nozzle assignments: ${response.errorMessage}');
+          debugPrint('Error loading nozzle assignments: ${response.errorMessage}');
         }
       });
     } catch (e) {
       setState(() {
         _loadingNozzleAssignments = false;
       });
-      print('Exception in _fetchNozzleAssignments: $e');
+      debugPrint('Exception in _fetchNozzleAssignments: $e');
     }
   }
   
@@ -970,27 +967,16 @@ class _SubmitStartReadingScreenState extends State<SubmitStartReadingScreen> {
 
   // Helper function to get color for fuel type
   Color _getFuelTypeColor(String fuelType) {
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.orange.shade800;
-      case 'premium':
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'premium diesel':
-        return Colors.deepPurple.shade800;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.indigo.shade700;
-      case 'bio-diesel':
-        return Colors.amber.shade800;
-      case 'electric':
-        return Colors.cyan.shade700;
-      default:
-        return Colors.blueGrey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    if (name == 'bio-diesel') return Colors.amber.shade800;
+    if (name == 'electric') return Colors.cyan.shade700;
+    return Colors.blueGrey.shade700;
   }
 
   // Widget to display previous readings

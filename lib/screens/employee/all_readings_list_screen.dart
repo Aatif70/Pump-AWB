@@ -7,6 +7,7 @@ import '../../widgets/loading_indicator.dart';
 import '../../widgets/error_message.dart';
 import '../../theme.dart';
 import '../../api/api_constants.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class AllReadingsListScreen extends StatefulWidget {
   const AllReadingsListScreen({super.key});
@@ -163,58 +164,25 @@ class _AllReadingsListScreenState extends State<AllReadingsListScreen> {
       );
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 10),
-                const Text('Reading updated successfully'),
-              ],
-            ),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Reading updated successfully',
+          isError: false,
         );
         // Refresh the readings list
         _fetchAllReadings();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 10),
-                Text('Failed to update: ${response.statusCode}'),
-              ],
-            ),
-            backgroundColor: Colors.red.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Failed to update: ${response.statusCode}',
+          isError: true,
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 10),
-              Text('Error updating reading: $e'),
-            ],
-          ),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Error updating reading: $e',
+        isError: true,
       );
     }
   }
@@ -1049,19 +1017,13 @@ class _AllReadingsListScreenState extends State<AllReadingsListScreen> {
   
   // Helper method to get color for fuel type
   Color _getColorForFuelType(String fuelType) {
-    switch(fuelType.toLowerCase()) {
-      case 'petrol':
-        return Colors.green.shade700;
-      case 'diesel':
-        return Colors.blue.shade700;
-      case 'premium petrol':
-        return Colors.purple.shade700;
-      case 'cng':
-        return Colors.teal.shade700;
-      case 'lpg':
-        return Colors.orange.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'cng') return Colors.teal.shade700;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    return Colors.grey.shade700;
   }
 }

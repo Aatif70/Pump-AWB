@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../../api/supplier_repository.dart';
 import '../../models/supplier_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EditSupplierScreen extends StatefulWidget {
   final Supplier supplier;
@@ -100,15 +102,10 @@ class _EditSupplierScreenState extends State<EditSupplierScreen> {
       if (mounted) {
         if (response.success) {
           // Show success message and pop back with result
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Supplier updated successfully'),
-              backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Supplier updated successfully',
+            isError: false,
           );
           Navigator.pop(context, true);
         } else {

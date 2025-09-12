@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
 
@@ -55,7 +56,7 @@ class EmployeeRepository {
   
   // Get all employees - simplified to directly fetch from the endpoint
   Future<ApiResponse<List<Employee>>> getAllEmployees({bool forceRefresh = false}) async {
-    print('REPOSITORY: Getting all employees');
+    debugPrint('REPOSITORY: Getting all employees');
     
     try {
       // Get token from shared preferences
@@ -64,7 +65,7 @@ class EmployeeRepository {
       
       // Check if token exists
       if (token == null) {
-        print('REPOSITORY: No auth token found for getting employees');
+        debugPrint('REPOSITORY: No auth token found for getting employees');
         return ApiResponse(
           success: false,
           errorMessage: 'You are not logged in. Please login to continue.',
@@ -74,7 +75,7 @@ class EmployeeRepository {
       // Add timestamp to prevent caching issues
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final url = '${ApiConstants.getEmployeeUrl()}?t=$timestamp';
-      print('REPOSITORY: Requesting employees from: $url with timestamp to prevent caching');
+      debugPrint('REPOSITORY: Requesting employees from: $url with timestamp to prevent caching');
       
       final response = await _apiService.get<List<Employee>>(
         url,
@@ -89,15 +90,15 @@ class EmployeeRepository {
             // Format: {"data": [...employees...], "success": true, "message": "..."}
             employeeList = json['data'] as List;
             developer.log('Found employees in data field, count: ${employeeList.length}');
-            print('Processing ${employeeList.length} employees from "data" field');
+            debugPrint('Processing ${employeeList.length} employees from "data" field');
           } else if (json is List) {
             // Format: [...employees...]
             employeeList = json;
             developer.log('Got direct list of employees, count: ${employeeList.length}');
-            print('Processing ${employeeList.length} employees from direct list');
+            debugPrint('Processing ${employeeList.length} employees from direct list');
           } else {
             developer.log('Unexpected response format: $json');
-            print('Unexpected response format: $json');
+            debugPrint('Unexpected response format: $json');
             return <Employee>[];
           }
           
@@ -133,11 +134,11 @@ class EmployeeRepository {
                 .toList();
             
             developer.log('Successfully processed ${employees.length} employees');
-            print('Successfully mapped ${employees.length} employees to model objects');
+            debugPrint('Successfully mapped ${employees.length} employees to model objects');
             return employees;
           } catch (e) {
             developer.log('Error converting JSON to Employee objects: $e');
-            print('Error converting JSON to Employee objects: $e');
+            debugPrint('Error converting JSON to Employee objects: $e');
             return <Employee>[];
           }
         },
@@ -147,16 +148,16 @@ class EmployeeRepository {
       if (response.success) {
         final count = response.data?.length ?? 0;
         developer.log('Successfully got $count employees');
-        print('Successfully got $count employees from API');
+        debugPrint('Successfully got $count employees from API');
       } else {
         developer.log('Failed to get employees: ${response.errorMessage}');
-        print('Failed to get employees: ${response.errorMessage}');
+        debugPrint('Failed to get employees: ${response.errorMessage}');
       }
       
       return response;
     } catch (e) {
       developer.log('Exception in getAllEmployees: $e');
-      print('Exception in getAllEmployees: $e');
+      debugPrint('Exception in getAllEmployees: $e');
       return ApiResponse(
         success: false,
         errorMessage: e.toString(),
@@ -166,7 +167,7 @@ class EmployeeRepository {
   
   // Get employee by ID
   Future<ApiResponse<Employee>> getEmployeeById(String id) async {
-    print('REPOSITORY: Getting employee with ID: $id');
+    debugPrint('REPOSITORY: Getting employee with ID: $id');
     
     try {
       // Get token from shared preferences
@@ -175,7 +176,7 @@ class EmployeeRepository {
       
       // Check if token exists
       if (token == null) {
-        print('REPOSITORY: No auth token found for getting employee details');
+        debugPrint('REPOSITORY: No auth token found for getting employee details');
         return ApiResponse(
           success: false,
           errorMessage: 'You are not logged in. Please login to continue.',
@@ -184,26 +185,26 @@ class EmployeeRepository {
       
       // Direct API call to get employee by ID
       final url = '${ApiConstants.getEmployeeUrl()}/$id';
-      print('REPOSITORY: Requesting employee details from: $url');
+      debugPrint('REPOSITORY: Requesting employee details from: $url');
       
       final response = await _apiService.get<Employee>(
         url,
         token: token,
         fromJson: (json) {
-          print('REPOSITORY: Response data for employee: $json');
+          debugPrint('REPOSITORY: Response data for employee: $json');
           
           // Handle different response formats
           Map<String, dynamic> employeeData = {};
           
           if (json is Map && json.containsKey('data')) {
             // Format: {"data": {...employee data...}}
-            print('REPOSITORY: Found employee in data field');
+            debugPrint('REPOSITORY: Found employee in data field');
             employeeData = (json['data'] as Map).cast<String, dynamic>();
           } else if (json is Map) {
             // Format: {...employee data...}
             employeeData = (json).cast<String, dynamic>();
           } else {
-            print('REPOSITORY: Unexpected response format for employee: $json');
+            debugPrint('REPOSITORY: Unexpected response format for employee: $json');
             return Employee(
               id: id, // Use requested ID as fallback
               firstName: '',
@@ -226,33 +227,33 @@ class EmployeeRepository {
           }
           
           // Debug log to check if isActive is present in the data
-          print('REPOSITORY: Employee data contains isActive? ${employeeData.containsKey('isActive')}');
+          debugPrint('REPOSITORY: Employee data contains isActive? ${employeeData.containsKey('isActive')}');
           if (employeeData.containsKey('isActive')) {
-            print('REPOSITORY: isActive value is: ${employeeData['isActive']}');
+            debugPrint('REPOSITORY: isActive value is: ${employeeData['isActive']}');
           }
           
           // Ensure we map employeeId to id
           if (employeeData.containsKey('employeeId') && !employeeData.containsKey('id')) {
             employeeData['id'] = employeeData['employeeId'];
-            print('REPOSITORY: Mapped employeeId to id: ${employeeData['id']}');
+            debugPrint('REPOSITORY: Mapped employeeId to id: ${employeeData['id']}');
           }
           
           // If id is still missing, use the requested id
           if (!employeeData.containsKey('id') || employeeData['id'] == null) {
             employeeData['id'] = id;
-            print('REPOSITORY: Using requested ID as fallback: $id');
+            debugPrint('REPOSITORY: Using requested ID as fallback: $id');
           }
           
           // Make sure isActive is properly included
           if (!employeeData.containsKey('isActive')) {
             employeeData['isActive'] = true; // Default to active if not provided
-            print('REPOSITORY: Setting default isActive: true');
+            debugPrint('REPOSITORY: Setting default isActive: true');
           }
           
           try {
             return Employee.fromJson(employeeData);
           } catch (e) {
-            print('REPOSITORY: Error parsing employee data: $e');
+            debugPrint('REPOSITORY: Error parsing employee data: $e');
             return Employee(
               id: id,
               firstName: '',
@@ -278,7 +279,7 @@ class EmployeeRepository {
       
       return response;
     } catch (e) {
-      print('REPOSITORY: Exception in getEmployeeById: $e');
+      debugPrint('REPOSITORY: Exception in getEmployeeById: $e');
       return ApiResponse(
         success: false,
         errorMessage: e.toString(),
@@ -288,7 +289,7 @@ class EmployeeRepository {
   
   // Get current employee using the Current endpoint
   Future<ApiResponse<Employee>> getCurrentEmployee() async {
-    print('REPOSITORY: Getting current employee details');
+    debugPrint('REPOSITORY: Getting current employee details');
     
     try {
       // Get token from shared preferences
@@ -297,7 +298,7 @@ class EmployeeRepository {
       
       // Check if token exists
       if (token == null) {
-        print('REPOSITORY: No auth token found for getting employee details');
+        debugPrint('REPOSITORY: No auth token found for getting employee details');
         return ApiResponse(
           success: false,
           errorMessage: 'You are not logged in. Please login to continue.',
@@ -306,26 +307,26 @@ class EmployeeRepository {
       
       // Direct API call to get current employee
       final url = '${ApiConstants.getEmployeeUrl()}/Current';
-      print('REPOSITORY: Requesting current employee details from: $url');
+      debugPrint('REPOSITORY: Requesting current employee details from: $url');
       
       final response = await _apiService.get<Employee>(
         url,
         token: token,
         fromJson: (json) {
-          print('REPOSITORY: Response data for current employee: $json');
+          debugPrint('REPOSITORY: Response data for current employee: $json');
           
           // Handle different response formats
           Map<String, dynamic> employeeData = {};
           
           if (json is Map && json.containsKey('data')) {
             // Format: {"data": {...employee data...}}
-            print('REPOSITORY: Found employee in data field');
+            debugPrint('REPOSITORY: Found employee in data field');
             employeeData = (json['data'] as Map).cast<String, dynamic>();
           } else if (json is Map) {
             // Format: {...employee data...}
             employeeData = (json).cast<String, dynamic>();
           } else {
-            print('REPOSITORY: Unexpected response format for employee: $json');
+            debugPrint('REPOSITORY: Unexpected response format for employee: $json');
             return Employee(
               id: '',
               firstName: '',
@@ -350,19 +351,19 @@ class EmployeeRepository {
           // Ensure we map employeeId to id
           if (employeeData.containsKey('employeeId') && !employeeData.containsKey('id')) {
             employeeData['id'] = employeeData['employeeId'];
-            print('REPOSITORY: Mapped employeeId to id: ${employeeData['id']}');
+            debugPrint('REPOSITORY: Mapped employeeId to id: ${employeeData['id']}');
           }
           
           // Make sure isActive is properly included
           if (!employeeData.containsKey('isActive')) {
             employeeData['isActive'] = true; // Default to active if not provided
-            print('REPOSITORY: Setting default isActive: true');
+            debugPrint('REPOSITORY: Setting default isActive: true');
           }
           
           try {
             return Employee.fromJson(employeeData);
           } catch (e) {
-            print('REPOSITORY: Error parsing employee data: $e');
+            debugPrint('REPOSITORY: Error parsing employee data: $e');
             return Employee(
               id: '',
               firstName: '',
@@ -388,7 +389,7 @@ class EmployeeRepository {
       
       return response;
     } catch (e) {
-      print('REPOSITORY: Exception in getCurrentEmployee: $e');
+      debugPrint('REPOSITORY: Exception in getCurrentEmployee: $e');
       return ApiResponse(
         success: false,
         errorMessage: e.toString(),
@@ -454,7 +455,7 @@ class EmployeeRepository {
 
   // Delete employee
   Future<ApiResponse<bool>> deleteEmployee(String employeeId) async {
-    print('REPOSITORY: Deleting employee with ID: $employeeId');
+    debugPrint('REPOSITORY: Deleting employee with ID: $employeeId');
     
     try {
       // Get the authentication token
@@ -462,7 +463,7 @@ class EmployeeRepository {
       final token = prefs.getString(ApiConstants.authTokenKey);
       
       if (token == null) {
-        print('REPOSITORY: No auth token found for deleting employee');
+        debugPrint('REPOSITORY: No auth token found for deleting employee');
         return ApiResponse(
           success: false,
           errorMessage: 'You are not logged in. Please login to continue.',
@@ -471,7 +472,7 @@ class EmployeeRepository {
       
       // Make the API call to DELETE employee
       final url = '${ApiConstants.getEmployeeUrl()}/$employeeId';
-      print('REPOSITORY: Making DELETE request to: $url');
+      debugPrint('REPOSITORY: Making DELETE request to: $url');
       
       final response = await _apiService.delete<bool>(
         url,
@@ -480,20 +481,20 @@ class EmployeeRepository {
           // For DELETE operations with 204 responses, 
           // we'll get an empty JSON or the ApiService will handle it
           // Just return true to indicate success
-          print('REPOSITORY: Delete operation completed, received response');
+          debugPrint('REPOSITORY: Delete operation completed, received response');
           return true;
         },
       );
       
       if (response.success) {
-        print('REPOSITORY: Employee deleted successfully, server confirmed');
+        debugPrint('REPOSITORY: Employee deleted successfully, server confirmed');
       } else {
-        print('REPOSITORY: Failed to delete employee: ${response.errorMessage}');
+        debugPrint('REPOSITORY: Failed to delete employee: ${response.errorMessage}');
       }
       
       return response;
     } catch (e) {
-      print('REPOSITORY EXCEPTION in deleteEmployee: $e');
+      debugPrint('REPOSITORY EXCEPTION in deleteEmployee: $e');
       return ApiResponse(
         success: false,
         errorMessage: e.toString(),

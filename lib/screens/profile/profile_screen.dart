@@ -5,7 +5,8 @@ import '../../models/pump_model.dart';
 import '../../models/fuel_type_model.dart';
 import '../../theme.dart';
 import 'package:intl/intl.dart';
-import 'package:collection/collection.dart'; // For firstWhereOrNull
+import 'package:collection/collection.dart';
+import '../../widgets/custom_snackbar.dart'; // For firstWhereOrNull
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -77,13 +78,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Set form values
         _setFormValues();
         
-        print('PROFILE_SCREEN: Profile loaded successfully: ${_profile!.toJson()}');
+        debugPrint('PROFILE_SCREEN: Profile loaded successfully: ${_profile!.toJson()}');
       } else {
         setState(() {
           _errorMessage = response.errorMessage ?? 'Failed to load profile data';
           _isLoading = false;
         });
-        print('PROFILE_SCREEN: Failed to load profile: $_errorMessage');
+        debugPrint('PROFILE_SCREEN: Failed to load profile: $_errorMessage');
       }
     } catch (e) {
       if (!mounted) return;
@@ -92,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _errorMessage = 'Error: $e';
         _isLoading = false;
       });
-      print('PROFILE_SCREEN: Exception loading profile: $e');
+      debugPrint('PROFILE_SCREEN: Exception loading profile: $e');
     }
   }
   
@@ -117,20 +118,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _fuelTypes = allFuelTypesResponse.data!;
         });
         
-        print('PROFILE_SCREEN: Loaded ${_fuelTypes.length} available fuel types');
+        debugPrint('PROFILE_SCREEN: Loaded ${_fuelTypes.length} available fuel types');
         // Debug log to help diagnose issues
         for (var fuelType in _fuelTypes) {
-          print('PROFILE_SCREEN: Fuel Type - ID: ${fuelType.fuelTypeId}, Name: ${fuelType.name}');
+          debugPrint('PROFILE_SCREEN: Fuel Type - ID: ${fuelType.fuelTypeId}, Name: ${fuelType.name}');
         }
       } else {
-        print('PROFILE_SCREEN: Failed to load all fuel types: ${allFuelTypesResponse.errorMessage}');
+        debugPrint('PROFILE_SCREEN: Failed to load all fuel types: ${allFuelTypesResponse.errorMessage}');
       }
       
       // Parse selected fuel types from profile
       if (_profile != null && _profile!.fuelTypesAvailable.isNotEmpty) {
-        print('PROFILE_SCREEN: Profile has fuel types: ${_profile!.fuelTypesAvailable}');
+        debugPrint('PROFILE_SCREEN: Profile has fuel types: ${_profile!.fuelTypesAvailable}');
         _selectedFuelTypeIds = _profile!.fuelTypesAvailable.split(',');
-        print('PROFILE_SCREEN: Selected fuel type IDs: $_selectedFuelTypeIds');
+        debugPrint('PROFILE_SCREEN: Selected fuel type IDs: $_selectedFuelTypeIds');
         
         // Now try to get pump-specific fuel types if we have a petrol pump ID
         if (_profile!.petrolPumpId != null && _profile!.petrolPumpId!.isNotEmpty) {
@@ -141,13 +142,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _pumpFuelTypes = pumpFuelTypesResponse.data!;
             });
             
-            print('PROFILE_SCREEN: Loaded ${_pumpFuelTypes.length} pump-specific fuel types');
+            debugPrint('PROFILE_SCREEN: Loaded ${_pumpFuelTypes.length} pump-specific fuel types');
             // Debug log for pump-specific fuel types
             for (var fuelType in _pumpFuelTypes) {
-              print('PROFILE_SCREEN: Pump Fuel Type - ID: ${fuelType.fuelTypeId}, Name: ${fuelType.name}');
+              debugPrint('PROFILE_SCREEN: Pump Fuel Type - ID: ${fuelType.fuelTypeId}, Name: ${fuelType.name}');
             }
           } else {
-            print('PROFILE_SCREEN: Failed to load pump fuel types: ${pumpFuelTypesResponse.errorMessage}');
+            debugPrint('PROFILE_SCREEN: Failed to load pump fuel types: ${pumpFuelTypesResponse.errorMessage}');
           }
         }
       }
@@ -161,7 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _isLoadingFuelTypes = false;
       });
-      print('PROFILE_SCREEN: Exception loading fuel types: $e');
+      debugPrint('PROFILE_SCREEN: Exception loading fuel types: $e');
     }
   }
   
@@ -217,8 +218,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Some APIs expect a comma-separated list without spaces
       final formattedFuelTypes = _selectedFuelTypeIds.join(',');
       
-      print('PROFILE_SCREEN: Preparing to save with fuel types: $formattedFuelTypes');
-      print('PROFILE_SCREEN: Number of selected fuel types: ${_selectedFuelTypeIds.length}');
+      debugPrint('PROFILE_SCREEN: Preparing to save with fuel types: $formattedFuelTypes');
+      debugPrint('PROFILE_SCREEN: Number of selected fuel types: ${_selectedFuelTypeIds.length}');
       
       // Create updated profile object with only the editable fields changed
       final updatedProfile = PumpProfile(
@@ -243,7 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         sapNo: _sapNoController.text,
       );
       
-      print('PROFILE_SCREEN: Saving updated profile: ${updatedProfile.toJson()}');
+      debugPrint('PROFILE_SCREEN: Saving updated profile: ${updatedProfile.toJson()}');
       
       // The API may have limitations on the number of fuel types or other validation rules
       // Try sending the update with the maximum allowed fuel types
@@ -260,11 +261,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isEditMode = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
-            backgroundColor: Colors.green,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Profile updated successfully',
+          isError: false,
         );
       } else {
         setState(() {
@@ -278,11 +278,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Try again with a limited number of fuel types (maximum 3)
           _showFuelTypeWarningDialog();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_errorMessage),
-              backgroundColor: Colors.red,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: _errorMessage,
+            isError: true,
           );
         }
       }
@@ -1020,7 +1019,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fuelTypeColor = pumpFuelType.color ?? '#CCCCCC';
                       } else {
                         // Debug log
-                        print('PROFILE_SCREEN: Could not find details for fuel type ID: $id');
+                        debugPrint('PROFILE_SCREEN: Could not find details for fuel type ID: $id');
                       }
                     }
                     
@@ -1311,7 +1310,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         
         // Log the ID we couldn't resolve for debugging
-        print('PROFILE_SCREEN: Could not find fuel type name for ID: $id');
+        debugPrint('PROFILE_SCREEN: Could not find fuel type name for ID: $id');
         
         return 'Unknown';
       }).toList();
@@ -1339,12 +1338,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _fuelTypes = allFuelTypesResponse.data!;
         });
         
-        print('PROFILE_SCREEN: Dynamically loaded ${_fuelTypes.length} fuel types for display');
+        debugPrint('PROFILE_SCREEN: Dynamically loaded ${_fuelTypes.length} fuel types for display');
       } else {
-        print('PROFILE_SCREEN: Failed to dynamically load fuel types: ${allFuelTypesResponse.errorMessage}');
+        debugPrint('PROFILE_SCREEN: Failed to dynamically load fuel types: ${allFuelTypesResponse.errorMessage}');
       }
     } catch (e) {
-      print('PROFILE_SCREEN: Exception dynamically loading fuel types: $e');
+      debugPrint('PROFILE_SCREEN: Exception dynamically loading fuel types: $e');
     }
   }
   

@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/nozzle_model.dart';
 import 'dart:developer' as developer;
@@ -93,7 +95,7 @@ class NozzleRepository {
   Future<ApiResponse<List<Nozzle>>> getNozzlesByDispenserId(String dispenserId) async {
     if (dispenserId.isEmpty) {
       developer.log('NozzleRepository: Cannot get nozzles - empty dispenser ID provided');
-      print('NozzleRepository: Cannot get nozzles - empty dispenser ID provided');
+      debugPrint('NozzleRepository: Cannot get nozzles - empty dispenser ID provided');
       return ApiResponse<List<Nozzle>>(
         success: false,
         errorMessage: 'Dispenser ID cannot be empty',
@@ -102,12 +104,12 @@ class NozzleRepository {
     }
     
     developer.log('NozzleRepository: Getting nozzles for dispenser ID: $dispenserId');
-    print('NozzleRepository: Getting nozzles for dispenser ID: $dispenserId');
+    debugPrint('NozzleRepository: Getting nozzles for dispenser ID: $dispenserId');
     
     try {
       final url = ApiConstants.getNozzlesByDispenserUrl(dispenserId);
       developer.log('NozzleRepository: API URL: $url');
-      print('NozzleRepository: API URL: $url');
+      debugPrint('NozzleRepository: API URL: $url');
       
       final headers = await _getHeaders();
       developer.log('NozzleRepository: Request headers: $headers');
@@ -118,13 +120,13 @@ class NozzleRepository {
       );
 
       developer.log('NozzleRepository: Response status code: ${response.statusCode}');
-      print('NozzleRepository: Response status code: ${response.statusCode}');
-      print('NozzleRepository: Raw response body: ${response.body}');
+      debugPrint('NozzleRepository: Response status code: ${response.statusCode}');
+      debugPrint('NozzleRepository: Raw response body: ${response.body}');
 
       if (response.statusCode == ApiConstants.statusOk) {
         // Check if response body is empty
         if (response.body.isEmpty) {
-          print('NozzleRepository: Empty response body received');
+          debugPrint('NozzleRepository: Empty response body received');
           return ApiResponse<List<Nozzle>>(
             success: true,
             data: [],
@@ -134,10 +136,10 @@ class NozzleRepository {
         try {
           final List<dynamic> jsonData = json.decode(response.body);
           developer.log('NozzleRepository: Successfully parsed JSON data, count: ${jsonData.length}');
-          print('NozzleRepository: Successfully parsed JSON data, count: ${jsonData.length}');
+          debugPrint('NozzleRepository: Successfully parsed JSON data, count: ${jsonData.length}');
           
           if (jsonData.isEmpty) {
-            print('NozzleRepository: Empty nozzle array returned from API');
+            debugPrint('NozzleRepository: Empty nozzle array returned from API');
             return ApiResponse<List<Nozzle>>(
               success: true,
               data: [],
@@ -149,11 +151,11 @@ class NozzleRepository {
               .toList();
           
           developer.log('NozzleRepository: Returning ${nozzles.length} nozzles');
-          print('NozzleRepository: Returning ${nozzles.length} nozzles');
+          debugPrint('NozzleRepository: Returning ${nozzles.length} nozzles');
           
           // Log some details about the nozzles
           for (var nozzle in nozzles) {
-            print('NozzleRepository: Nozzle #${nozzle.nozzleNumber}, Status: ${nozzle.status}, FuelType: ${nozzle.fuelType ?? ''}');
+            debugPrint('NozzleRepository: Nozzle #${nozzle.nozzleNumber}, Status: ${nozzle.status}, FuelType: ${nozzle.fuelType ?? ''}');
           }
           
           return ApiResponse<List<Nozzle>>(
@@ -161,7 +163,7 @@ class NozzleRepository {
             data: nozzles,
           );
         } catch (e) {
-          print('NozzleRepository: JSON parsing error: $e');
+          debugPrint('NozzleRepository: JSON parsing error: $e');
           return ApiResponse<List<Nozzle>>(
             success: false,
             errorMessage: 'Error parsing response: $e',
@@ -171,8 +173,8 @@ class NozzleRepository {
       } else {
         developer.log('NozzleRepository: Error fetching nozzles: ${response.statusCode}');
         developer.log('NozzleRepository: Error response: ${response.body}');
-        print('NozzleRepository: Error fetching nozzles: ${response.statusCode}');
-        print('NozzleRepository: Error response: ${response.body}');
+        debugPrint('NozzleRepository: Error fetching nozzles: ${response.statusCode}');
+        debugPrint('NozzleRepository: Error response: ${response.body}');
         return ApiResponse<List<Nozzle>>(
           success: false,
           errorMessage: 'Failed to fetch nozzles: ${response.statusCode}',
@@ -180,7 +182,7 @@ class NozzleRepository {
       }
     } catch (e) {
       developer.log('NozzleRepository: Exception when fetching nozzles: $e');
-      print('NozzleRepository: Exception when fetching nozzles: $e');
+      debugPrint('NozzleRepository: Exception when fetching nozzles: $e');
       return ApiResponse<List<Nozzle>>(
         success: false,
         errorMessage: 'Error: $e',
@@ -192,13 +194,13 @@ class NozzleRepository {
   Future<ApiResponse<Nozzle>> addNozzle(Nozzle nozzle) async {
     developer.log('NozzleRepository: Adding new nozzle for dispenser: ${nozzle.fuelDispenserUnitId}');
     developer.log('NozzleRepository: Nozzle details: ${nozzle.toJson()}');
-    print('ADD_NOZZLE_API: Starting API call to add nozzle');
-    print('ADD_NOZZLE_API: Nozzle details: ${nozzle.toJson()}');
+    debugPrint('ADD_NOZZLE_API: Starting API call to add nozzle');
+    debugPrint('ADD_NOZZLE_API: Nozzle details: ${nozzle.toJson()}');
     
     try {
       // Validate input data before sending request
       if (nozzle.fuelDispenserUnitId.isEmpty) {
-        print('ADD_NOZZLE_API: Error - Dispenser ID is empty');
+        debugPrint('ADD_NOZZLE_API: Error - Dispenser ID is empty');
         return ApiResponse<Nozzle>(
           success: false,
           errorMessage: 'Error: Dispenser ID cannot be empty',
@@ -206,7 +208,7 @@ class NozzleRepository {
       }
       
       if (nozzle.nozzleNumber <= 0 || nozzle.nozzleNumber > 8) {
-        print('ADD_NOZZLE_API: Error - Invalid nozzle number: ${nozzle.nozzleNumber}');
+        debugPrint('ADD_NOZZLE_API: Error - Invalid nozzle number: ${nozzle.nozzleNumber}');
         return ApiResponse<Nozzle>(
           success: false,
           errorMessage: 'Error: Nozzle number must be between 1 and 8',
@@ -214,7 +216,7 @@ class NozzleRepository {
       }
       
       if (nozzle.fuelTankId == null || nozzle.fuelTankId!.isEmpty) {
-        print('ADD_NOZZLE_API: Error - Fuel tank ID is empty');
+        debugPrint('ADD_NOZZLE_API: Error - Fuel tank ID is empty');
         return ApiResponse<Nozzle>(
           success: false,
           errorMessage: 'Error: Fuel tank must be selected',
@@ -222,7 +224,7 @@ class NozzleRepository {
       }
       
       final url = ApiConstants.getNozzleUrl();
-      print('ADD_NOZZLE_API: API URL: $url');
+      debugPrint('ADD_NOZZLE_API: API URL: $url');
       developer.log('NozzleRepository: API URL: $url');
       
       // Create payload according to the specified API format
@@ -236,28 +238,28 @@ class NozzleRepository {
       };
       
       final body = json.encode(payload);
-      print('ADD_NOZZLE_API: Request payload: $body');
+      debugPrint('ADD_NOZZLE_API: Request payload: $body');
       developer.log('NozzleRepository: Request body: $body');
       
       final headers = await _getHeaders();      
-      print('ADD_NOZZLE_API: Request headers: $headers');
+      debugPrint('ADD_NOZZLE_API: Request headers: $headers');
       developer.log('NozzleRepository: Headers: $headers');
       
       // Using POST method as specified in the API requirements
-      print('ADD_NOZZLE_API: Sending POST request');
+      debugPrint('ADD_NOZZLE_API: Sending POST request');
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: body,
       );
 
-      print('ADD_NOZZLE_API: Response status code: ${response.statusCode}');
-      print('ADD_NOZZLE_API: Response body: ${response.body}');
+      debugPrint('ADD_NOZZLE_API: Response status code: ${response.statusCode}');
+      debugPrint('ADD_NOZZLE_API: Response body: ${response.body}');
       developer.log('NozzleRepository: Response status code: ${response.statusCode}');
       developer.log('NozzleRepository: Response body: ${response.body}');
 
       if (response.statusCode == ApiConstants.statusCreated || response.statusCode == ApiConstants.statusOk) {
-        print('ADD_NOZZLE_API: Success - Nozzle created');
+        debugPrint('ADD_NOZZLE_API: Success - Nozzle created');
         final jsonData = json.decode(response.body);
         developer.log('NozzleRepository: Successfully created nozzle');
         return ApiResponse<Nozzle>(
@@ -265,22 +267,22 @@ class NozzleRepository {
           data: Nozzle.fromJson(jsonData),
         );
       } else {
-        print('ADD_NOZZLE_API: Error - Failed with status code: ${response.statusCode}');
+        debugPrint('ADD_NOZZLE_API: Error - Failed with status code: ${response.statusCode}');
         developer.log('NozzleRepository: Error adding nozzle: ${response.statusCode}');
         String errorBody = 'No response body';
         try {
           if (response.body.isNotEmpty) {
             errorBody = response.body;
-            print('ADD_NOZZLE_API: Error response body: $errorBody');
+            debugPrint('ADD_NOZZLE_API: Error response body: $errorBody');
             // Try to parse as JSON for better error details
             final errorJson = json.decode(response.body);
             if (errorJson.containsKey('message')) {
               errorBody = errorJson['message'];
-              print('ADD_NOZZLE_API: Error message from response: $errorBody');
+              debugPrint('ADD_NOZZLE_API: Error message from response: $errorBody');
             }
           }
         } catch (e) {
-          print('ADD_NOZZLE_API: Could not parse error response: $e');
+          debugPrint('ADD_NOZZLE_API: Could not parse error response: $e');
           developer.log('NozzleRepository: Could not parse error response: $e');
         }
         
@@ -291,7 +293,7 @@ class NozzleRepository {
         );
       }
     } catch (e) {
-      print('ADD_NOZZLE_API: Exception occurred: $e');
+      debugPrint('ADD_NOZZLE_API: Exception occurred: $e');
       developer.log('NozzleRepository: Exception when adding nozzle: $e');
       return ApiResponse<Nozzle>(
         success: false,

@@ -60,7 +60,6 @@ class Supplier {
     return {
       'contactPerson': contactPerson,
       'phoneNumber': phoneNumber,
-      'supplierDetailId': supplierDetailId,
       'supplierName': supplierName,
       'email': email,
       'address': address,
@@ -69,6 +68,22 @@ class Supplier {
       'zipCode': zipCode,
       'gstNumber': gstNumber,
       'petrolPumpId': petrolPumpId,
+      'isActive': isActive,
+    };
+  }
+
+  Map<String, dynamic> toJsonForUpdate() {
+    return {
+      'contactPerson': contactPerson,
+      'phoneNumber': phoneNumber,
+      'supplierDetailId': supplierDetailId,
+      'supplierName': supplierName,
+      'email': email,
+      'address': address,
+      'city': city,
+      'state': state,
+      'zipCode': zipCode,
+      'gstNumber': gstNumber,
       'isActive': isActive,
     };
   }

@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -16,6 +16,7 @@ import '../../models/cash_reconciliation_model.dart';
 import '../../theme.dart';
 import '../../utils/jwt_decoder.dart';
 import '../../widgets/loading_indicator.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class CashReconciliationReportScreen extends StatefulWidget {
   const CashReconciliationReportScreen({super.key});
@@ -387,7 +388,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
                   ),
@@ -419,7 +420,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
                                   borderRadius: BorderRadius.circular(8),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Colors.black.withValues(alpha:0.05),
                                       blurRadius: 5,
                                       offset: const Offset(0, 2),
                                     ),
@@ -456,7 +457,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
+                                    color: Colors.black.withValues(alpha:0.05),
                                     blurRadius: 5,
                                     offset: const Offset(0, 2),
                                   ),
@@ -768,8 +769,8 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
                   ),
                   decoration: BoxDecoration(
                     color: dailySummary.totalCashVariance == 0
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
+                        ? Colors.green.withValues(alpha:0.1)
+                        : Colors.red.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -970,7 +971,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withOpacity(0.05),
+                color: AppTheme.primaryBlue.withValues(alpha:0.05),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -1020,7 +1021,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withOpacity(0.1),
+            color: AppTheme.primaryBlue.withValues(alpha:0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -1104,7 +1105,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha:0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -1190,7 +1191,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withOpacity(0.1),
+                color: AppTheme.primaryBlue.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -1222,7 +1223,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: hasVariance ? Colors.red.withOpacity(0.3) : Colors.transparent,
+          color: hasVariance ? Colors.red.withValues(alpha:0.3) : Colors.transparent,
           width: hasVariance ? 1 : 0,
         ),
       ),
@@ -1243,7 +1244,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryBlue.withOpacity(0.1),
+                        color: AppTheme.primaryBlue.withValues(alpha:0.1),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -1298,13 +1299,13 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
                   ),
                   decoration: BoxDecoration(
                     color: shift.reconciliationStatus == 'Balanced'
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
+                        ? Colors.green.withValues(alpha:0.1)
+                        : Colors.red.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: shift.reconciliationStatus == 'Balanced'
-                          ? Colors.green.withOpacity(0.3)
-                          : Colors.red.withOpacity(0.3),
+                          ? Colors.green.withValues(alpha:0.3)
+                          : Colors.red.withValues(alpha:0.3),
                       width: 1,
                     ),
                   ),
@@ -1426,10 +1427,10 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: hasVariance ? Colors.red.withOpacity(0.05) : Colors.green.withOpacity(0.05),
+                color: hasVariance ? Colors.red.withValues(alpha:0.05) : Colors.green.withValues(alpha:0.05),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: hasVariance ? Colors.red.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+                  color: hasVariance ? Colors.red.withValues(alpha:0.2) : Colors.green.withValues(alpha:0.2),
                 ),
               ),
               child: Row(
@@ -1527,7 +1528,7 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withOpacity(0.08),
+            color: AppTheme.primaryBlue.withValues(alpha:0.08),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Icon(
@@ -1566,8 +1567,10 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
   // PDF Export functionality
   Future<void> _exportToPdf(BuildContext context) async {
     if (cashReconciliationData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No report data available to export')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No report data available to export',
+        isError: true,
       );
       return;
     }
@@ -1578,11 +1581,11 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
     
     // Show a notification that PDF generation has started
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Generating PDF report...'),
-          duration: Duration(seconds: 1),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Generating PDF report...',
+        isError: false,
+        duration: const Duration(seconds: 1),
       );
     }
     
@@ -1625,8 +1628,10 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate PDF: $e')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Failed to generate PDF: $e',
+        isError: true,
       );
     } finally {
       if (mounted) {
@@ -2357,8 +2362,10 @@ class _CashReconciliationReportScreenState extends State<CashReconciliationRepor
     
     if (result.status != ShareResultStatus.success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to share the PDF file')),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Failed to share the PDF file',
+          isError: true,
         );
       }
     }

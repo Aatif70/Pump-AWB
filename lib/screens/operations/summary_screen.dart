@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../api/api_constants.dart';
 import '../../theme.dart';
 import '../../screens/login/login_screen.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class SummaryScreen extends StatefulWidget {
   const SummaryScreen({Key? key}) : super(key: key);
@@ -132,11 +133,10 @@ class _SummaryScreenState extends State<SummaryScreen> {
     if (!mounted) return;
     
     // Show a snackbar before redirecting
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Session expired. Please log in again.'),
-        backgroundColor: Colors.red,
-      ),
+    showAnimatedSnackBar(
+      context: context,
+      message: 'Session expired. Please log in again.',
+      isError: true,
     );
     
     // Delay briefly to allow snackbar to be seen

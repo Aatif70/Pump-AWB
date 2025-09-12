@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_snackbar.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
@@ -17,6 +18,7 @@ import '../../models/employee_model.dart';
 import '../../models/employee_performance_report_model.dart';
 import '../../theme.dart';
 import '../../utils/shared_prefs.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EmployeePerformanceReportScreen extends StatefulWidget {
   const EmployeePerformanceReportScreen({super.key});
@@ -77,30 +79,41 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
         });
         return;
       }
-      
+      final String url = ApiConstants.getEmployeeUrl();
+      final masked = authToken.length > 12
+          ? authToken.substring(0, 6) + '...' + authToken.substring(authToken.length - 4)
+          : '***masked***';
+      print('EmployeePerformance: Employees URL => ' + url);
+      print('EmployeePerformance: Auth => Bearer ' + masked);
+
       final response = await http.get(
-        Uri.parse(ApiConstants.getEmployeeUrl()),
+        Uri.parse(url),
         headers: {
           'Authorization': 'Bearer $authToken',
           'Content-Type': 'application/json',
         },
       );
+      print('EmployeePerformance: Employees status=${response.statusCode}');
+      print('EmployeePerformance: Employees rawBody=${response.body}');
       
       if (response.statusCode == 200) {
         try {
           final responseData = jsonDecode(response.body);
-          print('Employee API Response: ${response.body}');
+          if (responseData is Map<String, dynamic>) {
+            print('EmployeePerformance: Employees parsed keys=${responseData.keys.join(', ')}');
+          }
           
           if (responseData['success'] == true && responseData['data'] != null) {
             final employeesList = List<Map<String, dynamic>>.from(responseData['data']);
+            print('EmployeePerformance: Employees count=${employeesList.length}');
             
             List<Employee> employees = [];
             for (var employeeJson in employeesList) {
               try {
                 employees.add(Employee.fromJson(employeeJson));
               } catch (e) {
-                print('Error parsing employee: $e');
-                print('Employee data: $employeeJson');
+                print('EmployeePerformance: Error parsing employee: $e');
+                print('EmployeePerformance: Employee data: $employeeJson');
                 // Continue with next employee
               }
             }
@@ -120,21 +133,21 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
           setState(() {
             _errorMessage = 'Error parsing employee data: $e';
           });
-          print('JSON parse error: $e');
-          print('Response body: ${response.body}');
+          print('EmployeePerformance: Employees JSON parse error: $e');
+          print('EmployeePerformance: Employees body: ${response.body}');
         }
       } else {
         setState(() {
           _errorMessage = 'Failed to load employees: ${response.statusCode}';
         });
-        print('HTTP Error: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('EmployeePerformance: Employees HTTP Error: ${response.statusCode}');
+        print('EmployeePerformance: Employees body: ${response.body}');
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Error loading employees: $e';
       });
-      print('Exception in _loadEmployees: $e');
+      print('EmployeePerformance: Exception in _loadEmployees: $e');
     }
   }
   
@@ -177,7 +190,12 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
         _endDate, 
         _selectedEmployeeId!
       );
-      
+      final masked = authToken.length > 12
+          ? authToken.substring(0, 6) + '...' + authToken.substring(authToken.length - 4)
+          : '***masked***';
+      print('EmployeePerformance: Report URL => ' + url);
+      print('EmployeePerformance: Auth => Bearer ' + masked);
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -185,10 +203,19 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
           'Content-Type': 'application/json',
         },
       );
+      print('EmployeePerformance: Report status=${response.statusCode}');
+      print('EmployeePerformance: Report rawBody=${response.body}');
       
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+        if (responseData is Map<String, dynamic>) {
+          print('EmployeePerformance: Report parsed keys=${responseData.keys.join(', ')}');
+        }
         final performanceResponse = EmployeePerformanceResponse.fromJson(responseData);
+        print('EmployeePerformance: Report success=${performanceResponse.success}, dataCount=${performanceResponse.data.length}');
+        if (!performanceResponse.success) {
+          print('EmployeePerformance: Report message=${performanceResponse.message}');
+        }
         
         setState(() {
           _isLoading = false;
@@ -203,12 +230,15 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
           _isLoading = false;
           _errorMessage = 'Failed to load report: ${response.statusCode}';
         });
+        print('EmployeePerformance: Report HTTP Error: ${response.statusCode}');
+        print('EmployeePerformance: Report body: ${response.body}');
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
         _errorMessage = 'Error: $e';
       });
+      print('EmployeePerformance: Exception in _loadReport: $e');
     }
   }
   
@@ -1466,40 +1496,27 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
   }
   
   Color _getFuelTypeColor(String fuelType) {
-    // Map common fuel types to distinct colors
-    switch (fuelType.toLowerCase()) {
-      case 'petrol':
-      case 'gasoline':
-        return Colors.green.shade500;
-      case 'diesel':
-        return Colors.orange.shade500;
-      case 'kerosene':
-        return Colors.blue.shade500;
-      case 'cng':
-      case 'natural gas':
-        return Colors.purple.shade500;
-      case 'lpg':
-        return Colors.red.shade500;
-      case 'premium petrol':
-      case 'premium gasoline':
-        return Colors.green.shade700;
-      case 'premium diesel':
-        return Colors.orange.shade700;
-      case 'biofuel':
-      case 'ethanol':
-        return Colors.teal.shade500;
-      default:
-        // Generate a color based on the string hash value for unknown types
-        final hash = fuelType.hashCode;
-        return Color(0xFF000000 + (hash % 0xFFFFFF));
-    }
+    final name = fuelType.toLowerCase().trim();
+    if (name == 'diesel') return Colors.blue;
+    if (name == 'petrol' || name == 'gasoline') return Colors.green;
+    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium' || name == 'premium gasoline') return Colors.red;
+    if (name == 'premium diesel') return Colors.black;
+    if (name == 'kerosene') return Colors.blue.shade500;
+    if (name == 'cng' || name == 'natural gas') return Colors.purple.shade500;
+    if (name == 'lpg') return Colors.indigo.shade700;
+    if (name == 'biofuel' || name == 'ethanol') return Colors.amber.shade600;
+    // Fallback deterministic color for unknown types
+    final hash = fuelType.hashCode;
+    return Color(0xFF000000 + (hash % 0xFFFFFF));
   }
 
   // PDF Export functionality
   Future<void> _exportToPdf(BuildContext context) async {
     if (_report == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No report data available to export')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'No report data available to export',
+        isError: true,
       );
       return;
     }
@@ -1510,11 +1527,11 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
     
     // Show a notification that PDF generation has started
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Generating PDF report...'),
-          duration: Duration(seconds: 1),
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Generating PDF report...',
+        isError: false,
+        duration: const Duration(seconds: 1),
       );
     }
     
@@ -1558,8 +1575,10 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to generate PDF: $e')),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Failed to generate PDF: $e',
+        isError: true,
       );
     } finally {
       if (mounted) {
@@ -1973,8 +1992,10 @@ class _EmployeePerformanceReportScreenState extends State<EmployeePerformanceRep
     
     if (result.status != ShareResultStatus.success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to share the PDF file')),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Failed to share the PDF file',
+          isError: true,
         );
       }
     }

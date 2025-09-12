@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
+
 import '../models/fuel_delivery_order_model.dart';
 import 'api_service.dart';
 import 'api_response.dart' as api_response_model;
@@ -23,17 +25,17 @@ class FuelDeliveryOrderRepository {
       // Get the auth token - using correct method name
       final token = await SharedPrefs.getAuthToken();
       if (token == null || token.isEmpty) {
-        print('===== AUTH ERROR =====');
-        print('Authentication token is null or empty');
+        debugPrint('===== AUTH ERROR =====');
+        debugPrint('Authentication token is null or empty');
         return api_response_model.ApiResponse<String>(
           success: false,
           errorMessage: 'Authentication token not found. Please login again.',
         );
       }
       
-      print('===== AUTH INFO =====');
-      print('Token exists: ${token.isNotEmpty}');
-      print('Token length: ${token.length}');
+      debugPrint('===== AUTH INFO =====');
+      debugPrint('Token exists: ${token.isNotEmpty}');
+      debugPrint('Token length: ${token.length}');
       
       // Convert order to JSON map
       final Map<String, dynamic> jsonMap = order.toJson();
@@ -41,14 +43,14 @@ class FuelDeliveryOrderRepository {
       // Create a full URL with base URL and endpoint
       final String url = '${ApiConstants.baseUrl}/api/FuelDeliveryOrder/petrol-pump/$petrolPumpId';
       
-      // Print the JSON data for debugging
-      print('===== DEBUGGING API REQUEST =====');
-      print('API Endpoint: $url');
+      // debugPrint the JSON data for debugging
+      debugPrint('===== DEBUGGING API REQUEST =====');
+      debugPrint('API Endpoint: $url');
       
-      // Print the JSON as a formatted string to better see the structure
+      // debugPrint the JSON as a formatted string to better see the structure
       final jsonString = const JsonEncoder.withIndent('  ').convert(jsonMap);
-      print('Request Payload:');
-      print(jsonString);
+      debugPrint('Request Payload:');
+      debugPrint(jsonString);
       
       final response = await _apiService.post<dynamic>(
         url,
@@ -57,11 +59,11 @@ class FuelDeliveryOrderRepository {
         fromJson: (json) => json,
       );
       
-      // Print the API response
-      print('===== API RESPONSE =====');
-      print('Success: ${response.success}');
-      print('Error: ${response.errorMessage}');
-      print('Data: ${response.data}');
+      // debugPrint the API response
+      debugPrint('===== API RESPONSE =====');
+      debugPrint('Success: ${response.success}');
+      debugPrint('Error: ${response.errorMessage}');
+      debugPrint('Data: ${response.data}');
       
       if (response.success) {
         return api_response_model.ApiResponse<String>(
@@ -75,13 +77,13 @@ class FuelDeliveryOrderRepository {
         );
       }
     } catch (e) {
-      print('===== REPOSITORY ERROR =====');
-      print(e.toString());
+      debugPrint('===== REPOSITORY ERROR =====');
+      debugPrint(e.toString());
       print(e.runtimeType);
       if (e is FormatException) {
-        print('Format Exception Details: ${e.message}');
-        print('Source: ${e.source}');
-        print('Offset: ${e.offset}');
+        debugPrint('Format Exception Details: ${e.message}');
+        debugPrint('Source: ${e.source}');
+        debugPrint('Offset: ${e.offset}');
       }
       
       return api_response_model.ApiResponse<String>(

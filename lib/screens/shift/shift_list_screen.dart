@@ -10,6 +10,7 @@ import 'add_shift_screen.dart';
 import 'edit_shift_screen.dart';
 import 'dart:developer' as developer;
 import 'package:google_fonts/google_fonts.dart';
+import '../../widgets/custom_snackbar.dart';
 
 
 class ShiftListScreen extends StatefulWidget {
@@ -33,7 +34,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
   @override
   void initState() {
     super.initState();
-    print('SHIFT_LIST: Initializing Shift List Screen');
+    debugPrint('SHIFT_LIST: Initializing Shift List Screen');
     _loadShifts();
   }
 
@@ -43,7 +44,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
       _errorMessage = '';
     });
 
-    print('SHIFT_LIST: Loading shifts from repository');
+    debugPrint('SHIFT_LIST: Loading shifts from repository');
     try {
       developer.log('Loading all shifts');
       final response = await _repository.getAllShifts();
@@ -54,21 +55,21 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
           if (response.success && response.data != null) {
             // Add real shifts from the API
             _shifts = response.data!;
-            print('SHIFT_LIST: Successfully loaded ${_shifts.length} shifts from API');
+            debugPrint('SHIFT_LIST: Successfully loaded ${_shifts.length} shifts from API');
             developer.log('Loaded ${_shifts.length} shifts');
             
             // Check if any shifts have assigned employees
             int shiftsWithEmployees = _shifts.where((shift) => 
               shift.assignedEmployeeIds.isNotEmpty).length;
-            print('SHIFT_LIST: $shiftsWithEmployees shifts have assigned employees');
+            debugPrint('SHIFT_LIST: $shiftsWithEmployees shifts have assigned employees');
             
             // Log details about each shift's assignments for debugging
             for (var i = 0; i < _shifts.length; i++) {
               final shift = _shifts[i];
               final employeeCount = shift.assignedEmployeeIds?.length ?? 0;
-              print('SHIFT_LIST: Shift #${shift.shiftNumber} (ID: ${shift.id}) has $employeeCount assigned employees');
+              debugPrint('SHIFT_LIST: Shift #${shift.shiftNumber} (ID: ${shift.id}) has $employeeCount assigned employees');
               if (employeeCount > 0) {
-                print('SHIFT_LIST: Employee IDs for Shift #${shift.shiftNumber}: ${shift.assignedEmployeeIds}');
+                debugPrint('SHIFT_LIST: Employee IDs for Shift #${shift.shiftNumber}: ${shift.assignedEmployeeIds}');
               }
             }
             
@@ -77,7 +78,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
           } else {
             _errorMessage = response.errorMessage ?? 'Failed to load shifts';
             _shifts = [];
-            print('SHIFT_LIST: Error loading shifts: $_errorMessage');
+            debugPrint('SHIFT_LIST: Error loading shifts: $_errorMessage');
           }
         });
       }
@@ -87,7 +88,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
           _isLoading = false;
           _errorMessage = e.toString();
           _shifts = [];
-          print('SHIFT_LIST: Exception loading shifts: $e');
+          debugPrint('SHIFT_LIST: Exception loading shifts: $e');
         });
       }
     }
@@ -96,7 +97,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
   // New method to preload employee data for all shifts
   Future<void> _preloadEmployeeData() async {
     // Only clear cached data for shifts that need updating
-    print('SHIFT_LIST: Preloading employee data for shifts that need it');
+    debugPrint('SHIFT_LIST: Preloading employee data for shifts that need it');
     
     // Track which shifts actually need a refresh
     bool needsStateUpdate = false;
@@ -106,18 +107,18 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
         // Skip if we already have data for this shift and it hasn't changed
         if (_cachedEmployeeData.containsKey(shift.id!) && 
             _cachedEmployeeData[shift.id!]?.length == shift.assignedEmployeeIds.length) {
-          print('SHIFT_LIST: Skipping preload for shift ${shift.id} - data already cached');
+          debugPrint('SHIFT_LIST: Skipping preload for shift ${shift.id} - data already cached');
           continue;
         }
         
         try {
           // Process shifts sequentially to avoid overwhelming the API
           final employees = await _forceReloadEmployeeData(shift.id!);
-          print('SHIFT_LIST: Preloaded ${employees.length} employees for shift ${shift.id}');
+          debugPrint('SHIFT_LIST: Preloaded ${employees.length} employees for shift ${shift.id}');
           
           // If the shift shown on UI doesn't match actual employee count, mark for UI update
           if ((shift.assignedEmployeeIds?.length ?? 0) != employees.length) {
-            print('SHIFT_LIST: Detected mismatch in employee count for shift ${shift.id}');
+            debugPrint('SHIFT_LIST: Detected mismatch in employee count for shift ${shift.id}');
             
             // Update the shift's assignedEmployeeIds to match actual data
             final index = _shifts.indexWhere((s) => s.id == shift.id);
@@ -127,7 +128,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
             }
           }
         } catch (e) {
-          print('SHIFT_LIST: Failed to preload employee data for shift ${shift.id}: $e');
+          debugPrint('SHIFT_LIST: Failed to preload employee data for shift ${shift.id}: $e');
         }
       }
     }
@@ -141,33 +142,32 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
   }
 
   void _navigateToAddShift() async {
-    print('SHIFT_LIST: Navigating to Add Shift screen');
+    debugPrint('SHIFT_LIST: Navigating to Add Shift screen');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AddShiftScreen()),
     );
     
     if (result == true) {
-      print('SHIFT_LIST: Returned from Add Shift with success, refreshing list');
+      debugPrint('SHIFT_LIST: Returned from Add Shift with success, refreshing list');
       // Refresh shifts list
       _loadShifts();
     } else {
-      print('SHIFT_LIST: Returned from Add Shift without changes');
+      debugPrint('SHIFT_LIST: Returned from Add Shift without changes');
     }
   }
 
   // Add these methods for edit and delete functionality
   Future<void> _navigateToEditShift(Shift shift) async {
-    print('SHIFT_LIST: Navigating to Edit Shift screen for shift ID: ${shift.id}');
+    debugPrint('SHIFT_LIST: Navigating to Edit Shift screen for shift ID: ${shift.id}');
     
     // Check if shift has a valid ID
     if (shift.id == null || shift.id!.isEmpty) {
-      print('SHIFT_LIST: Cannot edit shift with missing ID');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot edit this shift: Missing shift ID. This may be due to an API response issue.'),
-          duration: Duration(seconds: 4),
-        ),
+      debugPrint('SHIFT_LIST: Cannot edit shift with missing ID');
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Cannot edit this shift: Missing shift ID. This may be due to an API response issue.',
+        isError: true,
       );
       return;
     }
@@ -178,25 +178,27 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
     );
     
     if (result == true) {
-      print('SHIFT_LIST: Returned from Edit Shift with success, refreshing list');
+      debugPrint('SHIFT_LIST: Returned from Edit Shift with success, refreshing list');
       // Refresh shifts list
       _loadShifts();
     } else {
-      print('SHIFT_LIST: Returned from Edit Shift without changes');
+      debugPrint('SHIFT_LIST: Returned from Edit Shift without changes');
     }
   }
   
   Future<void> _confirmDeleteShift(Shift shift) async {
     // Validate shift ID
     if (shift.id == null || shift.id!.isEmpty) {
-      print('SHIFT_LIST: Cannot delete shift with missing ID');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot delete shift: Missing shift ID')),
+      debugPrint('SHIFT_LIST: Cannot delete shift with missing ID');
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Cannot delete shift: Missing shift ID',
+        isError: true,
       );
       return;
     }
     
-    print('SHIFT_LIST: Confirming deletion of shift ID: ${shift.id}');
+    debugPrint('SHIFT_LIST: Confirming deletion of shift ID: ${shift.id}');
     // Show confirmation dialog
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -220,17 +222,17 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
     );
     
     if (confirm == true) {
-      print('SHIFT_LIST: User confirmed deletion, deleting shift ID: ${shift.id}');
+      debugPrint('SHIFT_LIST: User confirmed deletion, deleting shift ID: ${shift.id}');
       setState(() {
         _isLoading = true;
       });
       
       try {
         // First check if there are employees assigned to this shift
-        print('SHIFT_LIST: Checking for employees assigned to shift before deletion');
+        debugPrint('SHIFT_LIST: Checking for employees assigned to shift before deletion');
         // Check if the shift has assigned employees in the shift object
         if (shift.assignedEmployeeIds.isNotEmpty) {
-          print('SHIFT_LIST: Shift has ${shift.assignedEmployeeIds.length} assigned employees, need to remove them first');
+          debugPrint('SHIFT_LIST: Shift has ${shift.assignedEmployeeIds.length} assigned employees, need to remove them first');
           
           // Show a dialog asking if the user wants to remove all employees first
           final bool? removeEmployees = await showDialog<bool>(
@@ -259,7 +261,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
             setState(() {
               _isLoading = false;
             });
-            print('SHIFT_LIST: User cancelled removing employees and deleting shift');
+            debugPrint('SHIFT_LIST: User cancelled removing employees and deleting shift');
             return;
           }
           
@@ -281,7 +283,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
           );
           
           // Use the new repository method to remove all employees
-          print('SHIFT_LIST: Calling repository to remove all employees from shift ${shift.id}');
+          debugPrint('SHIFT_LIST: Calling repository to remove all employees from shift ${shift.id}');
           final removeResponse = await _employeeShiftRepository.removeAllEmployeesFromShift(shift.id!);
           
           // Close the progress dialog
@@ -292,18 +294,20 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
               _isLoading = false;
             });
             
-            print('SHIFT_LIST: Failed to remove employees: ${removeResponse.errorMessage}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to remove employees: ${removeResponse.errorMessage}')),
+            debugPrint('SHIFT_LIST: Failed to remove employees: ${removeResponse.errorMessage}');
+            showAnimatedSnackBar(
+              context: context,
+              message: 'Failed to remove employees: ${removeResponse.errorMessage}',
+              isError: true,
             );
             return;
           }
           
-          print('SHIFT_LIST: Successfully removed all employees from shift');
+          debugPrint('SHIFT_LIST: Successfully removed all employees from shift');
         }
         
         // Now try deleting the shift
-        print('SHIFT_LIST: Attempting to delete shift with ID: ${shift.id}');
+        debugPrint('SHIFT_LIST: Attempting to delete shift with ID: ${shift.id}');
         final response = await _repository.deleteShift(shift.id!);
         
         if (mounted) {
@@ -312,14 +316,14 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
           });
           
           if (response.success) {
-            print('SHIFT_LIST: Shift deleted successfully');
+            debugPrint('SHIFT_LIST: Shift deleted successfully');
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Shift deleted successfully')),
             );
             // Refresh shifts list
             _loadShifts();
           } else {
-            print('SHIFT_LIST: Failed to delete shift: ${response.errorMessage}');
+            debugPrint('SHIFT_LIST: Failed to delete shift: ${response.errorMessage}');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Failed to delete shift: ${response.errorMessage}')),
             );
@@ -330,7 +334,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
           setState(() {
             _isLoading = false;
           });
-          print('SHIFT_LIST: Exception deleting shift: $e');
+          debugPrint('SHIFT_LIST: Exception deleting shift: $e');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error: $e'),
@@ -340,7 +344,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
         }
       }
     } else {
-      print('SHIFT_LIST: User cancelled deletion');
+      debugPrint('SHIFT_LIST: User cancelled deletion');
     }
   }
 
@@ -356,7 +360,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
       final DateTime assignedDate = DateTime.now();
       final bool isTransfer = false;
       
-      print('SHIFT_LIST: Assigning employee $employeeId to shift $shiftId');
+      debugPrint('SHIFT_LIST: Assigning employee $employeeId to shift $shiftId');
       
       // Make API call
       final response = await _employeeShiftRepository.assignEmployeeToShift(
@@ -371,7 +375,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
       });
       
       if (response.success) {
-        print('SHIFT_LIST: Employee assigned successfully');
+        debugPrint('SHIFT_LIST: Employee assigned successfully');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Employee assigned to shift successfully'),
@@ -389,7 +393,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
         
         return true;
       } else {
-        print('SHIFT_LIST: Failed to assign employee: ${response.errorMessage}');
+        debugPrint('SHIFT_LIST: Failed to assign employee: ${response.errorMessage}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to assign employee: ${response.errorMessage}'),
@@ -403,7 +407,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
         _isLoading = false;
         _errorMessage = e.toString();
       });
-      print('SHIFT_LIST: Exception assigning employee: $e');
+      debugPrint('SHIFT_LIST: Exception assigning employee: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
@@ -609,12 +613,12 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
   
   // Navigate to assign staff screen or show dialog
   void _navigateToAssignStaff(Shift shift) async {
-    print('SHIFT_LIST: Showing assign staff dialog for shift ${shift.id}');
+    debugPrint('SHIFT_LIST: Showing assign staff dialog for shift ${shift.id}');
     final wasAssigned = await _showAssignEmployeeDialog(shift);
     
     // If an employee was assigned, refresh the shift details view
     if (wasAssigned == true) {
-      print('SHIFT_LIST: Employee was assigned, refreshing shift details');
+      debugPrint('SHIFT_LIST: Employee was assigned, refreshing shift details');
       // Force refresh of shift data by clearing cache and reloading data
       await _refreshShifts();
       
@@ -660,7 +664,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
     });
     
     try {
-      print('SHIFT_LIST: Removing employee $employeeId from shift $shiftId');
+      debugPrint('SHIFT_LIST: Removing employee $employeeId from shift $shiftId');
       final response = await _employeeShiftRepository.removeEmployeeFromShift(employeeId, shiftId);
       
       setState(() {
@@ -668,7 +672,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
       });
       
       if (response.success) {
-        print('SHIFT_LIST: Employee removed successfully');
+        debugPrint('SHIFT_LIST: Employee removed successfully');
     ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('$employeeName has been removed from the shift'),
@@ -679,7 +683,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
         // Refresh shifts list to update UI
         _loadShifts();
       } else {
-        print('SHIFT_LIST: Failed to remove employee: ${response.errorMessage}');
+        debugPrint('SHIFT_LIST: Failed to remove employee: ${response.errorMessage}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to remove employee: ${response.errorMessage}'),
@@ -692,7 +696,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
         _isLoading = false;
       });
       
-      print('SHIFT_LIST: Exception removing employee: $e');
+      debugPrint('SHIFT_LIST: Exception removing employee: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
@@ -704,7 +708,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
 
   // Get refresh status of shifts and employee assignments
   Future<void> _refreshShifts() async {
-    print('SHIFT_LIST: Refreshing shifts and staff assignments');
+    debugPrint('SHIFT_LIST: Refreshing shifts and staff assignments');
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Refreshing shifts...'),
@@ -920,7 +924,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
   }
 
   Widget _buildShiftsList() {
-    print('SHIFT_LIST: Building shifts list with ${_shifts.length} shifts');
+    debugPrint('SHIFT_LIST: Building shifts list with ${_shifts.length} shifts');
     return Column(
       children: [
         // Error banner if there's an error but we have mock data
@@ -1002,7 +1006,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
                   itemCount: _shifts.length,
                   itemBuilder: (context, index) {
                     final shift = _shifts[index];
-                    print('SHIFT_LIST: Rendering shift ${index + 1}: ID=${shift.id}, Number=${shift.shiftNumber}');
+                    debugPrint('SHIFT_LIST: Rendering shift ${index + 1}: ID=${shift.id}, Number=${shift.shiftNumber}');
                     return _buildShiftCard(shift, index);
                   },
                 ),
@@ -1386,13 +1390,13 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
 
   void _showShiftDetails(Shift shift) {
     // Show bottom sheet with shift details
-    print('SHIFT_LIST: Showing details for shift ID: ${shift.id}');
+    debugPrint('SHIFT_LIST: Showing details for shift ID: ${shift.id}');
     
     // Always clear cached data for this shift to get fresh data
     if (shift.id != null && shift.id!.isNotEmpty) {
       // Remove this shift from cache to force reload
       _cachedEmployeeData.remove(shift.id!);
-      print('SHIFT_LIST: Cleared cached employee data for shift ${shift.id} to ensure fresh data');
+      debugPrint('SHIFT_LIST: Cleared cached employee data for shift ${shift.id} to ensure fresh data');
     }
     
     // Check if shift has missing ID
@@ -1429,7 +1433,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
     
     // Pre-load the employee data right away
     if (!hasMissingId && shift.id != null) {
-      print('SHIFT_LIST: Pre-loading employee data for shift ${shift.id}');
+      debugPrint('SHIFT_LIST: Pre-loading employee data for shift ${shift.id}');
       _forceReloadEmployeeData(shift.id!);
     }
     
@@ -1658,7 +1662,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
                                     }
 
                                     if (snapshot.hasError) {
-                                      print('SHIFT_LIST: Error loading employees: ${snapshot.error}');
+                                      debugPrint('SHIFT_LIST: Error loading employees: ${snapshot.error}');
                                       return _buildErrorCard(
                                         'Failed to load employee details: ${snapshot.error}',
                                         icon: Icons.error_outline,
@@ -1667,7 +1671,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
                                     }
 
                                     final employees = snapshot.data ?? [];
-                                    print('SHIFT_LIST: Displaying ${employees.length} employees for shift ${shift.id}');
+                                    debugPrint('SHIFT_LIST: Displaying ${employees.length} employees for shift ${shift.id}');
 
                                     return _buildEmployeeListContent(employees, shift, color);
                                   },
@@ -1692,7 +1696,7 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
   
   // Helper method to build employee list content
   Widget _buildEmployeeListContent(List<Employee> employees, Shift shift, Color accentColor) {
-    print('SHIFT_LIST: Building employee list content with ${employees.length} employees');
+    debugPrint('SHIFT_LIST: Building employee list content with ${employees.length} employees');
     
     if (employees.isEmpty) {
       return Container(
@@ -1727,17 +1731,17 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
       );
     }
 
-    // Print detailed info about each employee for debugging
+    // debugPrint detailed info about each employee for debugging
     for (var employee in employees) {
-      print('SHIFT_LIST: Employee Name: "${employee.firstName} ${employee.lastName}"');
-      print('SHIFT_LIST: Employee Role: "${employee.role}"');
+      debugPrint('SHIFT_LIST: Employee Name: "${employee.firstName} ${employee.lastName}"');
+      debugPrint('SHIFT_LIST: Employee Role: "${employee.role}"');
       // Look for "Pump Manager" specifically
       if (employee.firstName.contains('Pump') || employee.lastName.contains('Manager')) {
-        print('SHIFT_LIST: Found Pump Manager! Detailed info:');
-        print('SHIFT_LIST: firstName: "${employee.firstName}"');
-        print('SHIFT_LIST: lastName: "${employee.lastName}"');
-        print('SHIFT_LIST: role: "${employee.role}"');
-        print('SHIFT_LIST: id: "${employee.id}"');
+        debugPrint('SHIFT_LIST: Found Pump Manager! Detailed info:');
+        debugPrint('SHIFT_LIST: firstName: "${employee.firstName}"');
+        debugPrint('SHIFT_LIST: lastName: "${employee.lastName}"');
+        debugPrint('SHIFT_LIST: role: "${employee.role}"');
+        debugPrint('SHIFT_LIST: id: "${employee.id}"');
       }
     }
 
@@ -2138,13 +2142,13 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
 
   // Force reload employee data for a specific shift
   Future<List<Employee>> _forceReloadEmployeeData(String shiftId) async {
-    print('SHIFT_LIST: Loading employee data for shift $shiftId');
+    debugPrint('SHIFT_LIST: Loading employee data for shift $shiftId');
     try {
       final response = await _repository.getEmployeeDetailsForShift(shiftId);
       if (response.success && response.data != null) {
         // Update the cache with fresh data
         _cachedEmployeeData[shiftId] = response.data!;
-        print('SHIFT_LIST: Successfully loaded ${response.data!.length} employees for shift $shiftId');
+        debugPrint('SHIFT_LIST: Successfully loaded ${response.data!.length} employees for shift $shiftId');
         
         // Add debug info for roles
         for (var employee in response.data!) {
@@ -2153,11 +2157,11 @@ class _ShiftListScreenState extends State<ShiftListScreen> {
         
         return response.data!;
       } else {
-        print('SHIFT_LIST: Failed to load employee data: ${response.errorMessage}');
+        debugPrint('SHIFT_LIST: Failed to load employee data: ${response.errorMessage}');
         return [];
       }
     } catch (e) {
-      print('SHIFT_LIST: Exception loading employee data: $e');
+      debugPrint('SHIFT_LIST: Exception loading employee data: $e');
       return [];
     }
   }

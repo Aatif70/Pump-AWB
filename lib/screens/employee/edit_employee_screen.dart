@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../api/employee_repository.dart';
 import '../../models/employee_model.dart';
 import '../../theme.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class EditEmployeeScreen extends StatefulWidget {
   final Employee employee;
@@ -37,7 +38,7 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
   
   // Role selection
   String _roleValue = 'Attendant';
-  final List<String> _roles = ['Attendant'];
+  final List<String> _roles = ['Attendant', 'Manager'];
 
   @override
   void initState() {
@@ -79,6 +80,10 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
     _hireDateValue = employee.hireDate;
     _dobValue = employee.dateOfBirth;
     _roleValue = employee.role;
+    // Ensure the current role is present in the dropdown items exactly once
+    if (!_roles.contains(_roleValue)) {
+      _roles.add(_roleValue);
+    }
     _isActive = employee.isActive;
   }
 
@@ -90,11 +95,10 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
     
     // Check if the employee ID is null
     if (widget.employee.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cannot update employee: Invalid employee ID'),
-          backgroundColor: Colors.red,
-        ),
+      showAnimatedSnackBar(
+        context: context,
+        message: 'Cannot update employee: Invalid employee ID',
+        isError: true,
       );
       return;
     }
@@ -142,11 +146,10 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
         
         if (response.success) {
           // Show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Employee updated successfully'),
-              backgroundColor: Colors.green,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: 'Employee updated successfully',
+            isError: false,
           );
           
           print('EMPLOYEE UPDATE SUCCESS: isActive=${updatedEmployee.isActive}');
@@ -156,11 +159,10 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
         } else {
           // Show error message
           print('EMPLOYEE UPDATE FAILED: ${response.errorMessage}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(response.errorMessage ?? 'Failed to update employee'),
-              backgroundColor: Colors.red,
-            ),
+          showAnimatedSnackBar(
+            context: context,
+            message: response.errorMessage ?? 'Failed to update employee',
+            isError: true,
           );
         }
       }
@@ -171,11 +173,10 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
           _isLoading = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+        showAnimatedSnackBar(
+          context: context,
+          message: 'Error: ${e.toString()}',
+          isError: true,
         );
       }
     }
@@ -399,23 +400,19 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
                         // Employment Details Section
                         _buildSectionHeader('Employment Details'),
                         
-                        // Role
-                        DropdownButtonFormField<String>(
-                          value: _roleValue,
+                        // Role (read-only)
+                        InputDecorator(
                           decoration: AppTheme.inputDecoration('Role'),
-                          items: _roles.map((role) {
-                            return DropdownMenuItem<String>(
-                              value: role,
-                              child: Text(role),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                _roleValue = newValue;
-                              });
-                            }
-                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _roleValue,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const Icon(Icons.lock, size: 18, color: Colors.grey),
+                            ],
+                          ),
                         ),
                         
                         const SizedBox(height: 16),
