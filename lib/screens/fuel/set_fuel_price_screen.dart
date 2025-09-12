@@ -22,9 +22,6 @@ class SetFuelPriceScreen extends StatefulWidget {
 class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _priceController = TextEditingController();
-  final _costController = TextEditingController();
-  final _markupPercentageController = TextEditingController();
-  final _markupAmountController = TextEditingController();
   final _pricingRepository = PricingRepository();
   final _fuelTypeRepository = FuelTypeRepository();
 
@@ -41,7 +38,6 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   List<Map<String, dynamic>> _availableFuelTanks = [];
 
   DateTime _selectedEffectiveFrom = DateTime.now();
-  DateTime _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30));
 
   // FUEL TYPES AND THEIR COLORS
   final Map<String, Color> _fuelColors = {
@@ -78,9 +74,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   @override
   void dispose() {
     _priceController.dispose();
-    _costController.dispose();
-    _markupPercentageController.dispose();
-    _markupAmountController.dispose();
+    
     super.dispose();
   }
 
@@ -264,41 +258,21 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
       _priceController.text = currentPrice.pricePerLiter.toString();
 
       // Also fill in the new fields if they exist
-      if (currentPrice.costPerLiter != null) {
-        _costController.text = currentPrice.costPerLiter!.toString();
-      } else {
-        _costController.clear();
-      }
-
-      if (currentPrice.markupPercentage != null) {
-        _markupPercentageController.text = currentPrice.markupPercentage!.toString();
-      } else {
-        _markupPercentageController.clear();
-      }
-
-      if (currentPrice.markupAmount != null) {
-        _markupAmountController.text = currentPrice.markupAmount!.toString();
-      } else {
-        _markupAmountController.clear();
-      }
+      
 
       // If we're prefilling an existing price, also set the effective dates
       if (currentPrice.id != null) {
         setState(() {
           _selectedEffectiveFrom = currentPrice!.effectiveFrom;
-          _selectedEffectiveTo = currentPrice.effectiveTo ?? DateTime.now().add(const Duration(days: 30));
         });
-        developer.log('SetFuelPriceScreen: Prefilled effective dates: From ${DateFormat('yyyy-MM-dd').format(_selectedEffectiveFrom)} to ${DateFormat('yyyy-MM-dd').format(_selectedEffectiveTo)}');
+        developer.log('SetFuelPriceScreen: Prefilled effective date From ${DateFormat('yyyy-MM-dd').format(_selectedEffectiveFrom)}');
       }
     } else {
       _priceController.clear();
-      _costController.clear();
-      _markupPercentageController.clear();
-      _markupAmountController.clear();
+
       // Reset to current date if no existing price
       setState(() {
         _selectedEffectiveFrom = DateTime.now();
-        _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30));
       });
     }
   }
@@ -317,20 +291,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
       final pricePerLiter = double.parse(_priceController.text);
 
       // Parse new fields if provided
-      double? costPerLiter;
-      if (_costController.text.isNotEmpty) {
-        costPerLiter = double.parse(_costController.text);
-      }
-
-      double? markupPercentage;
-      if (_markupPercentageController.text.isNotEmpty) {
-        markupPercentage = double.parse(_markupPercentageController.text);
-      }
-
-      double? markupAmount;
-      if (_markupAmountController.text.isNotEmpty) {
-        markupAmount = double.parse(_markupAmountController.text);
-      }
+      // Removed legacy pricing fields per API update
 
       // Get pump ID and employee ID for lastUpdatedBy
       final pumpId = await _pricingRepository.getPumpId() ?? 'default_pump_id';
@@ -391,11 +352,9 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
       print("DEBUG: Selected fuel type: $_selectedFuelType");
       print("DEBUG: Effective from date: ${_selectedEffectiveFrom.toIso8601String()}");
-      print("DEBUG: Effective to date: ${_selectedEffectiveTo.toIso8601String()}");
+      
       print("DEBUG: Price per liter: $pricePerLiter");
-      print("DEBUG: Cost per liter: $costPerLiter");
-      print("DEBUG: Markup percentage: $markupPercentage");
-      print("DEBUG: Markup amount: $markupAmount");
+
       print("DEBUG: FuelTypeId: $fuelTypeId");
 
       ApiResponse<FuelPrice> response;
@@ -405,13 +364,11 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
         final updatedPrice = FuelPrice(
           id: existingPrice.id,
           effectiveFrom: _selectedEffectiveFrom,
-          effectiveTo: _selectedEffectiveTo,
+
           fuelType: _selectedFuelType,
           fuelTypeId: fuelTypeId,
           pricePerLiter: pricePerLiter,
-          costPerLiter: costPerLiter,
-          markupPercentage: markupPercentage,
-          markupAmount: markupAmount,
+          
           petrolPumpId: pumpId,
           lastUpdatedBy: employeeId,
         );
@@ -424,13 +381,9 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
         // Create new price
         final newPrice = FuelPrice(
           effectiveFrom: _selectedEffectiveFrom,
-          effectiveTo: _selectedEffectiveTo,
           fuelType: _selectedFuelType,
           fuelTypeId: fuelTypeId,
           pricePerLiter: pricePerLiter,
-          costPerLiter: costPerLiter,
-          markupPercentage: markupPercentage,
-          markupAmount: markupAmount,
           petrolPumpId: pumpId,
           lastUpdatedBy: employeeId,
         );
@@ -447,9 +400,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
           SnackBar(content: Text('Fuel price ${isUpdating ? 'updated' : 'set'} successfully')),
         );
         _priceController.clear();
-        _costController.clear();
-        _markupPercentageController.clear();
-        _markupAmountController.clear();
+        
         _fetchCurrentPrices();
         setState(() {
           _showPriceForm = false;
@@ -1218,7 +1169,6 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                           setState(() {
                             _selectedFuelType = _fuelTypes.first;
                             _selectedEffectiveFrom = DateTime.now();
-                            _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30));
                             _priceController.clear();
                             _showPriceForm = true;
                           });
@@ -1282,11 +1232,8 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                         setState(() {
                           _selectedFuelType = _fuelTypes.first;
                           _selectedEffectiveFrom = DateTime.now();
-                          _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30));
                           _priceController.clear();
-                          _costController.clear();
-                          _markupPercentageController.clear();
-                          _markupAmountController.clear();
+
                           _showPriceForm = true;
                         });
                       },
@@ -1542,28 +1489,13 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                       onDateSelected: (date) {
                         setState(() {
                           _selectedEffectiveFrom = date;
-                          // If effectiveTo is before the new effectiveFrom, update it
-                          if (_selectedEffectiveTo.isBefore(_selectedEffectiveFrom)) {
-                            _selectedEffectiveTo = _selectedEffectiveFrom.add(const Duration(days: 1));
-                          }
+
                         });
                       },
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildCompactDatePicker(
-                      label: 'To',
-                      selectedDate: _selectedEffectiveTo,
-                      color: color,
-                      context: context,
-                      onDateSelected: (date) {
-                        setState(() {
-                          _selectedEffectiveTo = date;
-                        });
-                      },
-                    ),
-                  ),
+                  
                 ],
               ),
 
@@ -1580,223 +1512,42 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Price and cost fields
-              Row(
-                children: [
-                  // Price per liter field
-                  Expanded(
-                    child: TextFormField(
-                      controller: _priceController,
-                      decoration: InputDecoration(
-                        labelText: 'Price per Liter (₹)',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        prefixIcon: Icon(Icons.currency_rupee, color: color),
-                        suffixText: '₹',
-                        suffixStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        floatingLabelBehavior: FloatingLabelBehavior.never,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a price';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
-                        }
-                        if (double.parse(value) <= 0) {
-                          return 'Price must be greater than zero';
-                        }
-                        return null;
-                      },
-                    ),
+              // Price per liter field
+              TextFormField(
+                controller: _priceController,
+                decoration: InputDecoration(
+                  labelText: 'Price per Liter (₹)',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
                   ),
-                  const SizedBox(width: 16),
-                  // Cost per liter field
-                  Expanded(
-                    child: TextFormField(
-                      controller: _costController,
-                      decoration: InputDecoration(
-                        labelText: 'Cost per Liter (₹)',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        prefixIcon: Icon(Icons.receipt, color: color),
-                        suffixText: '₹',
-                        suffixStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        floatingLabelBehavior: FloatingLabelBehavior.never,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      // Not required
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          if (double.tryParse(value) == null) {
-                            return 'Please enter a valid number';
-                          }
-                          if (double.parse(value) <= 0) {
-                            return 'Cost must be greater than zero';
-                          }
-                        }
-                        return null;
-                      },
-                    ),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  prefixIcon: Icon(Icons.currency_rupee, color: color),
+                  suffixText: '₹',
+                  suffixStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color,
                   ),
-                ],
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  floatingLabelBehavior: FloatingLabelBehavior.never,
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a price';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  if (double.parse(value) <= 0) {
+                    return 'Price must be greater than zero';
+                  }
+                  return null;
+                },
               ),
 
               const SizedBox(height: 20),
-
-              // Markup fields
-              Row(
-                children: [
-                  // Markup percentage field
-                  Expanded(
-                    child: TextFormField(
-                      controller: _markupPercentageController,
-                      decoration: InputDecoration(
-                        labelText: 'Markup Percentage (%)',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        prefixIcon: Icon(Icons.percent, color: color),
-                        suffixText: '%',
-                        suffixStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        floatingLabelBehavior: FloatingLabelBehavior.never,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      // Not required
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          if (double.tryParse(value) == null) {
-                            return 'Please enter a valid number';
-                          }
-                          if (double.parse(value) < 0) {
-                            return 'Markup % cannot be negative';
-                          }
-                        }
-                        return null;
-                      },
-                      onChanged: (value) {
-                        // Optionally: Calculate markup amount if both cost and percentage are entered
-                        if (value.isNotEmpty && _costController.text.isNotEmpty) {
-                          try {
-                            final cost = double.parse(_costController.text);
-                            final percentage = double.parse(value);
-                            final markupAmount = cost * (percentage / 100);
-                            _markupAmountController.text = markupAmount.toStringAsFixed(2);
-                          } catch (e) {
-                            // Ignore errors
-                          }
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Markup amount field
-                  Expanded(
-                    child: TextFormField(
-                      controller: _markupAmountController,
-                      decoration: InputDecoration(
-                        labelText: 'Markup Amount (₹)',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey.shade100,
-                        prefixIcon: Icon(Icons.currency_rupee, color: color),
-                        suffixText: '₹',
-                        suffixStyle: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        floatingLabelBehavior: FloatingLabelBehavior.never,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      // Not required
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          if (double.tryParse(value) == null) {
-                            return 'Please enter a valid number';
-                          }
-                          if (double.parse(value) < 0) {
-                            return 'Markup amount cannot be negative';
-                          }
-                        }
-                        return null;
-                      },
-                      onChanged: (value) {
-                        // Optionally: Calculate percentage if both cost and amount are entered
-                        if (value.isNotEmpty && _costController.text.isNotEmpty) {
-                          try {
-                            final cost = double.parse(_costController.text);
-                            if (cost > 0) {
-                              final amount = double.parse(value);
-                              final percentage = (amount / cost) * 100;
-                              _markupPercentageController.text = percentage.toStringAsFixed(2);
-                            }
-                          } catch (e) {
-                            // Ignore errors
-                          }
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Help text for markup calculation
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8.0),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.amber.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.amber.shade800, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Formula: Price = Cost + Markup Amount',
-                        style: TextStyle(
-                          color: Colors.amber.shade800,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
 
               // Action buttons
               Row(

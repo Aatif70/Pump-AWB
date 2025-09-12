@@ -73,9 +73,9 @@ class FuelPrice {
       fuelType: parseFuelType(),
       fuelTypeId: json['fuelTypeId'],
       pricePerLiter: json['pricePerLiter']?.toDouble() ?? 0.0,
-      costPerLiter: json['costPerLiter']?.toDouble(),
-      markupPercentage: json['markupPercentage']?.toDouble(),
-      markupAmount: json['markupAmount']?.toDouble(),
+      costPerLiter: null,
+      markupPercentage: null,
+      markupAmount: null,
       petrolPumpId: json['petrolPumpId'] ?? '',
       lastUpdatedBy: json['lastUpdatedBy'],
       isActive: json['isActive'] ?? true,
@@ -88,15 +88,11 @@ class FuelPrice {
       'fuelTypeId': fuelTypeId,
       'pricePerLiter': pricePerLiter,
       'petrolPumpId': petrolPumpId,
-      'lastUpdatedBy': lastUpdatedBy,
     };
     
     // Add optional fields only if they have values
     if (id != null) data['pricingId'] = id;
     if (effectiveTo != null) data['effectiveTo'] = effectiveTo!.toIso8601String();
-    if (costPerLiter != null) data['costPerLiter'] = costPerLiter;
-    if (markupPercentage != null) data['markupPercentage'] = markupPercentage;
-    if (markupAmount != null) data['markupAmount'] = markupAmount;
     
     return data;
   }

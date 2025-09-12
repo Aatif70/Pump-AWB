@@ -185,25 +185,10 @@ class PricingRepository {
       // Prepare the payload according to the specified API format
       final Map<String, dynamic> payload = {
         'effectiveFrom': price.effectiveFrom.toIso8601String(),
-        'pricePerLiter': price.pricePerLiter,
-        'petrolPumpId': price.petrolPumpId,
         'fuelTypeId': price.fuelTypeId,
-        'lastUpdatedBy': price.lastUpdatedBy,
+        'petrolPumpId': price.petrolPumpId,
+        'pricePerLiter': price.pricePerLiter,
       };
-
-      // Add optional fields if they exist
-      if (price.effectiveTo != null) {
-        payload['effectiveTo'] = price.effectiveTo!.toIso8601String();
-      }
-      if (price.costPerLiter != null) {
-        payload['costPerLiter'] = price.costPerLiter;
-      }
-      if (price.markupPercentage != null) {
-        payload['markupPercentage'] = price.markupPercentage;
-      }
-      if (price.markupAmount != null) {
-        payload['markupAmount'] = price.markupAmount;
-      }
 
       print('DEBUG: Full payload before encoding:');
       payload.forEach((key, value) {
@@ -232,7 +217,7 @@ class PricingRepository {
       developer.log('PricingRepository: Response status code: ${response.statusCode}');
       developer.log('PricingRepository: Response body: ${response.body}');
 
-      if (response.statusCode == ApiConstants.statusCreated) {
+      if (response.statusCode == ApiConstants.statusCreated || response.statusCode == ApiConstants.statusOk) {
         final responseData = json.decode(response.body);
         print('DEBUG: Response status code: ${response.statusCode}');
         print('DEBUG: Response body: ${response.body}');
@@ -250,7 +235,7 @@ class PricingRepository {
           print('DEBUG: Returning success response anyway since price was set');
 
           // Create a minimal FuelPrice object with the ID and fuelTypeId
-          final String? pricingId = responseData['pricingId'];
+          final String? pricingId = responseData['pricingId'] ?? responseData['id'];
           final String? fuelTypeId = responseData['fuelTypeId'];
 
           // Try to build a minimally valid FuelPrice object
@@ -263,11 +248,8 @@ class PricingRepository {
               fuelType: '', // Empty string as default
               fuelTypeId: fuelTypeId,
               pricePerLiter: double.parse(responseData['pricePerLiter'].toString()),
-              costPerLiter: responseData['costPerLiter'] != null ? double.parse(responseData['costPerLiter'].toString()) : null,
-              markupPercentage: responseData['markupPercentage'] != null ? double.parse(responseData['markupPercentage'].toString()) : null,
-              markupAmount: responseData['markupAmount'] != null ? double.parse(responseData['markupAmount'].toString()) : null,
               petrolPumpId: responseData['petrolPumpId'],
-              lastUpdatedBy: responseData['lastUpdatedBy'],
+              lastUpdatedBy: null,
             ),
           );
         }
@@ -645,25 +627,10 @@ class PricingRepository {
       final Map<String, dynamic> payload = {
         'pricingId': priceId,
         'effectiveFrom': price.effectiveFrom.toIso8601String(),
-        'pricePerLiter': price.pricePerLiter,
-        'petrolPumpId': price.petrolPumpId,
         'fuelTypeId': price.fuelTypeId,
-        'lastUpdatedBy': price.lastUpdatedBy,
+        'petrolPumpId': price.petrolPumpId,
+        'pricePerLiter': price.pricePerLiter,
       };
-
-      // Add optional fields if they exist
-      if (price.effectiveTo != null) {
-        payload['effectiveTo'] = price.effectiveTo!.toIso8601String();
-      }
-      if (price.costPerLiter != null) {
-        payload['costPerLiter'] = price.costPerLiter;
-      }
-      if (price.markupPercentage != null) {
-        payload['markupPercentage'] = price.markupPercentage;
-      }
-      if (price.markupAmount != null) {
-        payload['markupAmount'] = price.markupAmount;
-      }
 
       print('DEBUG: Full update payload before encoding:');
       payload.forEach((key, value) {
