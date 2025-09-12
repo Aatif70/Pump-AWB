@@ -12,7 +12,6 @@ import '../../models/price_model.dart';
 import '../../models/shift_model.dart';
 import '../../theme.dart';
 import '../../utils/jwt_decoder.dart';
-import '../../widgets/custom_snackbar.dart';
 import '../login/login_screen.dart';
 import 'employee_profile_screen.dart';
 import 'nozzle_readings_detail_screen.dart';
@@ -45,7 +44,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   Shift? _currentShift;
-  
+
   // Repositories
   final _employeeShiftRepository = EmployeeShiftRepository();
   final _pricingRepository = PricingRepository();
@@ -53,12 +52,12 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   final _nozzleAssignmentRepository = NozzleAssignmentRepository();
   final _nozzleRepository = NozzleRepository();
   final _attendanceRepository = AttendanceRepository();
-  
+
   // Fuel price data
   List<FuelPrice> _currentPrices = [];
   bool _loadingPrices = false;
   String _priceErrorMessage = '';
-  
+
   // Fuel type mapping data
   List<FuelType> _fuelTypes = [];
   bool _loadingFuelTypes = false;
@@ -78,30 +77,30 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     super.initState();
     _loadUserData();
   }
-  
+
   // Load user data from JWT token
   void _loadUserData() async {
     try {
       setState(() {
         _isLoading = true;
       });
-      
+
       final prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString(ApiConstants.authTokenKey);
-      
+
       if (token != null) {
         Map<String, dynamic>? decodedToken = JwtDecoder.decode(token);
 
         if (decodedToken != null) {
           developer.log('JWT Token contains - userId: ${decodedToken['userId']}, employeeId: ${decodedToken['employeeId']}');
-          
+
           setState(() {
             _username = decodedToken['employeeName'] ?? decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ?? 'Employee';
             _role = decodedToken['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? 'Attendant';
             _employeeId = decodedToken['employeeId'] ?? '';
             _petrolPumpId = decodedToken['petrolPumpId'] ?? '';
           });
-          
+
           // Load data with our streamlined sequence
           await _loadDataInSequence();
         }
@@ -117,7 +116,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       });
     }
   }
-  
+
   // Simplified data loading sequence focused on key data
   Future<void> _loadDataInSequence() async {
     try {
@@ -128,12 +127,12 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         _loadingFuelTypes = true;
         _loadingNozzleAssignments = true;
       });
-      
+
       _addDebugLog('Starting data load sequence');
-      
+
       // Load dependencies in parallel for better performance
       List<Future> dataLoadingTasks = [];
-      
+
       // 1. Load fuel types for proper display names
       dataLoadingTasks.add(_fetchFuelTypes().catchError((e) {
         _addDebugLog('Error loading fuel types: $e');
@@ -142,7 +141,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           _loadingFuelTypes = false;
         });
       }));
-      
+
       // 2. Load current prices in parallel
       dataLoadingTasks.add(_fetchCurrentPrices().catchError((e) {
         _addDebugLog('Error loading prices: $e');
@@ -151,7 +150,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           _loadingPrices = false;
         });
       }));
-      
+
       // 3. Load shift data
       dataLoadingTasks.add(_fetchCurrentShift().catchError((e) {
         _addDebugLog('Error loading current shift: $e');
@@ -159,7 +158,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           _errorMessage = 'Error loading shift data: $e';
         });
       }));
-      
+
       // 4. Load nozzle assignments
       dataLoadingTasks.add(_fetchNozzleAssignments().catchError((e) {
         _addDebugLog('Error loading nozzle assignments: $e');
@@ -168,15 +167,15 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           _loadingNozzleAssignments = false;
         });
       }));
-      
+
       // 5. Fetch check-in status
       dataLoadingTasks.add(_fetchCheckInStatus().catchError((e) {
         _addDebugLog('Error fetching check-in status: $e');
       }));
-      
+
       // Wait for parallel data loading to complete
       await Future.wait(dataLoadingTasks);
-      
+
       _addDebugLog('Data loading sequence completed');
     } catch (e) {
       _addDebugLog('Error in data loading sequence: $e');
@@ -193,7 +192,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       });
     }
   }
-  
+
   // Improved method to check and automatically reset for a new day
 
   // Helper to get time-appropriate greeting
@@ -207,29 +206,29 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       return 'evening';
     }
   }
-  
+
   // Fetch fuel types to map IDs to names
   Future<void> _fetchFuelTypes() async {
     setState(() {
       _loadingFuelTypes = true;
       _fuelTypeErrorMessage = '';
     });
-    
+
     try {
       developer.log('Fetching fuel types for petrol pump');
-      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump();
-      
+      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump(_petrolPumpId);
+
       if (response.success && response.data != null) {
         setState(() {
           _fuelTypes = response.data!;
-          
+
           // Create a mapping of fuel type IDs to their names
           _fuelTypeIdToName = {};
           for (var fuelType in _fuelTypes) {
             _fuelTypeIdToName[fuelType.fuelTypeId] = fuelType.name;
             developer.log('Mapped fuel type: ${fuelType.fuelTypeId} -> ${fuelType.name}');
           }
-          
+
           developer.log('Loaded ${_fuelTypes.length} fuel types');
         });
       } else {
@@ -249,16 +248,16 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       });
     }
   }
-  
+
   // Get fuel type name from ID
   String _getFuelTypeName(String? fuelTypeId) {
     if (fuelTypeId == null || fuelTypeId.isEmpty) {
       return 'Unknown';
     }
-    
+
     return _fuelTypeIdToName[fuelTypeId] ?? 'Unknown';
   }
-  
+
   // Show prompt to complete sales entry
   void _showCompleteSalesPrompt() {
     showDialog(
@@ -298,22 +297,22 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       ),
     );
   }
-  
+
   // Fetch current fuel prices
   Future<void> _fetchCurrentPrices() async {
     setState(() {
       _loadingPrices = true;
       _priceErrorMessage = '';
     });
-    
+
     try {
       developer.log('Fetching current fuel prices');
-      
+
       final response = await _pricingRepository.getCurrentPrices();
-      
+
       setState(() {
         _loadingPrices = false;
-        
+
         if (response.success && response.data != null) {
           _currentPrices = response.data!;
           developer.log('Loaded ${_currentPrices.length} fuel prices');
@@ -330,13 +329,13 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       });
     }
   }
-  
+
   Future<void> _fetchCurrentShift() async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
-    
+
     try {
       if (_employeeId.isEmpty) {
         setState(() {
@@ -344,47 +343,47 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         });
         return;
       }
-      
+
       developer.log('Fetching shifts for employee ID: $_employeeId using the getShiftsByEmployeeId endpoint');
-      debugPrint('DEBUG: Fetching shifts for employee ID: $_employeeId');
+      print('DEBUG: Fetching shifts for employee ID: $_employeeId');
       final response = await _employeeShiftRepository.getShiftsByEmployeeId(_employeeId);
-      
+
       if (response.success && response.data != null && response.data!.isNotEmpty) {
         developer.log('Found ${response.data!.length} shifts for employeeId: $_employeeId');
-        debugPrint('DEBUG: Found ${response.data!.length} shifts');
-        
+        print('DEBUG: Found ${response.data!.length} shifts');
+
         // Find the current active shift
         final now = DateTime.now();
         final shifts = response.data!;
-        
+
         // Try to find a shift that the employee is currently working
         try {
           _currentShift = shifts.firstWhere(
-            (shift) {
+                (shift) {
               // Parse start and end times to determine if current time is within shift
               final shiftDate = DateFormat('yyyy-MM-dd').format(now);
               final startDateTime = DateFormat('yyyy-MM-dd HH:mm').parse('$shiftDate ${shift.startTime}');
-              
+
               // Create a local variable for endDateTime that can be modified
               var endDateTime = DateFormat('yyyy-MM-dd HH:mm').parse('$shiftDate ${shift.endTime}');
-              
+
               // Adjust for overnight shifts
               if (endDateTime.isBefore(startDateTime)) {
                 endDateTime = endDateTime.add(const Duration(days: 1));
               }
-              
+
               final isWithinShift = now.isAfter(startDateTime) && now.isBefore(endDateTime);
-              debugPrint('DEBUG: Checking shift ${shift.shiftNumber}: start=$startDateTime, end=$endDateTime, isWithinShift=$isWithinShift');
+              print('DEBUG: Checking shift ${shift.shiftNumber}: start=$startDateTime, end=$endDateTime, isWithinShift=$isWithinShift');
               return isWithinShift;
             },
             orElse: () => shifts.first, // Default to first shift if no active shift found
           );
-          
+
           developer.log('Selected shift: ${_currentShift!.shiftNumber} with ID: ${_currentShift!.id}');
-          debugPrint('DEBUG: Selected shift: ${_currentShift!.shiftNumber}');
+          print('DEBUG: Selected shift: ${_currentShift!.shiftNumber}');
         } catch (e) {
           developer.log('Error finding current shift: $e');
-          debugPrint('DEBUG: Error finding current shift: $e');
+          print('DEBUG: Error finding current shift: $e');
           // If there's an error finding the current shift, just use the first one
           if (shifts.isNotEmpty) {
             _currentShift = shifts.first;
@@ -395,11 +394,11 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         setState(() {
           _errorMessage = response.errorMessage ?? 'No shifts assigned to you';
         });
-        debugPrint('DEBUG: No shifts found or error: ${response.errorMessage}');
+        print('DEBUG: No shifts found or error: ${response.errorMessage}');
       }
     } catch (e) {
       developer.log('Exception in _fetchCurrentShift: $e');
-      debugPrint('DEBUG: Exception in _fetchCurrentShift: $e');
+      print('DEBUG: Exception in _fetchCurrentShift: $e');
       setState(() {
         _errorMessage = 'Error fetching shifts: $e';
       });
@@ -409,14 +408,14 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       });
     }
   }
-  
+
   // Fetch nozzle assignments for the current employee
   Future<void> _fetchNozzleAssignments() async {
     setState(() {
       _loadingNozzleAssignments = true;
       _nozzleAssignmentErrorMessage = '';
     });
-    
+
     try {
       if (_employeeId.isEmpty) {
         setState(() {
@@ -425,13 +424,13 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         });
         return;
       }
-      
+
       developer.log('Fetching nozzle assignments for employee: $_employeeId');
       final response = await _nozzleAssignmentRepository.getEmployeeNozzleAssignments(_employeeId);
-      
+
       setState(() {
         _loadingNozzleAssignments = false;
-        
+
         if (response.success && response.data != null) {
           _nozzleAssignments = response.data!;
           developer.log('Loaded ${_nozzleAssignments.length} nozzle assignments');
@@ -448,27 +447,27 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       });
     }
   }
-  
+
   // Navigate to shift sales screen directly
   Future<void> _navigateToShiftSalesScreen(String employeeId) async {
     final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ShiftSalesScreen(
-          employeeId: employeeId,
-        ),
-      )
+        context,
+        MaterialPageRoute(
+          builder: (context) => ShiftSalesScreen(
+            employeeId: employeeId,
+          ),
+        )
     );
-    
+
     if (result == true) {
       await _refreshData();
     }
   }
-  
+
   // Helper method for debug logging
   void _addDebugLog(String message) {
     developer.log('DEBUG: $message');
-    debugPrint('DEBUG: $message');
+    print('DEBUG: $message');
   }
 
   // Map fuel types to their colors
@@ -487,18 +486,29 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
 
   get initialReadingType => null;
 
-  // Get color for fuel type (standardized)
+  // Get color for fuel type
   Color _getFuelTypeColor(String fuelType) {
-    final name = fuelType.toLowerCase().trim();
-    if (name == 'diesel') return Colors.blue;
-    if (name == 'petrol') return Colors.green;
-    if (name == 'power petrol' || name == 'premium petrol' || name == 'premium') return Colors.red;
-    if (name == 'premium diesel') return Colors.black;
-    if (name == 'cng') return Colors.teal.shade700;
-    if (name == 'lpg') return Colors.indigo.shade700;
-    if (name == 'bio-diesel') return Colors.amber.shade800;
-    if (name == 'electric') return Colors.cyan.shade700;
-    return Colors.blueGrey.shade700;
+    switch (fuelType.toLowerCase()) {
+      case 'petrol':
+        return Colors.green.shade700;
+      case 'diesel':
+        return Colors.orange.shade800;
+      case 'premium':
+      case 'premium petrol':
+        return Colors.purple.shade700;
+      case 'premium diesel':
+        return Colors.deepPurple.shade800;
+      case 'cng':
+        return Colors.teal.shade700;
+      case 'lpg':
+        return Colors.indigo.shade700;
+      case 'bio-diesel':
+        return Colors.amber.shade800;
+      case 'electric':
+        return Colors.cyan.shade700;
+      default:
+        return Colors.blueGrey.shade700;
+    }
   }
 
   @override
@@ -576,7 +586,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                 ),
               ),
             ),
-            
+
             // Menu items section
             Expanded(
               child: Container(
@@ -585,10 +595,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   physics: const BouncingScrollPhysics(),
                   children: [
                     const SizedBox(height: 8), // Reduced spacing
-                    
+
                     // Menu section: Main
                     _buildDrawerSection('Main'),
-                    
+
                     // DASHBOARD
                     _buildDrawerItem(
                       icon: Icons.dashboard_rounded,
@@ -654,14 +664,14 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                     ),
 
                     const SizedBox(height: 16),
-                    
+
                     Divider(
                       color: Colors.grey[300],
                       thickness: 1,
                       indent: 16,
                       endIndent: 16,
                     ),
-                    
+
                     // LOGOUT
                     _buildDrawerItem(
                       icon: Icons.logout_rounded,
@@ -676,540 +686,541 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           ],
         ),
       ),
-      body: _isLoading 
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: _refreshData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
+        onRefresh: _refreshData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome header
+              Container(
+                padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Welcome header
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryBlue,
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(30),
-                          bottomRight: Radius.circular(30),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 35,
+                          backgroundColor: Colors.white24,
+                          child: Icon(
+                            Icons.person,
+                            size: 30,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
-                                radius: 35,
-                                backgroundColor: Colors.white24,
-                                child: Icon(
-                                  Icons.person,
-                                  size: 30,
+                              Text(
+                                _username,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _username,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
+                              Row(
+                                children: [
+                                  Text(
+                                    _role,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white70,
                                     ),
-                                    Row(
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Check-in status badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: _isCheckedIn
+                                          ? Colors.green.withValues(alpha:0.3)
+                                          : Colors.red.withValues(alpha:0.3),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          _role,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.white70,
-                                          ),
+                                        Icon(
+                                          _isCheckedIn ? Icons.check_circle : Icons.cancel,
+                                          size: 12,
+                                          color: Colors.white,
                                         ),
-                                        const SizedBox(width: 8),
-                                        // Check-in status badge
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: _isCheckedIn 
-                                                ? Colors.green.withValues(alpha:0.3) 
-                                                : Colors.red.withValues(alpha:0.3),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                _isCheckedIn ? Icons.check_circle : Icons.cancel,
-                                                size: 12,
-                                                color: Colors.white,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                _isCheckedIn ? 'Checked In' : 'Not Checked In',
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _isCheckedIn ? 'Checked In' : 'Not Checked In',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Error message if any
-                    if (_errorMessage.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.error_outline, color: Colors.red.shade700),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Shift Assignment Issue',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.red.shade800,
-                                    ),
                                   ),
                                 ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _errorMessage,
-                                style: TextStyle(
-                                  color: Colors.red.shade700,
-                                ),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    
-                    // Current Fuel Prices
-                    _buildCurrentPricesCard(),
-                    
-                    // Current Shift Card
-                    if (_currentShift != null)
-                      _buildCurrentShiftCard(_currentShift!)
-                    else if (_errorMessage.isEmpty)
-                      _buildNoShiftCard(),
-
-                    // Add Check-in Card
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha:0.03),
-                              blurRadius: 6,
-                              spreadRadius: 0,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Title row
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.access_time_rounded,
-                                    color: Colors.grey.shade600,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Attendance',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            // Check-in section
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                              child: InkWell(
-                                onTap: _navigateToCheckInScreen,
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.green.shade50,
-                                    border: Border.all(
-                                      color: Colors.green.shade100,
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      // Check-in icon
-                                      Container(
-                                        width: 36,
-                                        height: 36,
-                                        decoration: BoxDecoration(
-                                          color: Colors.green.shade100,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.login_rounded,
-                                            color: Colors.green.shade600,
-                                            size: 18,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      
-                                      // Check-in details
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  'Check-In',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Colors.grey.shade800,
-                                                  ),
-                                                ),
-                                                const Spacer(),
-                                                if (_isCheckedIn)
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.green.shade100,
-                                                      borderRadius: BorderRadius.circular(8),
-                                                    ),
-                                                    child: Text(
-                                                      'Active',
-                                                      style: TextStyle(
-                                                        fontSize: 9,
-                                                        fontWeight: FontWeight.w500,
-                                                        color: Colors.green.shade700,
-                                                      ),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              'Record your arrival',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey.shade600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.chevron_right,
-                                        color: Colors.grey.shade400,
-                                        size: 16,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            
-                            // Check-out section
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                              child: InkWell(
-                                onTap: _navigateToCheckOutScreen,
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.red.shade50,
-                                    border: Border.all(
-                                      color: Colors.red.shade100,
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      // Check-out icon
-                                      Container(
-                                        width: 36,
-                                        height: 36,
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.shade100,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.logout_rounded,
-                                            color: Colors.red.shade600,
-                                            size: 18,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      
-                                      // Check-out details
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  'Check-Out',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Colors.grey.shade800,
-                                                  ),
-                                                ),
-                                                const Spacer(),
-                                                if (!_isCheckedIn)
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.red.shade100,
-                                                      borderRadius: BorderRadius.circular(8),
-                                                    ),
-                                                    child: Text(
-                                                      'Pending',
-                                                      style: TextStyle(
-                                                        fontSize: 9,
-                                                        fontWeight: FontWeight.w500,
-                                                        color: Colors.red.shade700,
-                                                      ),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              'Record your departure',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey.shade600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.chevron_right,
-                                        color: Colors.grey.shade400,
-                                        size: 16,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
-
-                    // Nozzle Assignment Card
-                    _buildNozzleAssignmentCard(),
-                    
-
-                    // View Reading History Card
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha:0.03),
-                              blurRadius: 6,
-                              spreadRadius: 0,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Title row
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.history_rounded,
-                                    color: Colors.grey.shade600,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'History',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            // View history section
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                              child: InkWell(
-                                onTap: () {
-                                  if (_nozzleAssignments.isNotEmpty) {
-                                    _showHistorySelectionDialog();
-                                  } else {
-                                    showAnimatedSnackBar(
-                                      context: context,
-                                      message: 'No nozzle assignment found',
-                                      isError: true,
-                                    );
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.grey.shade50,
-                                    border: Border.all(
-                                      color: Colors.grey.shade200,
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      // History icon
-                                      Container(
-                                        width: 36,
-                                        height: 36,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.shade200,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Icon(
-                                            Icons.history,
-                                            color: Colors.grey.shade600,
-                                            size: 18,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      
-                                      // History details
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  'View History',
-                                                  style: TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Colors.grey.shade800,
-                                                  ),
-                                                ),
-                                                const Spacer(),
-                                                if (_nozzleAssignments.isNotEmpty)
-                                                  Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.grey.shade200,
-                                                      borderRadius: BorderRadius.circular(8),
-                                                    ),
-                                                    child: Text(
-                                                      '${_nozzleAssignments.length} Nozzles',
-                                                      style: TextStyle(
-                                                        fontSize: 9,
-                                                        fontWeight: FontWeight.w500,
-                                                        color: Colors.grey.shade700,
-                                                      ),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              'View nozzle reading history',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey.shade600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.chevron_right,
-                                        color: Colors.grey.shade400,
-                                        size: 16,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
-            ),
+
+              // Error message if any
+              if (_errorMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red.shade700),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Shift Assignment Issue',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red.shade800,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _errorMessage,
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Current Fuel Prices
+              _buildCurrentPricesCard(),
+
+              // Current Shift Card
+              if (_currentShift != null)
+                _buildCurrentShiftCard(_currentShift!)
+              else if (_errorMessage.isEmpty)
+                _buildNoShiftCard(),
+
+              // Add Check-in Card
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha:0.03),
+                        blurRadius: 6,
+                        spreadRadius: 0,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title row
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.access_time_rounded,
+                              color: Colors.grey.shade600,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Attendance',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Check-in section
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: InkWell(
+                          onTap: _navigateToCheckInScreen,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.green.shade50,
+                              border: Border.all(
+                                color: Colors.green.shade100,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                // Check-in icon
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade100,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.login_rounded,
+                                      color: Colors.green.shade600,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // Check-in details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Check-In',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey.shade800,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          if (_isCheckedIn)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.shade100,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                'Active',
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.green.shade700,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Record your arrival',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey.shade400,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Check-out section
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: InkWell(
+                          onTap: _navigateToCheckOutScreen,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.red.shade50,
+                              border: Border.all(
+                                color: Colors.red.shade100,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                // Check-out icon
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade100,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.logout_rounded,
+                                      color: Colors.red.shade600,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // Check-out details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Check-Out',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey.shade800,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          if (!_isCheckedIn)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red.shade100,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                'Pending',
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.red.shade700,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Record your departure',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey.shade400,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Nozzle Assignment Card
+              _buildNozzleAssignmentCard(),
+
+
+              // View Reading History Card
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha:0.03),
+                        blurRadius: 6,
+                        spreadRadius: 0,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title row
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.history_rounded,
+                              color: Colors.grey.shade600,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'History',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // View history section
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: InkWell(
+                          onTap: () {
+                            if (_nozzleAssignments.isNotEmpty) {
+                              _showHistorySelectionDialog();
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('No nozzle assignment found'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: Colors.grey.shade50,
+                              border: Border.all(
+                                color: Colors.grey.shade200,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                // History icon
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.history,
+                                      color: Colors.grey.shade600,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+
+                                // History details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'View History',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey.shade800,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          if (_nozzleAssignments.isNotEmpty)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade200,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                '${_nozzleAssignments.length} Nozzles',
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.grey.shade700,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'View nozzle reading history',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey.shade400,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
-  
+
   // New method: Build shift progress tracker
   Widget _buildShiftProgressTracker() {
     return Padding(
@@ -1217,15 +1228,15 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha:0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2)
-            )
-          ]
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha:0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2)
+              )
+            ]
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1249,27 +1260,27 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            
+
 
             // Progress divider
             _buildProgressDivider(),
-            
 
-            
-            // Progress divider
-            _buildProgressDivider(),
-            
+
 
             // Progress divider
             _buildProgressDivider(),
-            
+
+
+            // Progress divider
+            _buildProgressDivider(),
+
 
           ],
         ),
       ),
     );
   }
-  
+
   // Helper to build a single progress item
   Widget _buildProgressItem({
     required String title,
@@ -1284,11 +1295,11 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: isCompleted 
-                ? Colors.green.shade500 
-                : isActive 
-                  ? AppTheme.primaryOrange
-                  : Colors.grey.shade300,
+            color: isCompleted
+                ? Colors.green.shade500
+                : isActive
+                ? AppTheme.primaryOrange
+                : Colors.grey.shade300,
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -1305,11 +1316,11 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: isActive || isCompleted ? FontWeight.w600 : FontWeight.normal,
-              color: isActive 
+              color: isActive
                   ? AppTheme.primaryOrange
-                  : isCompleted 
-                    ? Colors.green.shade700
-                    : Colors.grey.shade500,
+                  : isCompleted
+                  ? Colors.green.shade700
+                  : Colors.grey.shade500,
             ),
           ),
         ),
@@ -1365,7 +1376,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       ],
     );
   }
-  
+
   // Helper to build a vertical progress divider
   Widget _buildProgressDivider() {
     return Row(
@@ -1384,35 +1395,39 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   // Improved refresh method to use our enhanced data loading sequence
   Future<void> _refreshData() async {
     if (!mounted) return;
-    
+
     // Show loading indicator
     setState(() {
       _isLoading = true;
       _loadingPrices = true;
       _loadingNozzleAssignments = true;
     });
-    
+
     try {
       // Run the data loading sequence
       await _loadDataInSequence();
-      
+
       if (mounted) {
         // Show success message
-        showAnimatedSnackBar(
-          context: context,
-          message: 'Data refreshed successfully',
-          isError: false,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Data refreshed successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
         );
       }
     } catch (e) {
       _addDebugLog('Error refreshing data: $e');
-      
+
       if (mounted) {
         // Show error message
-        showAnimatedSnackBar(
-          context: context,
-          message: 'Error refreshing data: $e',
-          isError: true,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error refreshing data: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
         );
       }
     } finally {
@@ -1433,16 +1448,16 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     final shiftDate = DateFormat('yyyy-MM-dd').format(now);
     final startDateTime = DateFormat('yyyy-MM-dd HH:mm').parse('$shiftDate ${shift.startTime}');
     var endDateTime = DateFormat('yyyy-MM-dd HH:mm').parse('$shiftDate ${shift.endTime}');
-    
+
     // Adjust for overnight shifts
     if (endDateTime.isBefore(startDateTime)) {
       endDateTime = endDateTime.add(const Duration(days: 1));
     }
-    
+
     // Determine shift status
     String shiftStatus = 'Upcoming';
     Color statusColor = Colors.orange;
-    
+
     if (now.isAfter(startDateTime) && now.isBefore(endDateTime)) {
       shiftStatus = 'Active';
       statusColor = Colors.green;
@@ -1450,7 +1465,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       shiftStatus = 'Completed';
       statusColor = Colors.blue;
     }
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
       child: Container(
@@ -1491,7 +1506,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                 ],
               ),
             ),
-            
+
             // Shift period
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1517,7 +1532,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Shift Info Card
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -1563,7 +1578,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        
+
                         // Shift details
                         Expanded(
                           child: Column(
@@ -1605,7 +1620,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                                 ],
                               ),
                               const SizedBox(height: 6),
-                              
+
                               // Shift duration
                               Row(
                                 children: [
@@ -1629,9 +1644,9 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Shift timings
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -1693,14 +1708,14 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                               ],
                             ),
                           ),
-                          
+
                           // Divider
                           Container(
                             height: 40,
                             width: 1,
                             color: Colors.grey.shade200,
                           ),
-                          
+
                           // End time
                           Expanded(
                             child: Column(
@@ -1748,7 +1763,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                         ],
                       ),
                     ),
-                    
+
                     // Progress indicator
                     if (shiftStatus == 'Active') ...[
                       const SizedBox(height: 12),
@@ -1763,21 +1778,21 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       ),
     );
   }
-  
+
   // Helper method to build shift progress indicator
   Widget _buildShiftProgressIndicator(DateTime startTime, DateTime endTime) {
     final now = DateTime.now();
     final totalDuration = endTime.difference(startTime).inMinutes;
     final elapsedDuration = now.difference(startTime).inMinutes;
-    
+
     // Calculate progress percentage (capped between 0-100%)
     final progressPercent = (elapsedDuration / totalDuration).clamp(0.0, 1.0);
-    
+
     // Format remaining time
     final remainingMinutes = totalDuration - elapsedDuration;
     final remainingHours = remainingMinutes ~/ 60;
     final remainingMins = remainingMinutes % 60;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1851,7 +1866,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       ],
     );
   }
-  
+
   // Card for when no shift is assigned
   Widget _buildNoShiftCard() {
     return Padding(
@@ -1987,7 +2002,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                 ],
               ),
             ),
-            
+
             // Display error message if any
             if (_nozzleAssignmentErrorMessage.isNotEmpty && _nozzleAssignments.isEmpty)
               Padding(
@@ -2000,7 +2015,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   ),
                 ),
               ),
-            
+
             // Display no assignments message if no error but empty list
             if (_nozzleAssignmentErrorMessage.isEmpty && _nozzleAssignments.isEmpty && !_loadingNozzleAssignments)
               Padding(
@@ -2025,239 +2040,239 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   ),
                 ),
               ),
-            
+
             // Display nozzle assignments
             if (_nozzleAssignments.isNotEmpty)
               Column(
-                children: _nozzleAssignments.map((assignment) => 
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Assignment period
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.date_range,
-                              size: 14,
-                              color: Colors.grey.shade500,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                'Assignment: ${DateFormat('dd MMM').format(DateTime.parse(assignment.startDate))} - ${DateFormat('dd MMM yyyy').format(DateTime.parse(assignment.endDate))}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        // Nozzle Info Card
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                _getFuelTypeColor(assignment.fuelType).withValues(alpha:0.05),
-                                _getFuelTypeColor(assignment.fuelType).withValues(alpha:0.1),
-                              ],
-                            ),
-                            border: Border.all(
-                              color: _getFuelTypeColor(assignment.fuelType).withValues(alpha:0.2),
-                            ),
-                          ),
-                          child: Row(
+                children: _nozzleAssignments.map((assignment) =>
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Assignment period
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Nozzle number badge
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: _getFuelTypeColor(assignment.fuelType),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    assignment.nozzleNumber.toString(),
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
+                              Icon(
+                                Icons.date_range,
+                                size: 14,
+                                color: Colors.grey.shade500,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  'Assignment: ${DateFormat('dd MMM').format(DateTime.parse(assignment.startDate))} - ${DateFormat('dd MMM yyyy').format(DateTime.parse(assignment.endDate))}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              
-                              // Nozzle details
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Fuel type
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.local_gas_station,
-                                          size: 14,
-                                          color: _getFuelTypeColor(assignment.fuelType),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          assignment.fuelType,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Nozzle Info Card
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  _getFuelTypeColor(assignment.fuelType).withValues(alpha:0.05),
+                                  _getFuelTypeColor(assignment.fuelType).withValues(alpha:0.1),
+                                ],
+                              ),
+                              border: Border.all(
+                                color: _getFuelTypeColor(assignment.fuelType).withValues(alpha:0.2),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Nozzle number badge
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: _getFuelTypeColor(assignment.fuelType),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      assignment.nozzleNumber.toString(),
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+
+                                // Nozzle details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Fuel type
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.local_gas_station,
+                                            size: 14,
                                             color: _getFuelTypeColor(assignment.fuelType),
                                           ),
-                                        ),
-                                        const Spacer(),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: assignment.isActive 
-                                                ? Colors.green.shade100
-                                                : Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            assignment.isActive ? 'Active' : 'Inactive',
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            assignment.fuelType,
                                             style: TextStyle(
-                                              fontSize: 10,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold,
+                                              color: _getFuelTypeColor(assignment.fuelType),
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
                                               color: assignment.isActive
-                                                  ? Colors.green.shade700
-                                                  : Colors.grey.shade700,
+                                                  ? Colors.green.shade100
+                                                  : Colors.grey.shade100,
+                                              borderRadius: BorderRadius.circular(12),
                                             ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    
-                                    // Dispenser information
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.ev_station_rounded,
-                                          size: 14,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Dispenser #${assignment.fuelDispenserNo ?? 'N/A'}',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    
-                                    // Shift info
-                                    Container(
-                                      padding: EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Shift #${assignment.shiftNumber}',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.grey.shade800,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.schedule,
-                                                      size: 12,
-                                                      color: Colors.grey.shade600,
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      '${assignment.shiftStartTime.substring(0, 5)} - ${assignment.shiftEndTime.substring(0, 5)}',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.grey.shade600,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          InkWell(
-                                            onTap: () {
-                                              // Save to SharedPreferences
-                                              _saveNozzleDataToPreferences(assignment);
-                                              
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) => EnterNozzleReadingsScreen(
-                                                    nozzleId: assignment.nozzleId,
-                                                    shiftId: assignment.shiftId,
-                                                    fuelTankId: assignment.fuelTankId,
-                                                    petrolPumpId: assignment.petrolPumpId,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: AppTheme.primaryBlue.withValues(alpha:0.1),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                'Enter Readings',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppTheme.primaryBlue,
-                                                ),
+                                            child: Text(
+                                              assignment.isActive ? 'Active' : 'Inactive',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: assignment.isActive
+                                                    ? Colors.green.shade700
+                                                    : Colors.grey.shade700,
                                               ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 4),
+
+                                      // Dispenser information
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.ev_station_rounded,
+                                            size: 14,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Dispenser #${assignment.fuelDispenserNo ?? 'N/A'}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+
+                                      // Shift info
+                                      Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'Shift #${assignment.shiftNumber}',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.grey.shade800,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.schedule,
+                                                        size: 12,
+                                                        color: Colors.grey.shade600,
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        '${assignment.shiftStartTime.substring(0, 5)} - ${assignment.shiftEndTime.substring(0, 5)}',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.grey.shade600,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            InkWell(
+                                              onTap: () {
+                                                // Save to SharedPreferences
+                                                _saveNozzleDataToPreferences(assignment);
+
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => EnterNozzleReadingsScreen(
+                                                      nozzleId: assignment.nozzleId,
+                                                      shiftId: assignment.shiftId,
+                                                      fuelTankId: assignment.fuelTankId,
+                                                      petrolPumpId: assignment.petrolPumpId,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.primaryBlue.withValues(alpha:0.1),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  'Enter Readings',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: AppTheme.primaryBlue,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        if (_nozzleAssignments.last != assignment)
-                          Divider(height: 24, color: Colors.grey.shade200),
-                      ],
-                    ),
-                  )
+                          if (_nozzleAssignments.last != assignment)
+                            Divider(height: 24, color: Colors.grey.shade200),
+                        ],
+                      ),
+                    )
                 ).toList(),
               ),
-            
+
             // Loading indicator
             if (_loadingNozzleAssignments)
               Padding(
@@ -2326,7 +2341,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                 ],
               ),
             ),
-            
+
             // Display error message if any
             if (_priceErrorMessage.isNotEmpty && _currentPrices.isEmpty)
               Padding(
@@ -2339,7 +2354,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   ),
                 ),
               ),
-            
+
             // Display no prices message if no error but empty list
             if (_priceErrorMessage.isEmpty && _currentPrices.isEmpty && !_loadingPrices)
               Padding(
@@ -2354,7 +2369,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   ),
                 ),
               ),
-            
+
             // Display fuel prices
             if (_currentPrices.isNotEmpty)
               Padding(
@@ -2390,12 +2405,12 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   // Helper to build a price chip
   Widget _buildPriceChip(FuelPrice price) {
     // Use the fuelType directly from the API response instead of trying to map from ID
-    final String displayFuelType = price.fuelType.isNotEmpty 
-        ? price.fuelType 
+    final String displayFuelType = price.fuelType.isNotEmpty
+        ? price.fuelType
         : _getFuelTypeName(price.fuelTypeId);
-    
+
     final Color color = _fuelColors[displayFuelType] ?? Colors.grey.shade700;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
@@ -2496,7 +2511,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('employee_nozzle_id', assignment.nozzleId);
       await prefs.setString('employee_shift_id', assignment.shiftId);
-      
+
       // Get nozzle details to save fuel tank ID and petrol pump ID
       final nozzleResp = await _nozzleRepository.getNozzleById(assignment.nozzleId);
       if (nozzleResp.success && nozzleResp.data != null) {
@@ -2505,7 +2520,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         await prefs.setString('employee_petrol_pump_id', nozzle.petrolPumpId ?? '');
       }
     } catch (e) {
-      debugPrint('Error saving nozzle data to preferences: $e');
+      print('Error saving nozzle data to preferences: $e');
     }
   }
 
@@ -2518,7 +2533,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       await prefs.remove('employee_fuel_tank_id');
       await prefs.remove('employee_petrol_pump_id');
     } catch (e) {
-      debugPrint('Error clearing nozzle data from preferences: $e');
+      print('Error clearing nozzle data from preferences: $e');
     }
   }
 
@@ -2526,11 +2541,11 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(ApiConstants.authTokenKey);
     await _clearNozzleDataOnLogout();
-    
+
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
+          (route) => false,
     );
   }
 
@@ -2570,7 +2585,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     bool isSelected = false,
   }) {
     final itemColor = color ?? (isSelected ? AppTheme.primaryOrange : Colors.grey.shade700);
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
@@ -2585,8 +2600,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           height: 32,
           decoration: BoxDecoration(
             color: isSelected
-              ? AppTheme.primaryOrange.withValues(alpha:0.2)
-              : itemColor.withValues(alpha:0.1),
+                ? AppTheme.primaryOrange.withValues(alpha:0.2)
+                : itemColor.withValues(alpha:0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -2605,15 +2620,15 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           ),
         ),
         trailing: isSelected
-          ? Container(
-              width: 4,
-              height: 24,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryOrange,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            )
-          : null,
+            ? Container(
+          width: 4,
+          height: 24,
+          decoration: BoxDecoration(
+            color: AppTheme.primaryOrange,
+            borderRadius: BorderRadius.circular(8),
+          ),
+        )
+            : null,
         onTap: onTap,
         dense: true,
         visualDensity: const VisualDensity(horizontal: -1, vertical: -1),
@@ -2645,10 +2660,11 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         }
       });
     } else {
-      showAnimatedSnackBar(
-        context: context,
-        message: 'No active shift found. Please contact your manager.',
-        isError: true,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No active shift found. Please contact your manager.'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -2673,10 +2689,11 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         }
       });
     } else {
-      showAnimatedSnackBar(
-        context: context,
-        message: 'No active shift found. Please contact your manager.',
-        isError: true,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No active shift found. Please contact your manager.'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -2690,10 +2707,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         });
         return;
       }
-      
+
       developer.log('Fetching check-in status for employee ID: $_employeeId');
       final response = await _attendanceRepository.isEmployeeCheckedIn(_employeeId);
-      
+
       if (response.success && response.data != null) {
         setState(() {
           _isCheckedIn = response.data!;
@@ -2733,7 +2750,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                   Navigator.pop(context);
                   // Save to SharedPreferences
                   _saveNozzleDataToPreferences(assignment);
-                  
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -2803,8 +2820,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                 trailing: Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: assignment.isActive 
-                        ? Colors.green.shade100 
+                    color: assignment.isActive
+                        ? Colors.green.shade100
                         : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -2813,8 +2830,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: assignment.isActive 
-                          ? Colors.green.shade700 
+                      color: assignment.isActive
+                          ? Colors.green.shade700
                           : Colors.grey.shade700,
                     ),
                   ),
@@ -2862,7 +2879,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               return ListTile(
                 onTap: () {
                   Navigator.pop(context);
-                  
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(

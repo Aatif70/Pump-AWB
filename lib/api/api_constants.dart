@@ -47,6 +47,12 @@ class ApiConstants {
   static const String comprehensiveDailyReportEndpoint = "/api/Reporting/comprehensive-daily";
   static const String attendanceEndpoint = "/api/Attendance/";
 
+  // Customer API endpoints
+  static const String customerEndpoint = "/api/Customers";
+
+  // Vehicle Transaction API endpoints
+  static const String vehicleTransactionEndpoint = "/api/VehicleTransaction";
+
 
   // Full API URLs with debug logging
   static String getLoginUrl() {
@@ -619,6 +625,46 @@ class ApiConstants {
     
     return url;
   }
+
+
+  // Customer API URL methods
+  static String getCustomersUrl() {
+    final url = baseUrl + customerEndpoint;
+    developer.log('Customers URL: $url');
+    print('API_CONSTANTS: Customers URL: $url');
+    return url;
+  }
+
+  static String getCustomersByPumpUrl(String pumpId) {
+    final url = baseUrl + customerEndpoint + '/ByPump/' + pumpId;
+    developer.log('Customers By Pump URL: $url');
+    print('API_CONSTANTS: Customers By Pump URL: $url');
+    return url;
+  }
+
+
+  // Vehicle Transaction API URL methods
+  static String getVehicleTransactionUrl() {
+    final url = baseUrl + vehicleTransactionEndpoint;
+    developer.log('Vehicle Transaction URL: $url');
+    print('API_CONSTANTS: Vehicle Transaction URL: $url');
+    return url;
+  }
+
+  static String getVehicleTransactionsUrl(String petrolPumpId) {
+    final url = baseUrl + vehicleTransactionEndpoint + '/petrol-pump/' + petrolPumpId;
+    developer.log('Vehicle Transactions By Pump URL: $url');
+    print('API_CONSTANTS: Vehicle Transactions By Pump URL: $url');
+    return url;
+  }
+
+  static String getVehicleTransactionByIdUrl(String transactionId) {
+    final url = baseUrl + vehicleTransactionEndpoint + '/' + transactionId;
+    developer.log('Vehicle Transaction By ID URL: $url');
+    print('API_CONSTANTS: Vehicle Transaction By ID URL: $url');
+    return url;
+  }
+
 
   // Method to get the stored auth token
   static Future<String?> getAuthToken() async {

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
@@ -29,7 +28,7 @@ class PricingRepository {
       // Get the authentication token
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(ApiConstants.authTokenKey);
-      
+
       if (token == null) {
         developer.log('PricingRepository: No auth token found for getting petrol pump ID');
         developer.log('PricingRepository: Checking if petrolPumpId is stored directly');
@@ -41,11 +40,11 @@ class PricingRepository {
         }
         return null;
       }
-      
+
       // Extract petrolPumpId from token
       final petrolPumpId = JwtDecoder.getClaim<String>(token, 'petrolPumpId');
       developer.log('PricingRepository: Extracted petrolPumpId from token: $petrolPumpId');
-      
+
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
         developer.log('PricingRepository: petrolPumpId not found in JWT token. Checking for stored value.');
         // Try the direct storage if not in token
@@ -53,11 +52,11 @@ class PricingRepository {
         developer.log('PricingRepository: Found stored petrolPumpId: $storedId');
         return storedId;
       }
-      
+
       // Store for later use if extracted from JWT
       await prefs.setString('petrolPumpId', petrolPumpId);
       developer.log('PricingRepository: Stored petrolPumpId in preferences: $petrolPumpId');
-      
+
       return petrolPumpId;
     } catch (e) {
       developer.log('PricingRepository: Error getting petrol pump ID: $e');
@@ -72,7 +71,7 @@ class PricingRepository {
       // Get the authentication token
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(ApiConstants.authTokenKey);
-      
+
       if (token == null) {
         developer.log('PricingRepository: No auth token found for getting user ID');
         // Check if we stored the userId directly
@@ -83,11 +82,11 @@ class PricingRepository {
         }
         return null;
       }
-      
+
       // Try common claim names for user ID
       final userClaims = ['userId', 'sub', 'jti', 'id', 'user_id', 'nameId'];
       String? userId;
-      
+
       for (final claim in userClaims) {
         userId = JwtDecoder.getClaim<String>(token, claim);
         if (userId != null && userId.isNotEmpty) {
@@ -95,7 +94,7 @@ class PricingRepository {
           break;
         }
       }
-      
+
       if (userId == null || userId.isEmpty) {
         developer.log('PricingRepository: userId not found in JWT token claims. Checking for stored value.');
         // Try the direct storage if not in token
@@ -103,11 +102,11 @@ class PricingRepository {
         developer.log('PricingRepository: Found stored userId: $storedId');
         return storedId;
       }
-      
+
       // Store for later use
       await prefs.setString('userId', userId);
       developer.log('PricingRepository: Stored userId in preferences: $userId');
-      
+
       return userId;
     } catch (e) {
       developer.log('PricingRepository: Error getting user ID: $e');
@@ -122,12 +121,12 @@ class PricingRepository {
       // First check if we have a stored employee ID in preferences
       final prefs = await SharedPreferences.getInstance();
       final storedEmployeeId = prefs.getString('employeeId');
-      
+
       if (storedEmployeeId != null && storedEmployeeId.isNotEmpty) {
         developer.log('PricingRepository: Found stored employeeId: $storedEmployeeId');
         return storedEmployeeId;
       }
-      
+
       // If no stored ID, try to get it from the JWT token
       final token = prefs.getString(ApiConstants.authTokenKey);
       if (token != null) {
@@ -139,7 +138,7 @@ class PricingRepository {
           return employeeId;
         }
       }
-      
+
       // If we get here, we couldn't find the employee ID
       // In a real app, we might want to fetch it from the server using the user ID
       final userId = await getUserId();
@@ -147,7 +146,7 @@ class PricingRepository {
         developer.log('PricingRepository: Could not find employeeId, using userId as fallback: $userId');
         return userId; // Fallback to user ID for now
       }
-      
+
       return null;
     } catch (e) {
       developer.log('PricingRepository: Error getting employee ID: $e');
@@ -162,68 +161,83 @@ class PricingRepository {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-    
+
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
       developer.log('PricingRepository: Added auth token to headers');
     } else {
       developer.log('PricingRepository: Warning - No auth token available');
     }
-    
+
     return headers;
   }
 
   // Set a new fuel price
   Future<ApiResponse<FuelPrice>> setFuelPrice(FuelPrice price) async {
     developer.log('PricingRepository: Setting new price for ${price.fuelType}');
-    debugPrint('DEBUG: Setting new fuel price for ${price.fuelType}');
-    
+    print('DEBUG: Setting new fuel price for ${price.fuelType}');
+
     try {
       final url = ApiConstants.getSetPriceUrl();
       developer.log('PricingRepository: API URL: $url');
-      debugPrint('DEBUG: API URL: $url');
-      
-      // Prepare the payload according to the updated API format (only required fields)
+      print('DEBUG: API URL: $url');
+
+      // Prepare the payload according to the specified API format
       final Map<String, dynamic> payload = {
         'effectiveFrom': price.effectiveFrom.toIso8601String(),
-        'fuelTypeId': price.fuelTypeId,
-        'petrolPumpId': price.petrolPumpId,
         'pricePerLiter': price.pricePerLiter,
+        'petrolPumpId': price.petrolPumpId,
+        'fuelTypeId': price.fuelTypeId,
+        'lastUpdatedBy': price.lastUpdatedBy,
       };
-      
-      debugPrint('DEBUG: Full payload before encoding:');
+
+      // Add optional fields if they exist
+      if (price.effectiveTo != null) {
+        payload['effectiveTo'] = price.effectiveTo!.toIso8601String();
+      }
+      if (price.costPerLiter != null) {
+        payload['costPerLiter'] = price.costPerLiter;
+      }
+      if (price.markupPercentage != null) {
+        payload['markupPercentage'] = price.markupPercentage;
+      }
+      if (price.markupAmount != null) {
+        payload['markupAmount'] = price.markupAmount;
+      }
+
+      print('DEBUG: Full payload before encoding:');
       payload.forEach((key, value) {
-        debugPrint('DEBUG: $key = $value');
+        print('DEBUG: $key = $value');
       });
-      
+
       final body = json.encode(payload);
-      debugPrint('DEBUG: Request JSON body: $body');
+      print('DEBUG: Request JSON body: $body');
       developer.log('PricingRepository: Request body: $body');
-      
+
       final headers = await _getHeaders();
-      debugPrint('DEBUG: Request headers:');
+      print('DEBUG: Request headers:');
       headers.forEach((key, value) {
-        debugPrint('DEBUG: $key = $value');
+        print('DEBUG: $key = $value');
       });
-      
-      debugPrint('DEBUG: Sending POST request to $url');
+
+      print('DEBUG: Sending POST request to $url');
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
         body: body,
       );
 
-      debugPrint('DEBUG: Response status code: ${response.statusCode}');
-      debugPrint('DEBUG: Response body: ${response.body}');
+      print('DEBUG: Response status code: ${response.statusCode}');
+      print('DEBUG: Response body: ${response.body}');
       developer.log('PricingRepository: Response status code: ${response.statusCode}');
       developer.log('PricingRepository: Response body: ${response.body}');
 
-      if (response.statusCode == ApiConstants.statusCreated || response.statusCode == ApiConstants.statusOk) {
+      if (response.statusCode == ApiConstants.statusCreated) {
         final responseData = json.decode(response.body);
-        debugPrint('DEBUG: Response status code: ${response.statusCode}');
-        debugPrint('DEBUG: Response body: ${response.body}');
-        debugPrint('DEBUG: Successfully set price');
-        
+        print('DEBUG: Response status code: ${response.statusCode}');
+        print('DEBUG: Response body: ${response.body}');
+        print('DEBUG: Successfully set price');
+
         try {
           final fuelPrice = FuelPrice.fromJson(responseData);
           return ApiResponse<FuelPrice>(
@@ -232,58 +246,41 @@ class PricingRepository {
           );
         } catch (e) {
           // Even if parsing fails, the price was set successfully
-          debugPrint('DEBUG: Exception when parsing the response: $e');
-          debugPrint('DEBUG: Returning success response anyway since price was set');
-          
+          print('DEBUG: Exception when parsing the response: $e');
+          print('DEBUG: Returning success response anyway since price was set');
+
           // Create a minimal FuelPrice object with the ID and fuelTypeId
           final String? pricingId = responseData['pricingId'];
           final String? fuelTypeId = responseData['fuelTypeId'];
-          
+
           // Try to build a minimally valid FuelPrice object
           return ApiResponse<FuelPrice>(
             success: true,
             data: FuelPrice(
               id: pricingId,
               effectiveFrom: DateTime.parse(responseData['effectiveFrom'] ?? DateTime.now().toIso8601String()),
-              effectiveTo: null,
+              effectiveTo: responseData['effectiveTo'] != null ? DateTime.parse(responseData['effectiveTo']) : null,
               fuelType: '', // Empty string as default
               fuelTypeId: fuelTypeId,
               pricePerLiter: double.parse(responseData['pricePerLiter'].toString()),
-              costPerLiter: null,
-              markupPercentage: null,
-              markupAmount: null,
+              costPerLiter: responseData['costPerLiter'] != null ? double.parse(responseData['costPerLiter'].toString()) : null,
+              markupPercentage: responseData['markupPercentage'] != null ? double.parse(responseData['markupPercentage'].toString()) : null,
+              markupAmount: responseData['markupAmount'] != null ? double.parse(responseData['markupAmount'].toString()) : null,
               petrolPumpId: responseData['petrolPumpId'],
               lastUpdatedBy: responseData['lastUpdatedBy'],
             ),
           );
         }
       } else {
-        debugPrint('DEBUG: Error setting price. Status code: ${response.statusCode}');
-        debugPrint('DEBUG: Response body: ${response.body}');
-        String errorMessage = 'Failed to set price. Server returned: ${response.statusCode}';
-        try {
-          if (response.body.isNotEmpty) {
-            final Map<String, dynamic> errorJson = json.decode(response.body);
-            final String apiMsg = errorJson['message']?.toString() ?? '';
-            if (apiMsg.isNotEmpty) {
-              errorMessage = apiMsg;
-            }
-            // Optionally append validation errors if present
-            if (errorJson['validationErrors'] != null) {
-              final ve = errorJson['validationErrors'];
-              errorMessage = '$errorMessage';
-            }
-          }
-        } catch (e) {
-          debugPrint('DEBUG: Failed to parse error body: $e');
-        }
+        print('DEBUG: Error setting price. Status code: ${response.statusCode}');
+        print('DEBUG: Response body: ${response.body}');
         return ApiResponse<FuelPrice>(
           success: false,
-          errorMessage: errorMessage,
+          errorMessage: 'Failed to set price. Server returned: ${response.statusCode}',
         );
       }
     } catch (e) {
-      debugPrint('DEBUG: Exception when setting price: $e');
+      print('DEBUG: Exception when setting price: $e');
       developer.log('PricingRepository: Exception when setting price: $e');
       return ApiResponse<FuelPrice>(
         success: false,
@@ -295,11 +292,11 @@ class PricingRepository {
   // Get current fuel prices
   Future<ApiResponse<List<FuelPrice>>> getCurrentPrices() async {
     developer.log('PricingRepository: Getting current fuel prices');
-    
+
     try {
       // Get the petrol pump ID first
       final petrolPumpId = await getPumpId();
-      
+
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
         developer.log('PricingRepository: No petrol pump ID available for getting current prices');
         return ApiResponse<List<FuelPrice>>(
@@ -308,23 +305,23 @@ class PricingRepository {
           data: [],
         );
       }
-      
+
       // Use the new endpoint with petrol pump ID
       final url = ApiConstants.getCurrentPricesByPetrolPumpUrl(petrolPumpId);
       developer.log('PricingRepository: Using URL for current prices: $url');
-      
+
       final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse(url),
         headers: headers,
       );
-      
+
       developer.log('PricingRepository: Current prices response status: ${response.statusCode}');
       developer.log('PricingRepository: Current prices response body: ${response.body}');
-      
+
       if (response.statusCode == ApiConstants.statusOk) {
         final responseData = json.decode(response.body);
-        
+
         // Check if the response contains a data field with the prices
         if (responseData.containsKey('data') && responseData['data'] is List) {
           final List<dynamic> pricesJson = responseData['data'];
@@ -337,9 +334,9 @@ class PricingRepository {
                 fuelTypeId: json['fuelTypeId'],
                 fuelType: json['fuelTypeName'] ?? '',
                 pricePerLiter: json['pricePerLiter']?.toDouble() ?? 0.0,
-                effectiveFrom: json['effectiveFrom'] != null 
-                  ? DateTime.parse(json['effectiveFrom']) 
-                  : DateTime.now(),
+                effectiveFrom: json['effectiveFrom'] != null
+                    ? DateTime.parse(json['effectiveFrom'])
+                    : DateTime.now(),
                 isActive: json['isActive'] == true || json['isCurrentlyActive'] == true,
                 lastUpdatedBy: json['lastUpdatedBy'] ?? '',
               );
@@ -348,7 +345,7 @@ class PricingRepository {
               return null;
             }
           }).where((price) => price != null).cast<FuelPrice>().toList();
-          
+
           return ApiResponse<List<FuelPrice>>(
             success: true,
             data: prices,
@@ -382,13 +379,13 @@ class PricingRepository {
   // Get fuel price by ID
   Future<ApiResponse<FuelPrice>> getPriceById(String priceId) async {
     developer.log('PricingRepository: Getting fuel price with ID: $priceId');
-    
+
     try {
       final url = ApiConstants.getPriceByIdUrl(priceId);
       developer.log('PricingRepository: API URL: $url');
-      
+
       final headers = await _getHeaders();
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: headers,
@@ -423,13 +420,13 @@ class PricingRepository {
   // Get latest price for a specific fuel type
   Future<ApiResponse<FuelPrice>> getLatestPriceByFuelType(String fuelType) async {
     developer.log('PricingRepository: Getting latest price for fuel type: $fuelType');
-    
+
     try {
       final url = ApiConstants.getLatestPriceByFuelTypeUrl(fuelType);
       developer.log('PricingRepository: API URL: $url');
-      
+
       final headers = await _getHeaders();
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: headers,
@@ -464,12 +461,12 @@ class PricingRepository {
   // Get price history for a specific fuel type
   Future<ApiResponse<List<FuelPrice>>> getPriceHistoryByFuelType(String fuelType, {String? fuelTypeId}) async {
     developer.log('PricingRepository: Getting price history for fuel type: $fuelType');
-    debugPrint('DEBUG: Getting price history for fuel type: $fuelType, fuelTypeId: $fuelTypeId');
+    print('DEBUG: Getting price history for fuel type: $fuelType, fuelTypeId: $fuelTypeId');
 
     try {
       // We need both petrolPumpId and fuelTypeId for the new endpoint
       final petrolPumpId = await getPumpId();
-      
+
       if (petrolPumpId == null || petrolPumpId.isEmpty) {
         developer.log('PricingRepository: No petrol pump ID available for getting price history');
         return ApiResponse<List<FuelPrice>>(
@@ -478,7 +475,7 @@ class PricingRepository {
           data: [],
         );
       }
-      
+
       if (fuelTypeId == null || fuelTypeId.isEmpty) {
         developer.log('PricingRepository: No fuel type ID provided for getting price history');
         return ApiResponse<List<FuelPrice>>(
@@ -487,15 +484,15 @@ class PricingRepository {
           data: [],
         );
       }
-      
+
       // Use the new endpoint with petrolPumpId and fuelTypeId
       final url = ApiConstants.getPriceHistoryUrl(petrolPumpId, fuelTypeId);
       developer.log('PricingRepository: API URL: $url');
-      debugPrint('DEBUG: Fuel price history API URL: $url');
+      print('DEBUG: Fuel price history API URL: $url');
 
       final headers = await _getHeaders();
       developer.log('PricingRepository: Request headers: ${headers.keys.join(', ')}');
-      debugPrint('DEBUG: Request headers: ${headers.keys.join(', ')}');
+      print('DEBUG: Request headers: ${headers.keys.join(', ')}');
 
       final response = await http.get(
         Uri.parse(url),
@@ -504,36 +501,36 @@ class PricingRepository {
 
       developer.log('PricingRepository: Response status code: ${response.statusCode}');
       developer.log('PricingRepository: Response body: ${response.body}');
-      debugPrint('DEBUG: Fuel price history response status: ${response.statusCode}');
-      debugPrint('DEBUG: Response body: ${response.body}');
+      print('DEBUG: Fuel price history response status: ${response.statusCode}');
+      print('DEBUG: Response body: ${response.body}');
 
       if (response.statusCode == ApiConstants.statusOk) {
         final responseData = json.decode(response.body);
-        
+
         // Check if the response contains a data field with the prices
         if (responseData.containsKey('data') && responseData['data'] is List) {
           final List<dynamic> pricesJson = responseData['data'];
           developer.log('PricingRepository: Successfully parsed price history data, count: ${pricesJson.length}');
-          debugPrint('DEBUG: Received ${pricesJson.length} price history records');
+          print('DEBUG: Received ${pricesJson.length} price history records');
 
           final prices = pricesJson.map((json) {
             try {
-              // Try to map using the new response format 
+              // Try to map using the new response format
               return FuelPrice(
                 id: json['pricingId'],
                 petrolPumpId: petrolPumpId,
                 fuelTypeId: fuelTypeId,
                 fuelType: fuelType,
                 pricePerLiter: json['pricePerLiter']?.toDouble() ?? 0.0,
-                effectiveFrom: json['effectiveFrom'] != null 
-                  ? DateTime.parse(json['effectiveFrom']) 
-                  : DateTime.now(),
+                effectiveFrom: json['effectiveFrom'] != null
+                    ? DateTime.parse(json['effectiveFrom'])
+                    : DateTime.now(),
                 isActive: json['isActive'] == true,
                 lastUpdatedBy: json['lastUpdatedByName'] ?? '',
               );
             } catch (e) {
               developer.log('PricingRepository: Error parsing price history: $e');
-              debugPrint('DEBUG: Error parsing price history: $e');
+              print('DEBUG: Error parsing price history: $e');
               return null;
             }
           }).where((price) => price != null).cast<FuelPrice>().toList();
@@ -553,7 +550,7 @@ class PricingRepository {
         }
       } else {
         developer.log('PricingRepository: Error fetching price history: ${response.statusCode}');
-        debugPrint('DEBUG: Error fetching price history: ${response.statusCode}, body: ${response.body}');
+        print('DEBUG: Error fetching price history: ${response.statusCode}, body: ${response.body}');
         return ApiResponse<List<FuelPrice>>(
           success: false,
           errorMessage: 'Failed to fetch price history: ${response.statusCode}',
@@ -562,7 +559,7 @@ class PricingRepository {
       }
     } catch (e) {
       developer.log('PricingRepository: Exception when fetching price history: $e');
-      debugPrint('DEBUG: Exception in price history: $e');
+      print('DEBUG: Exception in price history: $e');
       return ApiResponse<List<FuelPrice>>(
         success: false,
         errorMessage: 'Error: $e',
@@ -574,14 +571,14 @@ class PricingRepository {
   // Delete a fuel price by ID
   Future<ApiResponse<bool>> deleteFuelPrice(String priceId) async {
     developer.log('PricingRepository: Deleting fuel price with ID: $priceId');
-    
+
     try {
       final url = ApiConstants.getDeletePriceUrl(priceId);
       developer.log('PricingRepository: Delete API URL: $url');
-      
+
       final headers = await _getHeaders();
       developer.log('PricingRepository: Delete request headers: ${headers.keys.join(', ')}');
-      
+
       // Log token info for debugging
       final token = await _getAuthToken();
       if (token != null) {
@@ -589,7 +586,7 @@ class PricingRepository {
       } else {
         developer.log('PricingRepository: WARNING - No auth token for delete operation');
       }
-      
+
       final response = await http.delete(
         Uri.parse(url),
         headers: headers,
@@ -597,8 +594,8 @@ class PricingRepository {
 
       developer.log('PricingRepository: Delete response status code: ${response.statusCode}');
       developer.log('PricingRepository: Delete response body: ${response.body}');
-      
-      if (response.statusCode == ApiConstants.statusOk || 
+
+      if (response.statusCode == ApiConstants.statusOk ||
           response.statusCode == ApiConstants.statusNoContent) {
         developer.log('PricingRepository: Successfully deleted price');
         return ApiResponse<bool>(
@@ -608,7 +605,7 @@ class PricingRepository {
       } else {
         developer.log('PricingRepository: Error deleting price: ${response.statusCode}');
         String errorMessage = 'Failed to delete price: ${response.statusCode}';
-        
+
         try {
           if (response.body.isNotEmpty) {
             final errorJson = json.decode(response.body);
@@ -619,7 +616,7 @@ class PricingRepository {
         } catch (e) {
           developer.log('PricingRepository: Could not parse error response: $e');
         }
-        
+
         return ApiResponse<bool>(
           success: false,
           errorMessage: errorMessage,
@@ -634,5 +631,142 @@ class PricingRepository {
     }
   }
 
-  // Update method removed per new API contract: updates are done via POST.
+  // Update an existing fuel price
+  Future<ApiResponse<FuelPrice>> updateFuelPrice(String priceId, FuelPrice price) async {
+    developer.log('PricingRepository: Updating price with ID: $priceId');
+    print('DEBUG: Updating fuel price with ID: $priceId');
+
+    try {
+      final url = ApiConstants.getUpdatePriceUrl(priceId);
+      developer.log('PricingRepository: Update API URL: $url');
+      print('DEBUG: Update API URL: $url');
+
+      // Create the PUT request payload according to API requirements
+      final Map<String, dynamic> payload = {
+        'pricingId': priceId,
+        'effectiveFrom': price.effectiveFrom.toIso8601String(),
+        'pricePerLiter': price.pricePerLiter,
+        'petrolPumpId': price.petrolPumpId,
+        'fuelTypeId': price.fuelTypeId,
+        'lastUpdatedBy': price.lastUpdatedBy,
+      };
+
+      // Add optional fields if they exist
+      if (price.effectiveTo != null) {
+        payload['effectiveTo'] = price.effectiveTo!.toIso8601String();
+      }
+      if (price.costPerLiter != null) {
+        payload['costPerLiter'] = price.costPerLiter;
+      }
+      if (price.markupPercentage != null) {
+        payload['markupPercentage'] = price.markupPercentage;
+      }
+      if (price.markupAmount != null) {
+        payload['markupAmount'] = price.markupAmount;
+      }
+
+      print('DEBUG: Full update payload before encoding:');
+      payload.forEach((key, value) {
+        print('DEBUG: $key = $value');
+      });
+
+      developer.log('PricingRepository: Update payload structure: ${payload.keys.join(', ')}');
+
+      final body = json.encode(payload);
+      print('DEBUG: Update request JSON body: $body');
+      developer.log('PricingRepository: Update request body: $body');
+
+      final headers = await _getHeaders();
+      // Ensure proper content type for JSON
+      headers['Content-Type'] = 'application/json';
+
+      print('DEBUG: Update request headers:');
+      headers.forEach((key, value) {
+        print('DEBUG: $key = $value');
+      });
+
+      // Print full request for debugging
+      developer.log('PricingRepository: FULL UPDATE REQUEST: \nURL: $url\nHeaders: $headers\nBody: $body');
+      print('DEBUG: Sending PUT request to $url');
+
+      final response = await http.put(
+        Uri.parse(url),
+        headers: headers,
+        body: body,
+      );
+
+      print('DEBUG: Update response status code: ${response.statusCode}');
+      print('DEBUG: Update response body: ${response.body}');
+      developer.log('PricingRepository: Update response status code: ${response.statusCode}');
+      developer.log('PricingRepository: Update response body: ${response.body}');
+
+      if (response.statusCode == ApiConstants.statusOk ||
+          response.statusCode == ApiConstants.statusNoContent) {
+        print('DEBUG: Successfully updated price');
+        developer.log('PricingRepository: Successfully updated price');
+
+        // If the response has a body, parse it. Otherwise, return the original price.
+        if (response.body.isNotEmpty) {
+          final jsonData = json.decode(response.body);
+          return ApiResponse<FuelPrice>(
+            success: true,
+            data: FuelPrice.fromJson(jsonData),
+          );
+        } else {
+          return ApiResponse<FuelPrice>(
+            success: true,
+            data: price,
+          );
+        }
+      } else {
+        print('DEBUG: Error updating price: ${response.statusCode}');
+        print('DEBUG: Error body: ${response.body}');
+        developer.log('PricingRepository: Error updating price: ${response.statusCode}');
+        String errorMessage = 'Failed to update price: ${response.statusCode}';
+        try {
+          if (response.body.isNotEmpty) {
+            developer.log('PricingRepository: Error response body: ${response.body}');
+            final errorJson = json.decode(response.body);
+            print('DEBUG: Error JSON: $errorJson');
+            developer.log('PricingRepository: Error response JSON: $errorJson');
+
+            if (errorJson.containsKey('message')) {
+              errorMessage = errorJson['message'];
+              print('DEBUG: Error message: $errorMessage');
+            } else if (errorJson.containsKey('error')) {
+              errorMessage = errorJson['error'];
+              print('DEBUG: Error message (error field): $errorMessage');
+            } else if (errorJson.containsKey('errors')) {
+              // Handle validation errors
+              final errors = errorJson['errors'];
+              print('DEBUG: Validation errors: $errors');
+              if (errors is Map) {
+                errorMessage = 'Validation errors: ${errors.values.join(', ')}';
+              } else if (errors is List && errors.isNotEmpty) {
+                errorMessage = 'Validation errors: ${errors.join(', ')}';
+              }
+            }
+
+            // Print error details for debugging
+            developer.log('PricingRepository: FAILED UPDATE REQUEST DETAILS:\nPayload: $payload\nResponse: ${response.body}');
+          }
+        } catch (e) {
+          print('DEBUG: Could not parse error response: $e');
+          developer.log('PricingRepository: Could not parse error response: $e');
+        }
+
+        return ApiResponse<FuelPrice>(
+          success: false,
+          errorMessage: errorMessage,
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Exception when updating price: $e');
+      developer.log('PricingRepository: Exception when updating price: $e');
+      return ApiResponse<FuelPrice>(
+        success: false,
+        errorMessage: 'Error: $e',
+      );
+    }
+  }
 } 

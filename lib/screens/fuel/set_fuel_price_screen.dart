@@ -5,7 +5,6 @@ import '../../api/pricing_repository.dart';
 import '../../api/api_response.dart';
 import '../../models/price_model.dart';
 import '../../theme.dart';
-import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../api/fuel_tank_repository.dart';
@@ -24,33 +23,33 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   final _formKey = GlobalKey<FormState>();
   final _priceController = TextEditingController();
   final _costController = TextEditingController();
-  // Removed markup controllers per updated API
+  final _markupPercentageController = TextEditingController();
+  final _markupAmountController = TextEditingController();
   final _pricingRepository = PricingRepository();
   final _fuelTypeRepository = FuelTypeRepository();
 
   String _selectedFuelType = 'Petrol';
   String? _selectedFuelTypeId;
   List<String> _fuelTypes = ['Petrol', 'Diesel', 'Premium Petrol', 'Premium Diesel', 'CNG'];
-  
+
   // Map to store fuelTypeId to fuel type name mapping
   Map<String, String> _fuelTypeIdToName = {};
   // Map to store fuel type name to fuelTypeId mapping (reverse lookup)
   Map<String, String> _fuelTypeNameToId = {};
-  
+
   // Store the available fuel tanks and their types
   List<Map<String, dynamic>> _availableFuelTanks = [];
-  
+
   DateTime _selectedEffectiveFrom = DateTime.now();
+  DateTime _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30));
 
   // FUEL TYPES AND THEIR COLORS
   final Map<String, Color> _fuelColors = {
-    'Diesel': Colors.blue,
-    'Petrol': Colors.green,
-    'Power Petrol': Colors.red,
-    'Premium Petrol': Colors.red,
-    'Premium Diesel': Colors.black,
-    'CNG': Colors.teal.shade700,
-    'LPG': Colors.indigo.shade700,
+    'Petrol': Colors.green.shade600,
+    'Diesel': Colors.blue.shade700,
+    'Premium Petrol': Colors.orange.shade600,
+    'Premium Diesel': Colors.purple.shade600,
+    'CNG': Colors.teal.shade600,
   };
 
   // Map fuel types to their icons
@@ -67,7 +66,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   String? _errorMessage;
   List<FuelPrice> _currentPrices = [];
   bool _showPriceForm = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -80,7 +79,8 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   void dispose() {
     _priceController.dispose();
     _costController.dispose();
-    // Removed markup controllers per updated API
+    _markupPercentageController.dispose();
+    _markupAmountController.dispose();
     super.dispose();
   }
 
@@ -88,8 +88,9 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   Future<void> _fetchFuelTypes() async {
     try {
       developer.log('SetFuelPriceScreen: Fetching fuel types from API');
-      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump();
-      
+      final pumpId = await _pricingRepository.getPumpId();
+      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump(pumpId ?? '');
+
       if (response.success && response.data != null) {
         setState(() {
           // Create mappings
@@ -97,14 +98,14 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
             for (var fuelType in response.data!)
               fuelType.fuelTypeId: fuelType.name
           };
-          
+
           _fuelTypeNameToId = {
             for (var fuelType in response.data!)
               fuelType.name: fuelType.fuelTypeId
           };
-          
+
           developer.log('SetFuelPriceScreen: Created mapping with ${_fuelTypeIdToName.length} fuel types');
-          
+
           // Debug the mappings
           _fuelTypeIdToName.forEach((id, name) {
             developer.log('SetFuelPriceScreen: Fuel Type ID: $id -> Name: $name');
@@ -117,21 +118,21 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
       developer.log('SetFuelPriceScreen: Error fetching fuel types: $e');
     }
   }
-  
+
   // Update fuel type display names in the current prices list
   void _updateFuelTypeDisplayNames() {
     if (_currentPrices.isEmpty) return;
-    
+
     for (int i = 0; i < _currentPrices.length; i++) {
       final price = _currentPrices[i];
-      
+
       // Use the API's fuelType value directly as it's already correct
       // Only map if fuelType is empty but fuelTypeId exists
-      if (price.fuelType.isEmpty && price.fuelTypeId != null && 
+      if (price.fuelType.isEmpty && price.fuelTypeId != null &&
           _fuelTypeIdToName.containsKey(price.fuelTypeId)) {
-        
+
         final displayName = _fuelTypeIdToName[price.fuelTypeId]!;
-        
+
         // Create a new price object with the updated fuel type name
         final updatedPrice = FuelPrice(
           id: price.id,
@@ -142,7 +143,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
           petrolPumpId: price.petrolPumpId,
           lastUpdatedBy: price.lastUpdatedBy,
         );
-        
+
         _currentPrices[i] = updatedPrice;
         developer.log('SetFuelPriceScreen: Updated empty fuel type: ${price.fuelTypeId} -> $displayName');
       }
@@ -161,22 +162,22 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
         await _fetchFuelTypes();
         await _fetchAvailableFuelTypes();
       }
-      
+
       final response = await _pricingRepository.getCurrentPrices();
 
       setState(() {
         if (response.success && response.data != null) {
           _currentPrices = response.data!;
-          
+
           // Log the received data
           developer.log("SetFuelPriceScreen: Received ${_currentPrices.length} prices from API");
           for (var price in _currentPrices) {
             developer.log("SetFuelPriceScreen: Price id=${price.id}, fuelType=${price.fuelType}, fuelTypeId=${price.fuelTypeId}, price=${price.pricePerLiter}");
           }
-          
+
           // Only update fuel type names if the field is empty
           _updateFuelTypeDisplayNames();
-          
+
           _prefillCurrentPrice();
         } else {
           _errorMessage = response.errorMessage ?? 'Failed to load current prices';
@@ -205,7 +206,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
           } else {
             _currentPrices.add(response.data!);
           }
-          
+
           if (_selectedFuelType == fuelType) {
             _prefillCurrentPrice();
           }
@@ -221,11 +222,11 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   void _prefillCurrentPrice() {
     // Find either by fuel type name or ID
     FuelPrice? currentPrice;
-    
+
     // First try to find by selected fuel type name directly
     try {
       currentPrice = _currentPrices.firstWhere(
-        (price) => price.fuelType == _selectedFuelType,
+            (price) => price.fuelType == _selectedFuelType,
         orElse: () => FuelPrice(
           effectiveFrom: DateTime.now(),
           fuelType: '',
@@ -237,13 +238,13 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
     } catch (e) {
       developer.log('SetFuelPriceScreen: Error finding price by name: $e');
     }
-    
+
     // If we couldn't find by name and we have a fuel type ID mapping, try to find by ID
     if (currentPrice?.fuelType.isEmpty == true && _fuelTypeNameToId.containsKey(_selectedFuelType)) {
       final fuelTypeId = _fuelTypeNameToId[_selectedFuelType];
       try {
         currentPrice = _currentPrices.firstWhere(
-          (price) => price.fuelTypeId == fuelTypeId,
+              (price) => price.fuelTypeId == fuelTypeId,
           orElse: () => currentPrice ?? FuelPrice(
             effectiveFrom: DateTime.now(),
             fuelType: '',
@@ -252,39 +253,52 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
             lastUpdatedBy: null,
           ),
         );
-        
+
         developer.log('SetFuelPriceScreen: Found price by fuelTypeId: $fuelTypeId');
       } catch (e) {
         developer.log('SetFuelPriceScreen: Error finding price by ID: $e');
       }
     }
-    
+
     if (currentPrice != null && currentPrice.fuelType.isNotEmpty) {
       _priceController.text = currentPrice.pricePerLiter.toString();
-      
+
       // Also fill in the new fields if they exist
       if (currentPrice.costPerLiter != null) {
         _costController.text = currentPrice.costPerLiter!.toString();
       } else {
         _costController.clear();
       }
-      
-      // Removed markup fields per updated API
-      
+
+      if (currentPrice.markupPercentage != null) {
+        _markupPercentageController.text = currentPrice.markupPercentage!.toString();
+      } else {
+        _markupPercentageController.clear();
+      }
+
+      if (currentPrice.markupAmount != null) {
+        _markupAmountController.text = currentPrice.markupAmount!.toString();
+      } else {
+        _markupAmountController.clear();
+      }
+
       // If we're prefilling an existing price, also set the effective dates
       if (currentPrice.id != null) {
         setState(() {
           _selectedEffectiveFrom = currentPrice!.effectiveFrom;
+          _selectedEffectiveTo = currentPrice.effectiveTo ?? DateTime.now().add(const Duration(days: 30));
         });
-        developer.log('SetFuelPriceScreen: Prefilled effective date: From ${DateFormat('yyyy-MM-dd').format(_selectedEffectiveFrom)}');
+        developer.log('SetFuelPriceScreen: Prefilled effective dates: From ${DateFormat('yyyy-MM-dd').format(_selectedEffectiveFrom)} to ${DateFormat('yyyy-MM-dd').format(_selectedEffectiveTo)}');
       }
     } else {
       _priceController.clear();
       _costController.clear();
-      // Removed markup fields per updated API
+      _markupPercentageController.clear();
+      _markupAmountController.clear();
       // Reset to current date if no existing price
       setState(() {
         _selectedEffectiveFrom = DateTime.now();
+        _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30));
       });
     }
   }
@@ -301,22 +315,30 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
     try {
       final pricePerLiter = double.parse(_priceController.text);
-      
+
       // Parse new fields if provided
       double? costPerLiter;
       if (_costController.text.isNotEmpty) {
         costPerLiter = double.parse(_costController.text);
       }
-      
-      // Removed markup parsing per updated API
-      
+
+      double? markupPercentage;
+      if (_markupPercentageController.text.isNotEmpty) {
+        markupPercentage = double.parse(_markupPercentageController.text);
+      }
+
+      double? markupAmount;
+      if (_markupAmountController.text.isNotEmpty) {
+        markupAmount = double.parse(_markupAmountController.text);
+      }
+
       // Get pump ID and employee ID for lastUpdatedBy
       final pumpId = await _pricingRepository.getPumpId() ?? 'default_pump_id';
       final employeeId = await _pricingRepository.getEmployeeId() ?? 'default_employee_id';
-      
+
       developer.log("SetFuelPriceScreen: Using pumpId='$pumpId', employeeId='$employeeId'");
-      debugPrint("DEBUG: Setting fuel price with pumpId='$pumpId', employeeId='$employeeId'");
-      
+      print("DEBUG: Setting fuel price with pumpId='$pumpId', employeeId='$employeeId'");
+
       // Check if IDs are available
       if (pumpId.isEmpty) {
         setState(() {
@@ -328,7 +350,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
       // Check if we're updating an existing price or creating a new one
       final existingPrice = _currentPrices.firstWhere(
-        (price) => price.fuelType == _selectedFuelType && price.id != null,
+            (price) => price.fuelType == _selectedFuelType && price.id != null,
         orElse: () => FuelPrice(
           effectiveFrom: DateTime.now(),
           fuelType: _selectedFuelType,
@@ -340,83 +362,94 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
       final bool isUpdating = existingPrice.id != null;
       developer.log("SetFuelPriceScreen: ${isUpdating ? 'Updating' : 'Creating new'} price for ${_selectedFuelType}, existing ID: ${existingPrice.id ?? 'None'}");
-      debugPrint("DEBUG: ${isUpdating ? 'Updating' : 'Creating new'} price for ${_selectedFuelType}, existing ID: ${existingPrice.id ?? 'None'}");
+      print("DEBUG: ${isUpdating ? 'Updating' : 'Creating new'} price for ${_selectedFuelType}, existing ID: ${existingPrice.id ?? 'None'}");
 
       // Get the fuelTypeId for the selected fuel type
       String? fuelTypeId;
-      
+
       // First try to get it from the existing price
       if (existingPrice.fuelTypeId != null) {
         fuelTypeId = existingPrice.fuelTypeId;
         developer.log("SetFuelPriceScreen: Using existing fuelTypeId: $fuelTypeId");
-        debugPrint("DEBUG: Using existing fuelTypeId: $fuelTypeId");
-      } 
+        print("DEBUG: Using existing fuelTypeId: $fuelTypeId");
+      }
       // If not available from existing price, use our selected ID
       else if (_selectedFuelTypeId != null) {
         fuelTypeId = _selectedFuelTypeId;
         developer.log("SetFuelPriceScreen: Using selected fuelTypeId: $fuelTypeId");
-        debugPrint("DEBUG: Using selected fuelTypeId: $fuelTypeId");
+        print("DEBUG: Using selected fuelTypeId: $fuelTypeId");
       }
       // If still not available, try from our mapping
       else if (_fuelTypeNameToId.containsKey(_selectedFuelType)) {
         fuelTypeId = _fuelTypeNameToId[_selectedFuelType];
         developer.log("SetFuelPriceScreen: Found fuelTypeId from mapping: $fuelTypeId");
-        debugPrint("DEBUG: Found fuelTypeId from mapping: $fuelTypeId");
+        print("DEBUG: Found fuelTypeId from mapping: $fuelTypeId");
       } else {
         developer.log("SetFuelPriceScreen: No fuelTypeId available for $_selectedFuelType, will use fuelType instead");
-        debugPrint("DEBUG: WARNING - No fuelTypeId available for $_selectedFuelType");
+        print("DEBUG: WARNING - No fuelTypeId available for $_selectedFuelType");
       }
 
-      debugPrint("DEBUG: Selected fuel type: $_selectedFuelType");
-      debugPrint("DEBUG: Effective from date: ${_selectedEffectiveFrom.toIso8601String()}");
-      debugPrint("DEBUG: Price per liter: $pricePerLiter");
-      debugPrint("DEBUG: Cost per liter: $costPerLiter");
-      // Removed markup debug per updated API
-      debugPrint("DEBUG: FuelTypeId: $fuelTypeId");
-      
+      print("DEBUG: Selected fuel type: $_selectedFuelType");
+      print("DEBUG: Effective from date: ${_selectedEffectiveFrom.toIso8601String()}");
+      print("DEBUG: Effective to date: ${_selectedEffectiveTo.toIso8601String()}");
+      print("DEBUG: Price per liter: $pricePerLiter");
+      print("DEBUG: Cost per liter: $costPerLiter");
+      print("DEBUG: Markup percentage: $markupPercentage");
+      print("DEBUG: Markup amount: $markupAmount");
+      print("DEBUG: FuelTypeId: $fuelTypeId");
+
       ApiResponse<FuelPrice> response;
-      
+
       if (isUpdating) {
-        // Per new API, updates also use POST with required fields only
-        final updatedPricePost = FuelPrice(
+        // Update existing price
+        final updatedPrice = FuelPrice(
+          id: existingPrice.id,
           effectiveFrom: _selectedEffectiveFrom,
+          effectiveTo: _selectedEffectiveTo,
           fuelType: _selectedFuelType,
           fuelTypeId: fuelTypeId,
           pricePerLiter: pricePerLiter,
+          costPerLiter: costPerLiter,
+          markupPercentage: markupPercentage,
+          markupAmount: markupAmount,
           petrolPumpId: pumpId,
           lastUpdatedBy: employeeId,
         );
 
-        developer.log("SetFuelPriceScreen: Updating via POST (no PUT). Employee: $employeeId");
-        debugPrint("DEBUG: Updating via POST (no PUT). Payload: ${updatedPricePost.toJson()}");
-        response = await _pricingRepository.setFuelPrice(updatedPricePost);
+        developer.log("SetFuelPriceScreen: Updating price with ID: ${existingPrice.id}, last updated by employee: $employeeId");
+        print("DEBUG: Updating price with ID: ${existingPrice.id}, last updated by employee: $employeeId");
+        print("DEBUG: Update price object: ${updatedPrice.toJson()}");
+        response = await _pricingRepository.updateFuelPrice(existingPrice.id!, updatedPrice);
       } else {
         // Create new price
         final newPrice = FuelPrice(
           effectiveFrom: _selectedEffectiveFrom,
+          effectiveTo: _selectedEffectiveTo,
           fuelType: _selectedFuelType,
           fuelTypeId: fuelTypeId,
           pricePerLiter: pricePerLiter,
+          costPerLiter: costPerLiter,
+          markupPercentage: markupPercentage,
+          markupAmount: markupAmount,
           petrolPumpId: pumpId,
           lastUpdatedBy: employeeId,
         );
 
         developer.log("SetFuelPriceScreen: Creating new price, updated by employee: $employeeId");
-        debugPrint("DEBUG: Creating new price, updated by employee: $employeeId");
-        debugPrint("DEBUG: New price object: ${newPrice.toJson()}");
+        print("DEBUG: Creating new price, updated by employee: $employeeId");
+        print("DEBUG: New price object: ${newPrice.toJson()}");
         response = await _pricingRepository.setFuelPrice(newPrice);
       }
 
       if (response.success) {
-        debugPrint("DEBUG: API response success: ${response.success}");
-        showAnimatedSnackBar(
-          context: context,
-          message: 'Fuel price ${isUpdating ? 'updated' : 'set'} successfully',
-          isError: false,
+        print("DEBUG: API response success: ${response.success}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fuel price ${isUpdating ? 'updated' : 'set'} successfully')),
         );
         _priceController.clear();
         _costController.clear();
-        // Removed markup fields per updated API
+        _markupPercentageController.clear();
+        _markupAmountController.clear();
         _fetchCurrentPrices();
         setState(() {
           _showPriceForm = false;
@@ -424,17 +457,34 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
       } else {
         final errorMsg = response.errorMessage ?? 'Failed to ${isUpdating ? 'update' : 'set'} price';
         developer.log("SetFuelPriceScreen: API error: $errorMsg");
-        debugPrint("DEBUG: API error response: $errorMsg");
+        print("DEBUG: API error response: $errorMsg");
 
         setState(() {
           _errorMessage = errorMsg;
         });
 
-        // Show the server error using our top overlay snackbar
-        showAnimatedSnackBar(
+        showDialog(
           context: context,
-          message: errorMsg,
-          isError: true,
+          builder: (context) => AlertDialog(
+            title: Text('Operation Failed'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(errorMsg),
+                SizedBox(height: 16),
+                Text('Please check the price and try again.'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('DISMISS'),
+              ),
+            ],
+          ),
         );
       }
     } catch (e) {
@@ -442,7 +492,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
         _errorMessage = 'Error: ${e.toString()}';
       });
       developer.log("SetFuelPriceScreen: Exception in _setFuelPrice: $e");
-      debugPrint("DEBUG: Exception in _setFuelPrice: $e");
+      print("DEBUG: Exception in _setFuelPrice: $e");
     } finally {
       setState(() {
         _isLoading = false;
@@ -455,22 +505,22 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
     // Check if the price has an ID
     if (price.id == null) {
       developer.log('SetFuelPriceScreen: WARNING - Missing ID in _showPriceOptions for ${price.fuelType}');
-      
+
       // Try to find a matching price with an ID
       final matchingPrice = _currentPrices.firstWhere(
-        (p) => p.fuelType == price.fuelType && p.id != null,
+            (p) => p.fuelType == price.fuelType && p.id != null,
         orElse: () => price,
       );
-      
+
       if (matchingPrice.id != null) {
         developer.log('SetFuelPriceScreen: Found matching price with ID: ${matchingPrice.id}');
         price = matchingPrice;
       }
     }
-    
+
     // Get display fuel type name using helper method
     String displayFuelType = _getDisplayFuelType(price);
-    
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -540,32 +590,32 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   Future<void> _fetchAvailableFuelTypes() async {
     try {
       developer.log('SetFuelPriceScreen: Fetching available fuel types');
-      
+
       // First, ensure we have the fuel type mapping loaded
       if (_fuelTypeIdToName.isEmpty) {
         await _fetchFuelTypes();
       }
-      
+
       // Get available fuel types from the actual fuel tanks
       final fuelTankRepository = FuelTankRepository();
       final response = await fuelTankRepository.getAllFuelTanks();
-      
+
       if (response.success && response.data != null) {
         // Extract unique fuel types from tanks
         final Set<String> availableFuelTypes = {};
         _availableFuelTanks = []; // Clear existing tank data
-        
+
         // Only include active tanks
         for (final tank in response.data!) {
           if (tank.status.toLowerCase() == 'active') {
             String? fuelTypeId = tank.fuelTypeId;
-            
+
             // Skip if no fuel type ID
             if (fuelTypeId == null || fuelTypeId.isEmpty) {
               developer.log('SetFuelPriceScreen: Skipping tank with missing fuelTypeId: ${tank.fuelTankId}');
               continue;
             }
-            
+
             // Get the fuel type name from our mapping or use the tank's fuel type
             String fuelTypeName;
             if (_fuelTypeIdToName.containsKey(fuelTypeId)) {
@@ -574,22 +624,22 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
             } else {
               fuelTypeName = tank.fuelType;
               developer.log('SetFuelPriceScreen: Using tank\'s fuel type name for ID $fuelTypeId: $fuelTypeName');
-              
+
               // Add to our mapping for future reference
               _fuelTypeIdToName[fuelTypeId] = fuelTypeName;
             }
-            
+
             // Only add if we have a valid name
             if (fuelTypeName.isNotEmpty) {
               availableFuelTypes.add(fuelTypeName);
-              
+
               // Store tank info with both name and ID
               _availableFuelTanks.add({
                 'name': fuelTypeName,
                 'id': fuelTypeId,
                 'tankId': tank.fuelTankId
               });
-              
+
               // Update our name-to-id mapping
               _fuelTypeNameToId[fuelTypeName] = fuelTypeId;
               developer.log('SetFuelPriceScreen: Added fuel type mapping: $fuelTypeName -> $fuelTypeId');
@@ -598,17 +648,17 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
             }
           }
         }
-        
+
         setState(() {
           // Convert Set to List
           _fuelTypes = availableFuelTypes.toList();
           _fuelTypes.sort(); // Sort alphabetically
         });
-        
+
         developer.log('SetFuelPriceScreen: Available fuel types from tanks: $_fuelTypes');
         developer.log('SetFuelPriceScreen: Available fuel tanks with IDs: $_availableFuelTanks');
         developer.log('SetFuelPriceScreen: FuelType to ID mapping: $_fuelTypeNameToId');
-        
+
         // If we have no fuel types, we have no tanks
         if (_fuelTypes.isEmpty) {
           setState(() {
@@ -646,14 +696,14 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
     if (_fuelTypeNameToId.containsKey(name)) {
       return _fuelTypeNameToId[name];
     }
-    
+
     // Then check in available fuel tanks
     for (final tank in _availableFuelTanks) {
       if (tank['name'] == name && tank['id'] != null) {
         return tank['id'];
       }
     }
-    
+
     return null;
   }
 
@@ -661,13 +711,18 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   void _showEditPriceDialog(FuelPrice price) {
     final TextEditingController priceController = TextEditingController(text: price.pricePerLiter.toString());
     final TextEditingController costController = TextEditingController(
-      text: price.costPerLiter != null ? price.costPerLiter.toString() : ''
+        text: price.costPerLiter != null ? price.costPerLiter.toString() : ''
     );
-    // Removed markup controllers per updated API
+    final TextEditingController markupPercentageController = TextEditingController(
+        text: price.markupPercentage != null ? price.markupPercentage.toString() : ''
+    );
+    final TextEditingController markupAmountController = TextEditingController(
+        text: price.markupAmount != null ? price.markupAmount.toString() : ''
+    );
 
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     DateTime effectiveFrom = price.effectiveFrom;
-    // DateTime effectiveTo = price.effectiveTo ?? price.effectiveFrom.add(const Duration(days: 30));
+    DateTime effectiveTo = price.effectiveTo ?? price.effectiveFrom.add(const Duration(days: 30));
 
     // Get display fuel type name using helper method
     String displayFuelType = _getDisplayFuelType(price);
@@ -738,23 +793,33 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                   children: [
                     Expanded(
                       child: _buildCompactDatePicker(
-                        label: 'From',
-                        selectedDate: effectiveFrom,
-                        color: color,
-                        context: context,
-                        onDateSelected: (date) {
-                          effectiveFrom = date;
-                          // If effectiveTo is before effectiveFrom, update it
-                          // if (effectiveTo.isBefore(effectiveFrom)) {
-                          //   effectiveTo = effectiveFrom.add(const Duration(days: 1));
-                          // }
-                        }
+                          label: 'From',
+                          selectedDate: effectiveFrom,
+                          color: color,
+                          context: context,
+                          onDateSelected: (date) {
+                            effectiveFrom = date;
+                            // If effectiveTo is before effectiveFrom, update it
+                            if (effectiveTo.isBefore(effectiveFrom)) {
+                              effectiveTo = effectiveFrom.add(const Duration(days: 1));
+                            }
+                          }
                       ),
                     ),
                     const SizedBox(width: 8),
 
                     // To date
-                    // Removed 'To' date picker
+                    Expanded(
+                      child: _buildCompactDatePicker(
+                          label: 'To',
+                          selectedDate: effectiveTo,
+                          color: color,
+                          context: context,
+                          onDateSelected: (date) {
+                            effectiveTo = date;
+                          }
+                      ),
+                    ),
                   ],
                 ),
 
@@ -792,8 +857,78 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
                 const SizedBox(height: 16),
 
+                // Cost per liter field
+                TextFormField(
+                  controller: costController,
+                  decoration: InputDecoration(
+                    labelText: 'Cost per liter (₹)',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.receipt),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: color),
+                    ),
+                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                ),
 
+                const SizedBox(height: 16),
 
+                // Markup fields (percentage and amount)
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: markupPercentageController,
+                        decoration: InputDecoration(
+                          labelText: 'Markup %',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.percent),
+                        ),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        onChanged: (value) {
+                          // Calculate markup amount if both cost and percentage are entered
+                          if (value.isNotEmpty && costController.text.isNotEmpty) {
+                            try {
+                              final cost = double.parse(costController.text);
+                              final percentage = double.parse(value);
+                              final markupAmount = cost * (percentage / 100);
+                              markupAmountController.text = markupAmount.toStringAsFixed(2);
+                            } catch (e) {
+                              // Ignore errors
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextFormField(
+                        controller: markupAmountController,
+                        decoration: InputDecoration(
+                          labelText: 'Markup ₹',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.currency_rupee),
+                        ),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        onChanged: (value) {
+                          // Calculate percentage if both cost and amount are entered
+                          if (value.isNotEmpty && costController.text.isNotEmpty) {
+                            try {
+                              final cost = double.parse(costController.text);
+                              if (cost > 0) {
+                                final amount = double.parse(value);
+                                final percentage = (amount / cost) * 100;
+                                markupPercentageController.text = percentage.toStringAsFixed(2);
+                              }
+                            } catch (e) {
+                              // Ignore errors
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -821,7 +956,15 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                     costPerLiter = double.parse(costController.text);
                   }
 
-                  // Removed markup parsing per updated API
+                  double? markupPercentage;
+                  if (markupPercentageController.text.isNotEmpty) {
+                    markupPercentage = double.parse(markupPercentageController.text);
+                  }
+
+                  double? markupAmount;
+                  if (markupAmountController.text.isNotEmpty) {
+                    markupAmount = double.parse(markupAmountController.text);
+                  }
 
                   // Get pump ID and employee ID for lastUpdatedBy
                   final pumpId = await _pricingRepository.getPumpId() ?? 'default_pump_id';
@@ -841,47 +984,34 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                   final updatedPrice = FuelPrice(
                     id: price.id,
                     effectiveFrom: effectiveFrom,
-                    // effectiveTo: effectiveTo, // Removed effectiveTo
+                    effectiveTo: effectiveTo,
                     fuelType: price.fuelType,
                     fuelTypeId: fuelTypeId,
                     pricePerLiter: pricePerLiter,
                     costPerLiter: costPerLiter,
+                    markupPercentage: markupPercentage,
+                    markupAmount: markupAmount,
                     petrolPumpId: pumpId,
                     lastUpdatedBy: employeeId,
                   );
 
                   if (price.id != null) {
-                    // Per new API, updates also use POST with required fields only
-                    final postPrice = FuelPrice(
-                      effectiveFrom: effectiveFrom,
-                      fuelType: price.fuelType,
-                      fuelTypeId: fuelTypeId,
-                      pricePerLiter: pricePerLiter,
-                      petrolPumpId: pumpId,
-                      lastUpdatedBy: employeeId,
-                    );
-                    final response = await _pricingRepository.setFuelPrice(postPrice);
+                    final response = await _pricingRepository.updateFuelPrice(price.id!, updatedPrice);
 
                     if (response.success) {
-                      showAnimatedSnackBar(
-                        context: context,
-                        message: 'Fuel price updated successfully',
-                        isError: false,
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Fuel price updated successfully')),
                       );
                       _fetchCurrentPrices();
                     } else {
-                      showAnimatedSnackBar(
-                        context: context,
-                        message: response.errorMessage ?? 'Failed to update price',
-                        isError: true,
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(response.errorMessage ?? 'Failed to update price')),
                       );
                     }
                   }
                 } catch (e) {
-                  showAnimatedSnackBar(
-                    context: context,
-                    message: 'Error: ${e.toString()}',
-                    isError: true,
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: ${e.toString()}')),
                   );
                 } finally {
                   setState(() {
@@ -899,7 +1029,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
       ),
     );
   }
-  
+
   // Helper method for compact date picker in the edit dialog
   Widget _buildCompactDatePicker({
     required String label,
@@ -924,7 +1054,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
             );
           },
         );
-        
+
         if (picked != null) {
           onDateSelected(DateTime(
             picked.year,
@@ -974,12 +1104,12 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
     if (price.fuelType.isNotEmpty) {
       return price.fuelType;
     }
-    
+
     // Otherwise, try to get from mapping
     if (price.fuelTypeId != null && _fuelTypeIdToName.containsKey(price.fuelTypeId)) {
       return _fuelTypeIdToName[price.fuelTypeId]!;
     }
-    
+
     // Fallback
     return "Unknown Fuel";
   }
@@ -1004,8 +1134,8 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
       body: _isLoadingCurrentPrices
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? _buildErrorView()
-              : _buildMainContent(),
+          ? _buildErrorView()
+          : _buildMainContent(),
     );
   }
 
@@ -1059,7 +1189,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
               ),
             ),
           ),
-          
+
           // Empty state
           if (_currentPrices.isEmpty)
             SliverFillRemaining(
@@ -1081,16 +1211,14 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                       onPressed: () {
                         if (_fuelTypes.isEmpty) {
                           // Navigate to fuel tank screen or show dialog explaining the need to add tanks
-                          showAnimatedSnackBar(
-                            context: context,
-                            message: 'Please add a fuel tank first',
-                            isError: true,
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please add a fuel tank first')),
                           );
                         } else {
                           setState(() {
                             _selectedFuelType = _fuelTypes.first;
                             _selectedEffectiveFrom = DateTime.now();
-                            // _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30)); // Removed effectiveTo
+                            _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30));
                             _priceController.clear();
                             _showPriceForm = true;
                           });
@@ -1108,25 +1236,25 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                 ),
               ),
             ),
-          
+
           // Price list
           if (_currentPrices.isNotEmpty)
             SliverPadding(
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) {
+                      (context, index) {
                     final price = _currentPrices[index];
                     final color = _fuelColors[price.fuelType] ?? Colors.grey.shade700;
                     final icon = _fuelIcons[price.fuelType] ?? Icons.local_gas_station;
-                    
+
                     return _buildPriceListItem(price, color, icon);
                   },
                   childCount: _currentPrices.length,
                 ),
               ),
             ),
-          
+
           // Add another price button at the bottom - REDESIGNED
           if (_currentPrices.isNotEmpty)
             SliverToBoxAdapter(
@@ -1151,20 +1279,14 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
                       onTap: () {
-                        if (_fuelTypes.isEmpty) {
-                          showAnimatedSnackBar(
-                            context: context,
-                            message: 'Please add a fuel tank first',
-                            isError: true,
-                          );
-                          return;
-                        }
                         setState(() {
                           _selectedFuelType = _fuelTypes.first;
                           _selectedEffectiveFrom = DateTime.now();
+                          _selectedEffectiveTo = DateTime.now().add(const Duration(days: 30));
                           _priceController.clear();
                           _costController.clear();
-
+                          _markupPercentageController.clear();
+                          _markupAmountController.clear();
                           _showPriceForm = true;
                         });
                       },
@@ -1232,12 +1354,46 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header with back button
+          Container(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _showPriceForm = false;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(50),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha:0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: const Icon(Icons.arrow_back, size: 22),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'Set Fuel Price',
+                  style: AppTheme.headingStyle,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
-          const SizedBox(height: 36),
-          
           // The price form
           _buildPriceForm(),
-          
+
           // Extra space at bottom to prevent overflow
           const SizedBox(height: 32),
         ],
@@ -1248,11 +1404,11 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   Widget _buildPriceForm() {
     // Find the current price for the selected fuel type (if any)
     final currentPrice = _currentPrices.firstWhere(
-      (price) => price.fuelType == _selectedFuelType && price.id != null,
+          (price) => price.fuelType == _selectedFuelType && price.id != null,
       orElse: () {
         // If we couldn't find one with an ID, try without ID filter
         final noIdPrice = _currentPrices.firstWhere(
-          (price) => price.fuelType == _selectedFuelType,
+              (price) => price.fuelType == _selectedFuelType,
           orElse: () => FuelPrice(
             effectiveFrom: DateTime.now(),
             fuelType: _selectedFuelType,
@@ -1261,18 +1417,18 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
             lastUpdatedBy: null,
           ),
         );
-        
+
         developer.log('SetFuelPriceScreen: In _buildPriceForm - Found price without ID check: ${noIdPrice.fuelType}, ID: ${noIdPrice.id ?? 'NULL'}');
         return noIdPrice;
       },
     );
-    
+
     developer.log('SetFuelPriceScreen: Current price in form: ${currentPrice.fuelType}, ID: ${currentPrice.id ?? 'NULL'}');
-    
+
     // Check if this is an existing price (has an ID) or a new one
     final isExistingPrice = currentPrice.id != null;
     final color = _fuelColors[_selectedFuelType] ?? Colors.grey.shade700;
-    
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -1326,9 +1482,9 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Fuel type dropdown
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
@@ -1362,9 +1518,9 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                   }
                 },
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Date pickers
               Text(
                 'Effective Period:',
@@ -1387,18 +1543,32 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                         setState(() {
                           _selectedEffectiveFrom = date;
                           // If effectiveTo is before the new effectiveFrom, update it
-                          // if (_selectedEffectiveTo.isBefore(_selectedEffectiveFrom)) {
-                          //   _selectedEffectiveTo = _selectedEffectiveFrom.add(const Duration(days: 1));
-                          // }
+                          if (_selectedEffectiveTo.isBefore(_selectedEffectiveFrom)) {
+                            _selectedEffectiveTo = _selectedEffectiveFrom.add(const Duration(days: 1));
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildCompactDatePicker(
+                      label: 'To',
+                      selectedDate: _selectedEffectiveTo,
+                      color: color,
+                      context: context,
+                      onDateSelected: (date) {
+                        setState(() {
+                          _selectedEffectiveTo = date;
                         });
                       },
                     ),
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Price section header
               Text(
                 'Price Details:',
@@ -1409,7 +1579,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Price and cost fields
               Row(
                 children: [
@@ -1450,13 +1620,184 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-
+                  // Cost per liter field
+                  Expanded(
+                    child: TextFormField(
+                      controller: _costController,
+                      decoration: InputDecoration(
+                        labelText: 'Cost per Liter (₹)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        prefixIcon: Icon(Icons.receipt, color: color),
+                        suffixText: '₹',
+                        suffixStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      // Not required
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty) {
+                          if (double.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (double.parse(value) <= 0) {
+                            return 'Cost must be greater than zero';
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
                 ],
               ),
 
-              
+              const SizedBox(height: 20),
+
+              // Markup fields
+              Row(
+                children: [
+                  // Markup percentage field
+                  Expanded(
+                    child: TextFormField(
+                      controller: _markupPercentageController,
+                      decoration: InputDecoration(
+                        labelText: 'Markup Percentage (%)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        prefixIcon: Icon(Icons.percent, color: color),
+                        suffixText: '%',
+                        suffixStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      // Not required
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty) {
+                          if (double.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (double.parse(value) < 0) {
+                            return 'Markup % cannot be negative';
+                          }
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        // Optionally: Calculate markup amount if both cost and percentage are entered
+                        if (value.isNotEmpty && _costController.text.isNotEmpty) {
+                          try {
+                            final cost = double.parse(_costController.text);
+                            final percentage = double.parse(value);
+                            final markupAmount = cost * (percentage / 100);
+                            _markupAmountController.text = markupAmount.toStringAsFixed(2);
+                          } catch (e) {
+                            // Ignore errors
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Markup amount field
+                  Expanded(
+                    child: TextFormField(
+                      controller: _markupAmountController,
+                      decoration: InputDecoration(
+                        labelText: 'Markup Amount (₹)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        prefixIcon: Icon(Icons.currency_rupee, color: color),
+                        suffixText: '₹',
+                        suffixStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        floatingLabelBehavior: FloatingLabelBehavior.never,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      // Not required
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty) {
+                          if (double.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          if (double.parse(value) < 0) {
+                            return 'Markup amount cannot be negative';
+                          }
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        // Optionally: Calculate percentage if both cost and amount are entered
+                        if (value.isNotEmpty && _costController.text.isNotEmpty) {
+                          try {
+                            final cost = double.parse(_costController.text);
+                            if (cost > 0) {
+                              final amount = double.parse(value);
+                              final percentage = (amount / cost) * 100;
+                              _markupPercentageController.text = percentage.toStringAsFixed(2);
+                            }
+                          } catch (e) {
+                            // Ignore errors
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Help text for markup calculation
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.amber.shade800, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Formula: Price = Cost + Markup Amount',
+                        style: TextStyle(
+                          color: Colors.amber.shade800,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               const SizedBox(height: 24),
-              
+
               // Action buttons
               Row(
                 children: [
@@ -1476,13 +1817,13 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                       ),
                       icon: _isLoading
                           ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                           : Icon(isExistingPrice ? Icons.update : Icons.save),
                       label: Text(
                         isExistingPrice ? 'Update Price' : 'Save Price',
@@ -1490,7 +1831,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                       ),
                     ),
                   ),
-                  
+
                   // Cancel button for all prices (not just new ones)
                   const SizedBox(width: 12),
                   Expanded(
@@ -1521,7 +1862,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
       ),
     );
   }
-  
+
   // Helper method to build date picker fields
   Widget _buildDatePicker({
     required String label,
@@ -1547,13 +1888,13 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
             );
           },
         );
-        
+
         if (picked != null) {
           final TimeOfDay? pickedTime = await showTimePicker(
             context: context,
             initialTime: TimeOfDay.fromDateTime(selectedDate),
           );
-          
+
           if (pickedTime != null) {
             onDateSelected(DateTime(
               picked.year,
@@ -1599,14 +1940,14 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
   // New horizontal price list item widget
   Widget _buildPriceListItem(FuelPrice price, Color color, IconData icon) {
     final lastUpdated = DateFormat('dd MMM HH:mm').format(price.effectiveFrom);
-    
+
     // Get display fuel type name using helper method
     String displayFuelType = _getDisplayFuelType(price);
-    
+
     // Get the appropriate color and icon for this fuel type
     final displayColor = _fuelColors[displayFuelType] ?? color;
     final displayIcon = _fuelIcons[displayFuelType] ?? icon;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Card(
@@ -1617,7 +1958,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          // onTap: () => _showEditPriceDialog(price),
+          onTap: () => _showEditPriceDialog(price),
           onLongPress: () => _showPriceOptions(price),
           child: Container(
             decoration: BoxDecoration(
@@ -1645,7 +1986,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                     child: Icon(displayIcon, color: displayColor, size: 24),
                   ),
                   const SizedBox(width: 16),
-                  
+
                   // Price and details
                   Expanded(
                     child: Column(
@@ -1670,7 +2011,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                       ],
                     ),
                   ),
-                  
+
                   // Price display
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,

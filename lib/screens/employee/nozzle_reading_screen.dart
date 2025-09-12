@@ -12,7 +12,6 @@ import '../../theme.dart';
 import '../../utils/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../screens/employee/shift_sales_screen.dart';
-import '../../widgets/custom_snackbar.dart';
 import 'dart:developer' as developer;
 
 class NozzleReadingScreen extends StatefulWidget {
@@ -37,7 +36,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
   final _readingFocusNode = FocusNode();
   final _nozzleReadingRepository = NozzleReadingRepository();
   final _fuelTypeRepository = FuelTypeRepository();
-  
+
   late String _readingType;
   File? _imageFile;
   bool _isLoading = false;
@@ -45,13 +44,13 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
   DateTime _recordedAt = DateTime.now();
   String? _petrolPumpId;
   bool _showDebugInfo = false;
-  
+
   // Local mutable copy of the nozzle assignment
   late NozzleReading _nozzleData;
 
   // Debug section data
   final List<String> _debugLog = [];
-  
+
   // Fuel type data
   List<FuelType> _fuelTypes = [];
   bool _loadingFuelTypes = false;
@@ -60,17 +59,17 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Create a local copy of the nozzle assignment
     _nozzleData = widget.nozzleAssignment;
-    
+
     // Simply use the initialReadingType passed from the dashboard
     _readingType = widget.initialReadingType;
     _addDebugLog('Reading type set from initialReadingType: $_readingType');
-    
+
     // Check if a reading of this type already exists today
     _checkForExistingReading();
-    
+
     // Fetch the latest reading from API if this is a Start reading
     if (_readingType == 'Start') {
       _fetchLatestReading();
@@ -84,17 +83,17 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
         // No local start reading, fetch from API
         _fetchStartReadingForEnd();
       }
-      
+
       // If this is an End reading, check for existing end readings as well
       _checkForExistingEndReading();
     }
-    
+
     // Get the petrol pump ID from stored JWT token
     _getPetrolPumpIdFromToken();
-    
+
     // Fetch fuel types for name mapping
     _fetchFuelTypes();
-    
+
     // Add initial debug info
     _addDebugLog('Screen initialized with reading type: $_readingType');
     _addDebugLog('Nozzle ID: ${_nozzleData.nozzleId}');
@@ -103,27 +102,27 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
     _addDebugLog('Start Reading: ${_nozzleData.startReading}');
     _addDebugLog('End Reading: ${_nozzleData.endReading}');
   }
-  
+
   void _addDebugLog(String message) {
     setState(() {
       _debugLog.add('[${DateTime.now().toIso8601String()}] $message');
       print('DEBUG: $message');
     });
   }
-  
+
   // Method to extract petrol pump ID from JWT token
   Future<void> _getPetrolPumpIdFromToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString(ApiConstants.authTokenKey);
-      
+
       if (token != null) {
         Map<String, dynamic>? decodedToken = JwtDecoder.decode(token);
         if (decodedToken != null) {
-          String? pumpId = decodedToken['petrolPumpId'] ?? 
-                         decodedToken['pumpId'] ?? 
-                         decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/petrolPumpId'];
-          
+          String? pumpId = decodedToken['petrolPumpId'] ??
+              decodedToken['pumpId'] ??
+              decodedToken['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/petrolPumpId'];
+
           if (pumpId != null && pumpId.isNotEmpty) {
             setState(() {
               _petrolPumpId = pumpId;
@@ -144,14 +143,14 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
     setState(() {
       _loadingFuelTypes = true;
     });
-    
+
     try {
-      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump();
-      
+      final response = await _fuelTypeRepository.getFuelTypesByPetrolPump(_petrolPumpId ?? '');
+
       if (response.success && response.data != null) {
         setState(() {
           _fuelTypes = response.data!;
-          
+
           // Create a mapping of fuel type IDs to their names
           _fuelTypeIdToName = {};
           for (var fuelType in _fuelTypes) {
@@ -167,13 +166,13 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       });
     }
   }
-  
+
   // Get fuel type name from ID
   String _getFuelTypeName(String? fuelTypeId) {
     if (fuelTypeId == null || fuelTypeId.isEmpty) {
       return 'Unknown';
     }
-    
+
     return _fuelTypeIdToName[fuelTypeId] ?? 'Unknown';
   }
 
@@ -187,9 +186,9 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
   Future<void> _pickImage() async {
     try {
       _addDebugLog('Starting image picker...');
-      
+
       final ImagePicker picker = ImagePicker();
-      
+
       final XFile? image = await picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 85,
@@ -205,20 +204,18 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       }
     } catch (e) {
       _addDebugLog('Error capturing image: $e');
-      
+
       // Show a helpful error message
       if (e.toString().contains('MissingPluginException')) {
-        showAnimatedSnackBar(
-          context: context,
-          message: 'Camera plugin not available. Try restarting the app or using a physical device.',
-          isError: true,
-          duration: const Duration(seconds: 5),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Camera plugin not available. Try restarting the app or using a physical device.'),
+            duration: Duration(seconds: 5),
+          ),
         );
       } else {
-        showAnimatedSnackBar(
-          context: context,
-          message: 'Error capturing image: $e',
-          isError: true,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error capturing image: $e')),
         );
       }
     }
@@ -230,7 +227,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       _addDebugLog('Form validation failed');
       return;
     }
-    
+
     // Validate image is captured
     if (_imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -241,7 +238,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       );
       return;
     }
-    
+
     // Validate petrol pump ID is available
     if (_petrolPumpId == null || _petrolPumpId!.isEmpty) {
       _addDebugLog('Petrol pump ID not available');
@@ -250,7 +247,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       });
       return;
     }
-    
+
     // Validate shift ID is available
     if (_nozzleData.shiftId == null || _nozzleData.shiftId!.isEmpty) {
       _addDebugLog('Shift ID not available');
@@ -259,38 +256,38 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       });
       return;
     }
-    
+
     // For End readings, verify with latest API data that an end reading doesn't exist
     if (_readingType == 'End') {
       setState(() {
         _isLoading = true;
       });
-      
+
       try {
         _addDebugLog('Verifying no existing End reading via API');
         final response = await _nozzleReadingRepository.getLatestReading(
-          _nozzleData.nozzleId,
-          'End'
+            _nozzleData.nozzleId,
+            'End'
         );
-        
+
         if (response.success && response.data != null) {
           final latestReading = response.data!;
           _addDebugLog('Latest reading response: ${latestReading.toString()}');
-          
+
           // Check if the reading is from today
           final today = DateTime.now();
           final todayString = DateFormat('yyyy-MM-dd').format(today);
           final readingDate = DateFormat('yyyy-MM-dd').format(latestReading.timestamp);
-          
-          if (latestReading.endReading != null && 
-              latestReading.endReading! > 0 && 
+
+          if (latestReading.endReading != null &&
+              latestReading.endReading! > 0 &&
               readingDate == todayString) {
             _addDebugLog('Found existing end reading for today with value: ${latestReading.endReading}');
             setState(() {
               _isLoading = false;
               _errorMessage = 'An end reading has already been submitted for this nozzle today.';
             });
-            
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('An end reading already exists for this nozzle today'),
@@ -315,29 +312,29 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
         }
       }
     }
-    
+
     // For Start readings, verify with latest API data that no reading exists
     if (_readingType == 'Start') {
       setState(() {
         _isLoading = true;
       });
-      
+
       try {
         _addDebugLog('Verifying no existing Start reading via API');
         final response = await _nozzleReadingRepository.getLatestReading(
-          _nozzleData.nozzleId,
-          'Start'
+            _nozzleData.nozzleId,
+            'Start'
         );
-        
+
         if (response.success && response.data != null) {
           final latestReading = response.data!;
-          
+
           if (latestReading.startReading > 0) {
             setState(() {
               _isLoading = false;
               _errorMessage = 'A start reading has already been submitted for this nozzle.';
             });
-            
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('A start reading already exists for this nozzle'),
@@ -358,14 +355,14 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
         }
       }
     }
-    
+
     // Additional check for Start readings using local data
     if (_readingType == 'Start' && _nozzleData.startReading > 0) {
       _addDebugLog('Preventing duplicate start reading submission (local check)');
       setState(() {
         _errorMessage = 'A start reading has already been submitted for this nozzle.';
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('A start reading already exists for this nozzle'),
@@ -374,19 +371,19 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       );
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
-    
+
     _addDebugLog('Starting submission process');
-    
+
     try {
       // Parse meter reading to double
       final meterReading = double.tryParse(_meterReadingController.text) ?? 0.0;
       _addDebugLog('Parsed meter reading: $meterReading');
-      
+
       // Call submitNozzleReadingMultipart
       _addDebugLog('Submitting reading to API - Type: $_readingType, Value: $meterReading');
       final response = await _nozzleReadingRepository.submitNozzleReadingMultipart(
@@ -398,25 +395,25 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
         petrolPumpId: _petrolPumpId!,
         imageFile: _imageFile!,
       );
-      
+
       setState(() {
         _isLoading = false;
       });
-      
+
       if (response.success) {
         _addDebugLog('Submission successful');
         if (mounted) {
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(_readingType == 'Start' 
-                ? 'Start reading submitted successfully' 
-                : 'End reading submitted successfully'),
+              content: Text(_readingType == 'Start'
+                  ? 'Start reading submitted successfully'
+                  : 'End reading submitted successfully'),
               backgroundColor: _readingType == 'Start' ? Colors.green : Colors.orange,
               duration: Duration(seconds: 2),
             ),
           );
-          
+
           // If this was an End reading, navigate to the shift sales screen
           if (_readingType == 'End') {
             _addDebugLog('End reading submitted, navigating to shift sales screen');
@@ -425,20 +422,20 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
               readingType: 'End',
               meterReading: meterReading,
             );
-            
+
             // ... continue with existing code
 
           } else {
             // Return to previous screen with success for Start readings
             // Use true to indicate success and trigger refresh
             _addDebugLog('Start reading submitted, returning to dashboard with refresh signal');
-            
+
             // To ensure immediate UI update, we can create an updated nozzle object here
             final updatedNozzle = _nozzleData.copyWith(
               readingType: 'Start',
               meterReading: meterReading,
             );
-            
+
             // Pop and return both success flag and updated nozzle
             Navigator.of(context).pop({
               'success': true,
@@ -451,13 +448,13 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
         setState(() {
           _errorMessage = response.errorMessage ?? 'Failed to submit reading';
         });
-        
+
         // Check if the error is about an existing reading (check with our new specific error messages)
-        if (_errorMessage.contains('has already been submitted for this nozzle today') || 
-            _errorMessage.toLowerCase().contains('already exists') || 
+        if (_errorMessage.contains('has already been submitted for this nozzle today') ||
+            _errorMessage.toLowerCase().contains('already exists') ||
             _errorMessage.toLowerCase().contains('duplicate')) {
           _addDebugLog('Error indicates duplicate reading: $_errorMessage');
-          
+
           // Show a more user-friendly error dialog for duplicate readings
           showDialog(
             context: context,
@@ -559,9 +556,9 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
                   Text(
                     'Error Message:',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold, 
-                      color: Colors.red.shade800,
-                      fontSize: 14
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade800,
+                        fontSize: 14
                     ),
                   ),
                   SizedBox(height: 4),
@@ -654,7 +651,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
   Future<void> _showDateTimePicker() async {
     final currentTime = _recordedAt;
     final now = DateTime.now();
-    
+
     try {
       final date = await showDatePicker(
         context: context,
@@ -662,13 +659,13 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
         firstDate: DateTime(now.year, now.month - 1, now.day),
         lastDate: now,
       );
-      
+
       if (date != null) {
         final time = await showTimePicker(
           context: context,
           initialTime: TimeOfDay.fromDateTime(currentTime),
         );
-        
+
         if (time != null) {
           setState(() {
             _recordedAt = DateTime(
@@ -689,7 +686,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isEndReading = _readingType == 'End';
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -738,164 +735,164 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: GestureDetector(
-                onTap: () => FocusScope.of(context).unfocus(),
-                child: Form(
-                  key: _formKey,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top banner with reading type
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: isEndReading ? Colors.orange.shade50 : Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isEndReading ? Colors.orange.shade200 : Colors.blue.shade200,
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        // Top banner with reading type
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: isEndReading ? Colors.orange.shade50 : Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isEndReading ? Colors.orange.shade200 : Colors.blue.shade200,
-                            ),
-                          ),
-                          child: Row(
+                        Icon(
+                          isEndReading ? Icons.stop_circle : Icons.play_circle,
+                          color: isEndReading ? Colors.orange : Colors.blue,
+                          size: 24,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                isEndReading ? Icons.stop_circle : Icons.play_circle,
-                                color: isEndReading ? Colors.orange : Colors.blue,
-                                size: 24,
+                              Text(
+                                isEndReading ? 'End Reading' : 'Start Reading',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: isEndReading ? Colors.orange.shade800 : Colors.blue.shade800,
+                                ),
                               ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      isEndReading ? 'End Reading' : 'Start Reading',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: isEndReading ? Colors.orange.shade800 : Colors.blue.shade800,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      isEndReading 
-                                          ? 'Record the final meter reading'
-                                          : 'Record the initial meter reading',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isEndReading ? Colors.orange.shade700 : Colors.blue.shade700,
-                                      ),
-                                    ),
-                                  ],
+                              SizedBox(height: 4),
+                              Text(
+                                isEndReading
+                                    ? 'Record the final meter reading'
+                                    : 'Record the initial meter reading',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isEndReading ? Colors.orange.shade700 : Colors.blue.shade700,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        
-                        SizedBox(height: 24),
-                        
-                        // Nozzle information card
-                        _buildNozzleInfoCard(),
-                        
-                        SizedBox(height: 24),
-                        
-                        // Reading input section
-                        _buildSectionLabel('METER READING'),
-                        SizedBox(height: 8),
-                        _buildMeterReadingInput(isEndReading),
-                        
-                        SizedBox(height: 24),
-                        
-                        // Image capture section
-                        _buildSectionLabel('PHOTO EVIDENCE'),
-                        SizedBox(height: 8),
-                        _buildImageCapture(),
-                        
-                        SizedBox(height: 24),
-                        
-                        // Date time picker
-                        _buildSectionLabel('DATE & TIME'),
-                        SizedBox(height: 8),
-                        _buildDateTimePicker(),
-                        
-                        SizedBox(height: 32),
-                        
-                        // Submit button
-                        Container(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _submitReading,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isEndReading ? Colors.orange : Colors.blue,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              isEndReading ? 'SUBMIT END READING' : 'SUBMIT START READING',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        // Error message if any
-                        if (_errorMessage.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16.0),
-                            child: Container(
-                              width: double.infinity,
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.red.shade200),
-                              ),
-                              child: Text(
-                                _errorMessage,
-                                style: TextStyle(
-                                  color: Colors.red.shade800,
-                                ),
-                              ),
-                            ),
-                          ),
-                        
-                        SizedBox(height: 24),
-                        
-                        // Debug toggle
-                        Align(
-                          alignment: Alignment.center,
-                          child: TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _showDebugInfo = !_showDebugInfo;
-                              });
-                            },
-                            child: Text(
-                              _showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                ),
+
+                  SizedBox(height: 24),
+
+                  // Nozzle information card
+                  _buildNozzleInfoCard(),
+
+                  SizedBox(height: 24),
+
+                  // Reading input section
+                  _buildSectionLabel('METER READING'),
+                  SizedBox(height: 8),
+                  _buildMeterReadingInput(isEndReading),
+
+                  SizedBox(height: 24),
+
+                  // Image capture section
+                  _buildSectionLabel('PHOTO EVIDENCE'),
+                  SizedBox(height: 8),
+                  _buildImageCapture(),
+
+                  SizedBox(height: 24),
+
+                  // Date time picker
+                  _buildSectionLabel('DATE & TIME'),
+                  SizedBox(height: 8),
+                  _buildDateTimePicker(),
+
+                  SizedBox(height: 32),
+
+                  // Submit button
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _submitReading,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isEndReading ? Colors.orange : Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        isEndReading ? 'SUBMIT END READING' : 'SUBMIT START READING',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Error message if any
+                  if (_errorMessage.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Text(
+                          _errorMessage,
+                          style: TextStyle(
+                            color: Colors.red.shade800,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  SizedBox(height: 24),
+
+                  // Debug toggle
+                  Align(
+                    alignment: Alignment.center,
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _showDebugInfo = !_showDebugInfo;
+                        });
+                      },
+                      child: Text(
+                        _showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ),
+        ),
+      ),
     );
   }
-  
+
   Widget _buildSectionLabel(String label) {
     return Text(
       label,
@@ -907,14 +904,14 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       ),
     );
   }
-  
+
   Widget _buildNozzleInfoCard() {
     // Get proper fuel type name if we have a fueltankId
-    final String displayFuelType = _nozzleData.fueltankId != null && 
-                                  _nozzleData.fueltankId!.isNotEmpty
+    final String displayFuelType = _nozzleData.fueltankId != null &&
+        _nozzleData.fueltankId!.isNotEmpty
         ? _getFuelTypeName(_nozzleData.fueltankId)
         : _nozzleData.fuelType ?? 'Unknown Fuel Type';
-        
+
     return Card(
       elevation: 2,
       margin: EdgeInsets.zero,
@@ -931,15 +928,15 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _readingType == 'End' 
-                        ? Colors.orange.shade100 
+                    color: _readingType == 'End'
+                        ? Colors.orange.shade100
                         : Colors.blue.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.local_gas_station,
-                    color: _readingType == 'End' 
-                        ? Colors.orange.shade800 
+                    color: _readingType == 'End'
+                        ? Colors.orange.shade800
                         : Colors.blue.shade800,
                     size: 24,
                   ),
@@ -962,8 +959,8 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
                         displayFuelType,
                         style: TextStyle(
                           fontSize: 14,
-                          color: _readingType == 'End' 
-                              ? Colors.orange.shade800 
+                          color: _readingType == 'End'
+                              ? Colors.orange.shade800
                               : Colors.blue.shade800,
                         ),
                       ),
@@ -1052,11 +1049,11 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       ),
     );
   }
-  
+
   Widget _buildMeterReadingInput(bool isEndReading) {
     final themeColor = isEndReading ? Colors.orange : Colors.blue;
     final labelColor = isEndReading ? Colors.orange.shade700 : Colors.blue.shade700;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1102,42 +1099,42 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
             if (value == null || value.isEmpty) {
               return 'Please enter a meter reading';
             }
-            
+
             final number = double.tryParse(value);
             if (number == null) {
               return 'Please enter a valid number';
             }
-            
+
             if (number <= 0) {
               return 'Reading must be greater than 0';
             }
-            
+
             // For end readings, validate against start reading
-            if (_readingType == 'End' && 
+            if (_readingType == 'End' &&
                 _nozzleData.startReading > 0 &&
                 number <= _nozzleData.startReading) {
               return 'End reading must be greater than start reading (${_nozzleData.startReading})';
             }
-            
+
             return null;
           },
         ),
       ],
     );
   }
-  
+
   Widget _buildImageCapture() {
     final isEndReading = _readingType == 'End';
     final themeColor = isEndReading ? Colors.orange : Colors.blue;
-    
+
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: _imageFile == null 
-              ? Colors.grey.shade300 
+          color: _imageFile == null
+              ? Colors.grey.shade300
               : themeColor.shade300,
         ),
       ),
@@ -1223,7 +1220,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
           TextButton.icon(
             onPressed: _pickImage,
             icon: Icon(
-              _imageFile == null ? Icons.camera_alt : Icons.refresh, 
+              _imageFile == null ? Icons.camera_alt : Icons.refresh,
               size: 18,
               color: themeColor.shade600,
             ),
@@ -1246,11 +1243,11 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       ),
     );
   }
-  
+
   Widget _buildDateTimePicker() {
     final isEndReading = _readingType == 'End';
     final themeColor = isEndReading ? Colors.orange : Colors.blue;
-    
+
     return InkWell(
       onTap: _showDateTimePicker,
       borderRadius: BorderRadius.circular(12),
@@ -1325,20 +1322,20 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
   Future<void> _fetchLatestReading() async {
     try {
       _addDebugLog('Fetching latest Start reading for nozzle: ${_nozzleData.nozzleId}');
-      
+
       final response = await _nozzleReadingRepository.getLatestReading(
-        _nozzleData.nozzleId,
-        'Start'
+          _nozzleData.nozzleId,
+          'Start'
       );
-      
+
       if (response.success && response.data != null) {
         final latestReading = response.data!;
         _addDebugLog('Found latest Start reading with value: ${latestReading.startReading}');
-        
+
         // If a start reading already exists with a non-zero value, show warning and go back
         if (latestReading.startReading > 0) {
           _addDebugLog('WARNING: Start reading already exists with value: ${latestReading.startReading}');
-          
+
           // Delay the warning to ensure UI is built
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -1350,7 +1347,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
                   duration: Duration(seconds: 3),
                 ),
               );
-              
+
               // Return to previous screen after delay
               Future.delayed(Duration(seconds: 1), () {
                 if (mounted) Navigator.of(context).pop(false);
@@ -1360,11 +1357,11 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
         }
       } else {
         _addDebugLog('No latest Start reading found or error: ${response.errorMessage}');
-        
+
         // Check if our local data has a start reading value
         if (_nozzleData.startReading > 0) {
           _addDebugLog('Local data shows start reading exists with value: ${_nozzleData.startReading}');
-          
+
           // Delay the warning to ensure UI is built
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -1376,7 +1373,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
                   duration: Duration(seconds: 3),
                 ),
               );
-              
+
               // Return to previous screen after delay
               Future.delayed(Duration(seconds: 1), () {
                 if (mounted) Navigator.of(context).pop(false);
@@ -1395,31 +1392,31 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       _addDebugLog('Fetching start reading from API for nozzle: ${_nozzleData.nozzleId}');
-      
+
       final response = await _nozzleReadingRepository.getLatestReading(
-        _nozzleData.nozzleId,
-        'Start'
+          _nozzleData.nozzleId,
+          'Start'
       );
-      
+
       setState(() {
         _isLoading = false;
       });
-      
+
       if (response.success && response.data != null) {
         final latestReading = response.data!;
         _addDebugLog('Found start reading with value: ${latestReading.startReading}');
-        
+
         // If a start reading exists, update our local model and pre-populate end reading field
         if (latestReading.startReading > 0) {
           setState(() {
             // Update the local nozzle data to include the start reading
             _nozzleData = _nozzleData.copyWith(
-              startReading: latestReading.startReading
+                startReading: latestReading.startReading
             );
-            
+
             // Pre-populate with a value slightly higher than the start reading
             _meterReadingController.text = (latestReading.startReading + 0.01).toStringAsFixed(2);
             _addDebugLog('Pre-filled end reading based on API start reading: ${_meterReadingController.text}');
@@ -1441,7 +1438,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
       _showStartReadingRequiredError();
     }
   }
-  
+
   // Show error when no start reading is found
   void _showStartReadingRequiredError() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1453,7 +1450,7 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
             duration: Duration(seconds: 3),
           ),
         );
-        
+
         // Return to previous screen after delay
         Future.delayed(Duration(seconds: 2), () {
           if (mounted) Navigator.of(context).pop(false);
@@ -1467,26 +1464,26 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
     try {
       _addDebugLog('DEBUG: Checking if end reading already exists for today...');
       final response = await _nozzleReadingRepository.getLatestReading(
-        _nozzleData.nozzleId,
-        'End'
+          _nozzleData.nozzleId,
+          'End'
       );
-      
+
       if (response.success && response.data != null) {
         final latestReading = response.data!;
-        
+
         // Check if the reading is from today
         final today = DateTime.now();
         final todayString = DateFormat('yyyy-MM-dd').format(today);
         final readingDate = DateFormat('yyyy-MM-dd').format(latestReading.timestamp);
-        
+
         _addDebugLog('Latest end reading details:');
         _addDebugLog('- Reading date: $readingDate');
         _addDebugLog('- Today\'s date: $todayString');
         _addDebugLog('- Reading value: ${latestReading.endReading ?? "null"}');
         _addDebugLog('- Is today\'s reading: ${readingDate == todayString}');
-        
-        if (latestReading.endReading != null && 
-            latestReading.endReading! > 0 && 
+
+        if (latestReading.endReading != null &&
+            latestReading.endReading! > 0 &&
             readingDate == todayString) {
           _addDebugLog('IMPORTANT: Found existing end reading for today with value: ${latestReading.endReading}');
         } else {
@@ -1505,17 +1502,17 @@ class _NozzleReadingScreenState extends State<NozzleReadingScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       _addDebugLog('Checking if a $_readingType reading already exists for today');
       final response = await _nozzleReadingRepository.checkReadingExistsForToday(
-        _nozzleData.nozzleId, 
-        _readingType
+          _nozzleData.nozzleId,
+          _readingType
       );
-      
+
       if (response.success && response.data == true) {
         _addDebugLog('A $_readingType reading already exists for today');
-        
+
         // Show dialog and go back to dashboard
         if (mounted) {
           // Wait for build to complete before showing dialog
