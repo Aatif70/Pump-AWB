@@ -359,45 +359,26 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
 
       ApiResponse<FuelPrice> response;
 
-      if (isUpdating) {
-        // Update existing price
-        final updatedPrice = FuelPrice(
-          id: existingPrice.id,
-          effectiveFrom: _selectedEffectiveFrom,
+      // Always POST to set the price (no PUT update)
+      final pricePayload = FuelPrice(
+        id: isUpdating ? existingPrice.id : null,
+        effectiveFrom: _selectedEffectiveFrom,
+        fuelType: _selectedFuelType,
+        fuelTypeId: fuelTypeId,
+        pricePerLiter: pricePerLiter,
+        petrolPumpId: pumpId,
+        lastUpdatedBy: employeeId,
+      );
 
-          fuelType: _selectedFuelType,
-          fuelTypeId: fuelTypeId,
-          pricePerLiter: pricePerLiter,
-          
-          petrolPumpId: pumpId,
-          lastUpdatedBy: employeeId,
-        );
-
-        developer.log("SetFuelPriceScreen: Updating price with ID: ${existingPrice.id}, last updated by employee: $employeeId");
-        print("DEBUG: Updating price with ID: ${existingPrice.id}, last updated by employee: $employeeId");
-        print("DEBUG: Update price object: ${updatedPrice.toJson()}");
-        response = await _pricingRepository.updateFuelPrice(existingPrice.id!, updatedPrice);
-      } else {
-        // Create new price
-        final newPrice = FuelPrice(
-          effectiveFrom: _selectedEffectiveFrom,
-          fuelType: _selectedFuelType,
-          fuelTypeId: fuelTypeId,
-          pricePerLiter: pricePerLiter,
-          petrolPumpId: pumpId,
-          lastUpdatedBy: employeeId,
-        );
-
-        developer.log("SetFuelPriceScreen: Creating new price, updated by employee: $employeeId");
-        print("DEBUG: Creating new price, updated by employee: $employeeId");
-        print("DEBUG: New price object: ${newPrice.toJson()}");
-        response = await _pricingRepository.setFuelPrice(newPrice);
-      }
+      developer.log("SetFuelPriceScreen: Submitting price via POST${isUpdating ? ' (replacing existing)' : ''}");
+      print("DEBUG: Submitting price via POST${isUpdating ? ' (replacing existing)' : ''}");
+      print("DEBUG: Price object: ${pricePayload.toJson()}");
+      response = await _pricingRepository.setFuelPrice(pricePayload);
 
       if (response.success) {
         print("DEBUG: API response success: ${response.success}");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fuel price ${isUpdating ? 'updated' : 'set'} successfully')),
+          const SnackBar(content: Text('Fuel price saved successfully')),
         );
         _priceController.clear();
         
@@ -406,7 +387,7 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
           _showPriceForm = false;
         });
       } else {
-        final errorMsg = response.errorMessage ?? 'Failed to ${isUpdating ? 'update' : 'set'} price';
+        final errorMsg = response.errorMessage ?? 'Failed to save price';
         developer.log("SetFuelPriceScreen: API error: $errorMsg");
         print("DEBUG: API error response: $errorMsg");
 
@@ -935,30 +916,25 @@ class _SetFuelPriceScreenState extends State<SetFuelPriceScreen> {
                   final updatedPrice = FuelPrice(
                     id: price.id,
                     effectiveFrom: effectiveFrom,
-                    effectiveTo: effectiveTo,
                     fuelType: price.fuelType,
                     fuelTypeId: fuelTypeId,
                     pricePerLiter: pricePerLiter,
-                    costPerLiter: costPerLiter,
-                    markupPercentage: markupPercentage,
-                    markupAmount: markupAmount,
                     petrolPumpId: pumpId,
                     lastUpdatedBy: employeeId,
                   );
 
-                  if (price.id != null) {
-                    final response = await _pricingRepository.updateFuelPrice(price.id!, updatedPrice);
+                  // Always POST to set price (no PUT updates)
+                  final response = await _pricingRepository.setFuelPrice(updatedPrice);
 
-                    if (response.success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Fuel price updated successfully')),
-                      );
-                      _fetchCurrentPrices();
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(response.errorMessage ?? 'Failed to update price')),
-                      );
-                    }
+                  if (response.success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fuel price saved successfully')),
+                    );
+                    _fetchCurrentPrices();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(response.errorMessage ?? 'Failed to save price')),
+                    );
                   }
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
