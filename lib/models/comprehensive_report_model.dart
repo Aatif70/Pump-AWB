@@ -13,10 +13,10 @@ class ComprehensiveReportResponse {
 
   factory ComprehensiveReportResponse.fromJson(Map<String, dynamic> json) {
     return ComprehensiveReportResponse(
-      data: ComprehensiveReportData.fromJson(json['data']),
-      success: json['success'],
-      message: json['message'],
-      validationErrors: json['validationErrors'] != null
+      data: ComprehensiveReportData.fromJson((json['data'] ?? {}) as Map<String, dynamic>),
+      success: (json['success'] as bool?) ?? false,
+      message: json['message']?.toString() ?? '',
+      validationErrors: (json['validationErrors'] is List)
           ? List<String>.from(json['validationErrors'])
           : null,
     );
@@ -53,19 +53,26 @@ class ComprehensiveReportData {
   });
 
   factory ComprehensiveReportData.fromJson(Map<String, dynamic> json) {
+    DateTime _parseDate(dynamic value) {
+      if (value is String) {
+        return DateTime.tryParse(value) ?? DateTime.now();
+      }
+      return DateTime.now();
+    }
+
     return ComprehensiveReportData(
-      stationName: json['stationName'],
-      reportDate: DateTime.parse(json['reportDate']),
-      salesDetails: SalesDetails.fromJson(json['salesDetails']),
-      nozzleDetails: NozzleDetails.fromJson(json['nozzleDetails']),
-      productDetails: ProductDetails.fromJson(json['productDetails']),
-      paymentDetails: PaymentDetails.fromJson(json['paymentDetails']),
-      petrolPumpId: json['petrolPumpId'],
-      petrolPumpName: json['petrolPumpName'],
-      generatedAt: DateTime.parse(json['generatedAt']),
-      generatedBy: json['generatedBy'],
-      reportPeriodStart: DateTime.parse(json['reportPeriodStart']),
-      reportPeriodEnd: DateTime.parse(json['reportPeriodEnd']),
+      stationName: json['stationName']?.toString() ?? '',
+      reportDate: _parseDate(json['reportDate']),
+      salesDetails: SalesDetails.fromJson((json['salesDetails'] ?? {}) as Map<String, dynamic>),
+      nozzleDetails: NozzleDetails.fromJson((json['nozzleDetails'] ?? {}) as Map<String, dynamic>),
+      productDetails: ProductDetails.fromJson((json['productDetails'] ?? {}) as Map<String, dynamic>),
+      paymentDetails: PaymentDetails.fromJson((json['paymentDetails'] ?? {}) as Map<String, dynamic>),
+      petrolPumpId: json['petrolPumpId']?.toString() ?? '',
+      petrolPumpName: json['petrolPumpName']?.toString() ?? '',
+      generatedAt: _parseDate(json['generatedAt']),
+      generatedBy: json['generatedBy']?.toString() ?? '',
+      reportPeriodStart: _parseDate(json['reportPeriodStart']),
+      reportPeriodEnd: _parseDate(json['reportPeriodEnd']),
     );
   }
 }
@@ -78,9 +85,11 @@ class SalesDetails {
   });
 
   factory SalesDetails.fromJson(Map<String, dynamic> json) {
+    final List list = (json['tankSalesDetails'] as List?) ?? const [];
     return SalesDetails(
-      tankSalesDetails: List<TankSalesDetail>.from(
-          json['tankSalesDetails'].map((x) => TankSalesDetail.fromJson(x))),
+      tankSalesDetails: list
+          .map((x) => TankSalesDetail.fromJson((x ?? {}) as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
@@ -122,8 +131,8 @@ class TankSalesDetail {
 
   factory TankSalesDetail.fromJson(Map<String, dynamic> json) {
     return TankSalesDetail(
-      product: json['product'],
-      tank: json['tank'],
+      product: json['product']?.toString() ?? '',
+      tank: json['tank']?.toString() ?? '',
       dip: json['dip']?.toDouble() ?? 0.0,
       openingStockVol: json['openingStockVol']?.toDouble() ?? 0.0,
       openingStockDensity: json['openingStockDensity']?.toDouble() ?? 0.0,
@@ -149,9 +158,11 @@ class NozzleDetails {
   });
 
   factory NozzleDetails.fromJson(Map<String, dynamic> json) {
+    final List list = (json['nozzleDetails'] as List?) ?? const [];
     return NozzleDetails(
-      nozzleDetails: List<NozzleDetail>.from(
-          json['nozzleDetails'].map((x) => NozzleDetail.fromJson(x))),
+      nozzleDetails: list
+          .map((x) => NozzleDetail.fromJson((x ?? {}) as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
@@ -202,8 +213,8 @@ class ProductDetails {
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) {
     return ProductDetails(
-      productDetails: List<dynamic>.from(json['productDetails']),
-      total: ProductTotal.fromJson(json['total']),
+      productDetails: List<dynamic>.from((json['productDetails'] as List?) ?? const []),
+      total: ProductTotal.fromJson((json['total'] ?? {}) as Map<String, dynamic>),
     );
   }
 }
@@ -236,8 +247,10 @@ class PaymentDetails {
 
   factory PaymentDetails.fromJson(Map<String, dynamic> json) {
     return PaymentDetails(
-      paymentModes: List<dynamic>.from(json['paymentModes'] ?? []),
-      totalAmount: json['totalAmount']?.toDouble() ?? 0.0,
+      paymentModes: List<dynamic>.from((json['paymentModes'] as List?) ?? const []),
+      totalAmount: (json['totalAmount'] is num)
+          ? (json['totalAmount'] as num).toDouble()
+          : 0.0,
     );
   }
 } 

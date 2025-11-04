@@ -45,9 +45,12 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
 
     try {
       final url = ApiConstants.getComprehensiveDailyReportUrl(selectedDate);
+      debugPrint('[ComprehensiveReport] Fetching URL: $url');
       final token = await ApiConstants.getAuthToken();
+      debugPrint('[ComprehensiveReport] Token present: ${token != null}, length: ${token?.length ?? 0}');
       
       if (token == null) {
+        debugPrint('[ComprehensiveReport] No auth token found');
         setState(() {
           isLoading = false;
           errorMessage = 'Authentication token not found. Please login again.';
@@ -55,6 +58,7 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
         return;
       }
 
+      debugPrint('[ComprehensiveReport] Sending GET request...');
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -62,21 +66,45 @@ class _ComprehensiveReportScreenState extends State<ComprehensiveReportScreen> {
           'Authorization': 'Bearer $token',
         },
       );
+      debugPrint('[ComprehensiveReport] Response status: ${response.statusCode}');
+      debugPrint('[ComprehensiveReport] Response body: ${response.body}');
 
       if (response.statusCode == ApiConstants.statusOk) {
-        final jsonData = json.decode(response.body);
+        Map<String, dynamic> jsonData;
+        try {
+          jsonData = json.decode(response.body) as Map<String, dynamic>;
+        } catch (e) {
+          debugPrint('[ComprehensiveReport] JSON decode error (200): $e');
+          setState(() {
+            isLoading = false;
+            errorMessage = 'Invalid response format';
+          });
+          return;
+        }
+        debugPrint('[ComprehensiveReport] Parsed JSON keys: ${jsonData.keys.toList()}');
+        debugPrint('[ComprehensiveReport] success: ${jsonData['success']}, message: ${jsonData['message']}');
         setState(() {
           reportData = ComprehensiveReportResponse.fromJson(jsonData);
           isLoading = false;
         });
+        debugPrint('[ComprehensiveReport] Parsed reportData: success=${reportData?.success}, message="${reportData?.message}"');
       } else {
-        final jsonData = json.decode(response.body);
+        dynamic raw;
+        try {
+          raw = json.decode(response.body);
+        } catch (e) {
+          debugPrint('[ComprehensiveReport] JSON decode error (non-200): $e');
+        }
+        final Map<String, dynamic> jsonData = (raw is Map<String, dynamic>) ? raw : <String, dynamic>{};
+        final apiMessage = jsonData['message']?.toString();
+        debugPrint('[ComprehensiveReport] Error status ${response.statusCode}, api message: $apiMessage');
         setState(() {
           isLoading = false;
-          errorMessage = jsonData['message'] ?? 'Failed to load report data';
+          errorMessage = apiMessage ?? 'Failed to load report data';
         });
       }
     } catch (e) {
+      debugPrint('[ComprehensiveReport] Exception during fetch: $e');
       setState(() {
         isLoading = false;
         errorMessage = 'An error occurred: ${e.toString()}';
