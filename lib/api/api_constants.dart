@@ -12,8 +12,9 @@ class ApiConstants {
   // static const String baseUrl = "http://127.0.0.1:8007"; // For local iOS simulator
   
   // Development server
-  static const String baseUrl = "https://pump360.planet.ninja";
+  // static const String baseUrl = "https://pump360.planet.ninja";
   // static const String baseUrl = "https://pumpbe.pxc.in";
+  static const String baseUrl = "https://api.pxc.in";
 
 
   // App specific constants
