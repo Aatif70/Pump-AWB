@@ -12,6 +12,7 @@ import '../../models/price_model.dart';
 import '../../models/shift_model.dart';
 import '../../theme.dart';
 import '../../utils/jwt_decoder.dart';
+import '../../widgets/custom_snackbar.dart';
 import '../login/login_screen.dart';
 import 'employee_profile_screen.dart';
 import 'nozzle_readings_detail_screen.dart';
@@ -2225,6 +2226,14 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
                                             ),
                                             InkWell(
                                               onTap: () {
+                                                if (!_isCheckedIn) {
+                                                  showCustomSnackBar(
+                                                    context: context,
+                                                    message: 'Please check in before entering readings',
+                                                    isError: true,
+                                                  );
+                                                  return;
+                                                }
                                                 // Save to SharedPreferences
                                                 _saveNozzleDataToPreferences(assignment);
 
@@ -2747,6 +2756,15 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               final assignment = _nozzleAssignments[index];
               return ListTile(
                 onTap: () {
+                  if (!_isCheckedIn) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Please check in before entering readings'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
                   Navigator.pop(context);
                   // Save to SharedPreferences
                   _saveNozzleDataToPreferences(assignment);

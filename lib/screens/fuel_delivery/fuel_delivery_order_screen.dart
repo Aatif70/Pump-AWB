@@ -347,7 +347,7 @@ class _FuelDeliveryOrderScreenState extends State<FuelDeliveryOrderScreen> {
                                 const Icon(Icons.local_shipping_rounded, size: 20),
                                 const SizedBox(width: 8),
                                 const Text(
-                                  'Submit Order',
+                                  'Take Delivery',
                                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                               ],
